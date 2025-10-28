@@ -3,23 +3,23 @@
     # of fixed caps     :       16
     # of page table caps:        2
     # of page caps      :       10
-    # of untyped objects:       69
+    # of untyped objects:       68
 
 # Loader Regions
 
-       <Region name=PD-ELF file_server-0 addr=0x60246000 size=10584>
-       <Region name=PD-ELF file_server-1 addr=0x60249000 size=208>
-       <Region name=PD-ELF client_0-0 addr=0x6024a000 size=5488>
-       <Region name=PD-ELF client_0-1 addr=0x6024c000 size=192>
+       <Region name=PD-ELF file_server-0 addr=0x60246000 size=10808>
+       <Region name=PD-ELF file_server-1 addr=0x60249000 size=224>
+       <Region name=PD-ELF client_0-0 addr=0x6024a000 size=9912>
+       <Region name=PD-ELF client_0-1 addr=0x6024d000 size=192>
 
 # Monitor (Initial Task) Info
 
      virtual memory : MemoryRegion(base=0x8a000000, end=0x8a00a000)
-     physical memory: MemoryRegion(base=0x6024d000, end=0x60257000)
+     physical memory: MemoryRegion(base=0x6024e000, end=0x60258000)
 
 # Allocated Kernel Objects Summary
 
-     # of allocated objects: 309
+     # of allocated objects: 310
 
 # Bootstrap Kernel Invocations Summary
 
@@ -28,8 +28,8 @@
 
 # System Kernel Invocations Summary
 
-     # of invocations   :         71
-     size of invocations:      5,336
+     # of invocations   :         72
+     size of invocations:      5,408
 
 # Allocated Kernel Objects Detail
 
@@ -39,309 +39,310 @@
     Page(4 KiB): MR=ELF:file_server-1 @ 60249000       9 cap_addr=8000000000000006 phys_addr=60249000
     Page(4 KiB): MR=ELF:client_0-0 @ 6024a000          9 cap_addr=8000000000000007 phys_addr=6024a000
     Page(4 KiB): MR=ELF:client_0-0 @ 6024b000          9 cap_addr=8000000000000008 phys_addr=6024b000
-    Page(4 KiB): MR=ELF:client_0-1 @ 6024c000          9 cap_addr=8000000000000009 phys_addr=6024c000
-    Page(4 KiB): IPC Buffer PD=file_server             9 cap_addr=800000000000000a phys_addr=60400000
-    Page(4 KiB): IPC Buffer PD=client_0                9 cap_addr=800000000000000b phys_addr=60401000
-    Page(4 KiB): MR=file_table #0                      9 cap_addr=800000000000000c phys_addr=60402000
-    Page(4 KiB): MR=file_table #1                      9 cap_addr=800000000000000d phys_addr=60403000
-    Page(4 KiB): MR=file_table #2                      9 cap_addr=800000000000000e phys_addr=60404000
-    Page(4 KiB): MR=file_table #3                      9 cap_addr=800000000000000f phys_addr=60405000
-    Page(4 KiB): MR=file_table #4                      9 cap_addr=8000000000000010 phys_addr=60406000
-    Page(4 KiB): MR=file_table #5                      9 cap_addr=8000000000000011 phys_addr=60407000
-    Page(4 KiB): MR=file_table #6                      9 cap_addr=8000000000000012 phys_addr=60408000
-    Page(4 KiB): MR=file_table #7                      9 cap_addr=8000000000000013 phys_addr=60409000
-    Page(4 KiB): MR=file_table #8                      9 cap_addr=8000000000000014 phys_addr=6040a000
-    Page(4 KiB): MR=file_table #9                      9 cap_addr=8000000000000015 phys_addr=6040b000
-    Page(4 KiB): MR=file_table #10                     9 cap_addr=8000000000000016 phys_addr=6040c000
-    Page(4 KiB): MR=file_table #11                     9 cap_addr=8000000000000017 phys_addr=6040d000
-    Page(4 KiB): MR=file_table #12                     9 cap_addr=8000000000000018 phys_addr=6040e000
-    Page(4 KiB): MR=file_table #13                     9 cap_addr=8000000000000019 phys_addr=6040f000
-    Page(4 KiB): MR=file_table #14                     9 cap_addr=800000000000001a phys_addr=60410000
-    Page(4 KiB): MR=file_table #15                     9 cap_addr=800000000000001b phys_addr=60411000
-    Page(4 KiB): MR=file_data #0                       9 cap_addr=800000000000001c phys_addr=60412000
-    Page(4 KiB): MR=file_data #1                       9 cap_addr=800000000000001d phys_addr=60413000
-    Page(4 KiB): MR=file_data #2                       9 cap_addr=800000000000001e phys_addr=60414000
-    Page(4 KiB): MR=file_data #3                       9 cap_addr=800000000000001f phys_addr=60415000
-    Page(4 KiB): MR=file_data #4                       9 cap_addr=8000000000000020 phys_addr=60416000
-    Page(4 KiB): MR=file_data #5                       9 cap_addr=8000000000000021 phys_addr=60417000
-    Page(4 KiB): MR=file_data #6                       9 cap_addr=8000000000000022 phys_addr=60418000
-    Page(4 KiB): MR=file_data #7                       9 cap_addr=8000000000000023 phys_addr=60419000
-    Page(4 KiB): MR=file_data #8                       9 cap_addr=8000000000000024 phys_addr=6041a000
-    Page(4 KiB): MR=file_data #9                       9 cap_addr=8000000000000025 phys_addr=6041b000
-    Page(4 KiB): MR=file_data #10                      9 cap_addr=8000000000000026 phys_addr=6041c000
-    Page(4 KiB): MR=file_data #11                      9 cap_addr=8000000000000027 phys_addr=6041d000
-    Page(4 KiB): MR=file_data #12                      9 cap_addr=8000000000000028 phys_addr=6041e000
-    Page(4 KiB): MR=file_data #13                      9 cap_addr=8000000000000029 phys_addr=6041f000
-    Page(4 KiB): MR=file_data #14                      9 cap_addr=800000000000002a phys_addr=60420000
-    Page(4 KiB): MR=file_data #15                      9 cap_addr=800000000000002b phys_addr=60421000
-    Page(4 KiB): MR=file_data #16                      9 cap_addr=800000000000002c phys_addr=60422000
-    Page(4 KiB): MR=file_data #17                      9 cap_addr=800000000000002d phys_addr=60423000
-    Page(4 KiB): MR=file_data #18                      9 cap_addr=800000000000002e phys_addr=60424000
-    Page(4 KiB): MR=file_data #19                      9 cap_addr=800000000000002f phys_addr=60425000
-    Page(4 KiB): MR=file_data #20                      9 cap_addr=8000000000000030 phys_addr=60426000
-    Page(4 KiB): MR=file_data #21                      9 cap_addr=8000000000000031 phys_addr=60427000
-    Page(4 KiB): MR=file_data #22                      9 cap_addr=8000000000000032 phys_addr=60428000
-    Page(4 KiB): MR=file_data #23                      9 cap_addr=8000000000000033 phys_addr=60429000
-    Page(4 KiB): MR=file_data #24                      9 cap_addr=8000000000000034 phys_addr=6042a000
-    Page(4 KiB): MR=file_data #25                      9 cap_addr=8000000000000035 phys_addr=6042b000
-    Page(4 KiB): MR=file_data #26                      9 cap_addr=8000000000000036 phys_addr=6042c000
-    Page(4 KiB): MR=file_data #27                      9 cap_addr=8000000000000037 phys_addr=6042d000
-    Page(4 KiB): MR=file_data #28                      9 cap_addr=8000000000000038 phys_addr=6042e000
-    Page(4 KiB): MR=file_data #29                      9 cap_addr=8000000000000039 phys_addr=6042f000
-    Page(4 KiB): MR=file_data #30                      9 cap_addr=800000000000003a phys_addr=60430000
-    Page(4 KiB): MR=file_data #31                      9 cap_addr=800000000000003b phys_addr=60431000
-    Page(4 KiB): MR=file_data #32                      9 cap_addr=800000000000003c phys_addr=60432000
-    Page(4 KiB): MR=file_data #33                      9 cap_addr=800000000000003d phys_addr=60433000
-    Page(4 KiB): MR=file_data #34                      9 cap_addr=800000000000003e phys_addr=60434000
-    Page(4 KiB): MR=file_data #35                      9 cap_addr=800000000000003f phys_addr=60435000
-    Page(4 KiB): MR=file_data #36                      9 cap_addr=8000000000000040 phys_addr=60436000
-    Page(4 KiB): MR=file_data #37                      9 cap_addr=8000000000000041 phys_addr=60437000
-    Page(4 KiB): MR=file_data #38                      9 cap_addr=8000000000000042 phys_addr=60438000
-    Page(4 KiB): MR=file_data #39                      9 cap_addr=8000000000000043 phys_addr=60439000
-    Page(4 KiB): MR=file_data #40                      9 cap_addr=8000000000000044 phys_addr=6043a000
-    Page(4 KiB): MR=file_data #41                      9 cap_addr=8000000000000045 phys_addr=6043b000
-    Page(4 KiB): MR=file_data #42                      9 cap_addr=8000000000000046 phys_addr=6043c000
-    Page(4 KiB): MR=file_data #43                      9 cap_addr=8000000000000047 phys_addr=6043d000
-    Page(4 KiB): MR=file_data #44                      9 cap_addr=8000000000000048 phys_addr=6043e000
-    Page(4 KiB): MR=file_data #45                      9 cap_addr=8000000000000049 phys_addr=6043f000
-    Page(4 KiB): MR=file_data #46                      9 cap_addr=800000000000004a phys_addr=60440000
-    Page(4 KiB): MR=file_data #47                      9 cap_addr=800000000000004b phys_addr=60441000
-    Page(4 KiB): MR=file_data #48                      9 cap_addr=800000000000004c phys_addr=60442000
-    Page(4 KiB): MR=file_data #49                      9 cap_addr=800000000000004d phys_addr=60443000
-    Page(4 KiB): MR=file_data #50                      9 cap_addr=800000000000004e phys_addr=60444000
-    Page(4 KiB): MR=file_data #51                      9 cap_addr=800000000000004f phys_addr=60445000
-    Page(4 KiB): MR=file_data #52                      9 cap_addr=8000000000000050 phys_addr=60446000
-    Page(4 KiB): MR=file_data #53                      9 cap_addr=8000000000000051 phys_addr=60447000
-    Page(4 KiB): MR=file_data #54                      9 cap_addr=8000000000000052 phys_addr=60448000
-    Page(4 KiB): MR=file_data #55                      9 cap_addr=8000000000000053 phys_addr=60449000
-    Page(4 KiB): MR=file_data #56                      9 cap_addr=8000000000000054 phys_addr=6044a000
-    Page(4 KiB): MR=file_data #57                      9 cap_addr=8000000000000055 phys_addr=6044b000
-    Page(4 KiB): MR=file_data #58                      9 cap_addr=8000000000000056 phys_addr=6044c000
-    Page(4 KiB): MR=file_data #59                      9 cap_addr=8000000000000057 phys_addr=6044d000
-    Page(4 KiB): MR=file_data #60                      9 cap_addr=8000000000000058 phys_addr=6044e000
-    Page(4 KiB): MR=file_data #61                      9 cap_addr=8000000000000059 phys_addr=6044f000
-    Page(4 KiB): MR=file_data #62                      9 cap_addr=800000000000005a phys_addr=60450000
-    Page(4 KiB): MR=file_data #63                      9 cap_addr=800000000000005b phys_addr=60451000
-    Page(4 KiB): MR=file_data #64                      9 cap_addr=800000000000005c phys_addr=60452000
-    Page(4 KiB): MR=file_data #65                      9 cap_addr=800000000000005d phys_addr=60453000
-    Page(4 KiB): MR=file_data #66                      9 cap_addr=800000000000005e phys_addr=60454000
-    Page(4 KiB): MR=file_data #67                      9 cap_addr=800000000000005f phys_addr=60455000
-    Page(4 KiB): MR=file_data #68                      9 cap_addr=8000000000000060 phys_addr=60456000
-    Page(4 KiB): MR=file_data #69                      9 cap_addr=8000000000000061 phys_addr=60457000
-    Page(4 KiB): MR=file_data #70                      9 cap_addr=8000000000000062 phys_addr=60458000
-    Page(4 KiB): MR=file_data #71                      9 cap_addr=8000000000000063 phys_addr=60459000
-    Page(4 KiB): MR=file_data #72                      9 cap_addr=8000000000000064 phys_addr=6045a000
-    Page(4 KiB): MR=file_data #73                      9 cap_addr=8000000000000065 phys_addr=6045b000
-    Page(4 KiB): MR=file_data #74                      9 cap_addr=8000000000000066 phys_addr=6045c000
-    Page(4 KiB): MR=file_data #75                      9 cap_addr=8000000000000067 phys_addr=6045d000
-    Page(4 KiB): MR=file_data #76                      9 cap_addr=8000000000000068 phys_addr=6045e000
-    Page(4 KiB): MR=file_data #77                      9 cap_addr=8000000000000069 phys_addr=6045f000
-    Page(4 KiB): MR=file_data #78                      9 cap_addr=800000000000006a phys_addr=60460000
-    Page(4 KiB): MR=file_data #79                      9 cap_addr=800000000000006b phys_addr=60461000
-    Page(4 KiB): MR=file_data #80                      9 cap_addr=800000000000006c phys_addr=60462000
-    Page(4 KiB): MR=file_data #81                      9 cap_addr=800000000000006d phys_addr=60463000
-    Page(4 KiB): MR=file_data #82                      9 cap_addr=800000000000006e phys_addr=60464000
-    Page(4 KiB): MR=file_data #83                      9 cap_addr=800000000000006f phys_addr=60465000
-    Page(4 KiB): MR=file_data #84                      9 cap_addr=8000000000000070 phys_addr=60466000
-    Page(4 KiB): MR=file_data #85                      9 cap_addr=8000000000000071 phys_addr=60467000
-    Page(4 KiB): MR=file_data #86                      9 cap_addr=8000000000000072 phys_addr=60468000
-    Page(4 KiB): MR=file_data #87                      9 cap_addr=8000000000000073 phys_addr=60469000
-    Page(4 KiB): MR=file_data #88                      9 cap_addr=8000000000000074 phys_addr=6046a000
-    Page(4 KiB): MR=file_data #89                      9 cap_addr=8000000000000075 phys_addr=6046b000
-    Page(4 KiB): MR=file_data #90                      9 cap_addr=8000000000000076 phys_addr=6046c000
-    Page(4 KiB): MR=file_data #91                      9 cap_addr=8000000000000077 phys_addr=6046d000
-    Page(4 KiB): MR=file_data #92                      9 cap_addr=8000000000000078 phys_addr=6046e000
-    Page(4 KiB): MR=file_data #93                      9 cap_addr=8000000000000079 phys_addr=6046f000
-    Page(4 KiB): MR=file_data #94                      9 cap_addr=800000000000007a phys_addr=60470000
-    Page(4 KiB): MR=file_data #95                      9 cap_addr=800000000000007b phys_addr=60471000
-    Page(4 KiB): MR=file_data #96                      9 cap_addr=800000000000007c phys_addr=60472000
-    Page(4 KiB): MR=file_data #97                      9 cap_addr=800000000000007d phys_addr=60473000
-    Page(4 KiB): MR=file_data #98                      9 cap_addr=800000000000007e phys_addr=60474000
-    Page(4 KiB): MR=file_data #99                      9 cap_addr=800000000000007f phys_addr=60475000
-    Page(4 KiB): MR=file_data #100                     9 cap_addr=8000000000000080 phys_addr=60476000
-    Page(4 KiB): MR=file_data #101                     9 cap_addr=8000000000000081 phys_addr=60477000
-    Page(4 KiB): MR=file_data #102                     9 cap_addr=8000000000000082 phys_addr=60478000
-    Page(4 KiB): MR=file_data #103                     9 cap_addr=8000000000000083 phys_addr=60479000
-    Page(4 KiB): MR=file_data #104                     9 cap_addr=8000000000000084 phys_addr=6047a000
-    Page(4 KiB): MR=file_data #105                     9 cap_addr=8000000000000085 phys_addr=6047b000
-    Page(4 KiB): MR=file_data #106                     9 cap_addr=8000000000000086 phys_addr=6047c000
-    Page(4 KiB): MR=file_data #107                     9 cap_addr=8000000000000087 phys_addr=6047d000
-    Page(4 KiB): MR=file_data #108                     9 cap_addr=8000000000000088 phys_addr=6047e000
-    Page(4 KiB): MR=file_data #109                     9 cap_addr=8000000000000089 phys_addr=6047f000
-    Page(4 KiB): MR=file_data #110                     9 cap_addr=800000000000008a phys_addr=60480000
-    Page(4 KiB): MR=file_data #111                     9 cap_addr=800000000000008b phys_addr=60481000
-    Page(4 KiB): MR=file_data #112                     9 cap_addr=800000000000008c phys_addr=60482000
-    Page(4 KiB): MR=file_data #113                     9 cap_addr=800000000000008d phys_addr=60483000
-    Page(4 KiB): MR=file_data #114                     9 cap_addr=800000000000008e phys_addr=60484000
-    Page(4 KiB): MR=file_data #115                     9 cap_addr=800000000000008f phys_addr=60485000
-    Page(4 KiB): MR=file_data #116                     9 cap_addr=8000000000000090 phys_addr=60486000
-    Page(4 KiB): MR=file_data #117                     9 cap_addr=8000000000000091 phys_addr=60487000
-    Page(4 KiB): MR=file_data #118                     9 cap_addr=8000000000000092 phys_addr=60488000
-    Page(4 KiB): MR=file_data #119                     9 cap_addr=8000000000000093 phys_addr=60489000
-    Page(4 KiB): MR=file_data #120                     9 cap_addr=8000000000000094 phys_addr=6048a000
-    Page(4 KiB): MR=file_data #121                     9 cap_addr=8000000000000095 phys_addr=6048b000
-    Page(4 KiB): MR=file_data #122                     9 cap_addr=8000000000000096 phys_addr=6048c000
-    Page(4 KiB): MR=file_data #123                     9 cap_addr=8000000000000097 phys_addr=6048d000
-    Page(4 KiB): MR=file_data #124                     9 cap_addr=8000000000000098 phys_addr=6048e000
-    Page(4 KiB): MR=file_data #125                     9 cap_addr=8000000000000099 phys_addr=6048f000
-    Page(4 KiB): MR=file_data #126                     9 cap_addr=800000000000009a phys_addr=60490000
-    Page(4 KiB): MR=file_data #127                     9 cap_addr=800000000000009b phys_addr=60491000
-    Page(4 KiB): MR=file_data #128                     9 cap_addr=800000000000009c phys_addr=60492000
-    Page(4 KiB): MR=file_data #129                     9 cap_addr=800000000000009d phys_addr=60493000
-    Page(4 KiB): MR=file_data #130                     9 cap_addr=800000000000009e phys_addr=60494000
-    Page(4 KiB): MR=file_data #131                     9 cap_addr=800000000000009f phys_addr=60495000
-    Page(4 KiB): MR=file_data #132                     9 cap_addr=80000000000000a0 phys_addr=60496000
-    Page(4 KiB): MR=file_data #133                     9 cap_addr=80000000000000a1 phys_addr=60497000
-    Page(4 KiB): MR=file_data #134                     9 cap_addr=80000000000000a2 phys_addr=60498000
-    Page(4 KiB): MR=file_data #135                     9 cap_addr=80000000000000a3 phys_addr=60499000
-    Page(4 KiB): MR=file_data #136                     9 cap_addr=80000000000000a4 phys_addr=6049a000
-    Page(4 KiB): MR=file_data #137                     9 cap_addr=80000000000000a5 phys_addr=6049b000
-    Page(4 KiB): MR=file_data #138                     9 cap_addr=80000000000000a6 phys_addr=6049c000
-    Page(4 KiB): MR=file_data #139                     9 cap_addr=80000000000000a7 phys_addr=6049d000
-    Page(4 KiB): MR=file_data #140                     9 cap_addr=80000000000000a8 phys_addr=6049e000
-    Page(4 KiB): MR=file_data #141                     9 cap_addr=80000000000000a9 phys_addr=6049f000
-    Page(4 KiB): MR=file_data #142                     9 cap_addr=80000000000000aa phys_addr=604a0000
-    Page(4 KiB): MR=file_data #143                     9 cap_addr=80000000000000ab phys_addr=604a1000
-    Page(4 KiB): MR=file_data #144                     9 cap_addr=80000000000000ac phys_addr=604a2000
-    Page(4 KiB): MR=file_data #145                     9 cap_addr=80000000000000ad phys_addr=604a3000
-    Page(4 KiB): MR=file_data #146                     9 cap_addr=80000000000000ae phys_addr=604a4000
-    Page(4 KiB): MR=file_data #147                     9 cap_addr=80000000000000af phys_addr=604a5000
-    Page(4 KiB): MR=file_data #148                     9 cap_addr=80000000000000b0 phys_addr=604a6000
-    Page(4 KiB): MR=file_data #149                     9 cap_addr=80000000000000b1 phys_addr=604a7000
-    Page(4 KiB): MR=file_data #150                     9 cap_addr=80000000000000b2 phys_addr=604a8000
-    Page(4 KiB): MR=file_data #151                     9 cap_addr=80000000000000b3 phys_addr=604a9000
-    Page(4 KiB): MR=file_data #152                     9 cap_addr=80000000000000b4 phys_addr=604aa000
-    Page(4 KiB): MR=file_data #153                     9 cap_addr=80000000000000b5 phys_addr=604ab000
-    Page(4 KiB): MR=file_data #154                     9 cap_addr=80000000000000b6 phys_addr=604ac000
-    Page(4 KiB): MR=file_data #155                     9 cap_addr=80000000000000b7 phys_addr=604ad000
-    Page(4 KiB): MR=file_data #156                     9 cap_addr=80000000000000b8 phys_addr=604ae000
-    Page(4 KiB): MR=file_data #157                     9 cap_addr=80000000000000b9 phys_addr=604af000
-    Page(4 KiB): MR=file_data #158                     9 cap_addr=80000000000000ba phys_addr=604b0000
-    Page(4 KiB): MR=file_data #159                     9 cap_addr=80000000000000bb phys_addr=604b1000
-    Page(4 KiB): MR=file_data #160                     9 cap_addr=80000000000000bc phys_addr=604b2000
-    Page(4 KiB): MR=file_data #161                     9 cap_addr=80000000000000bd phys_addr=604b3000
-    Page(4 KiB): MR=file_data #162                     9 cap_addr=80000000000000be phys_addr=604b4000
-    Page(4 KiB): MR=file_data #163                     9 cap_addr=80000000000000bf phys_addr=604b5000
-    Page(4 KiB): MR=file_data #164                     9 cap_addr=80000000000000c0 phys_addr=604b6000
-    Page(4 KiB): MR=file_data #165                     9 cap_addr=80000000000000c1 phys_addr=604b7000
-    Page(4 KiB): MR=file_data #166                     9 cap_addr=80000000000000c2 phys_addr=604b8000
-    Page(4 KiB): MR=file_data #167                     9 cap_addr=80000000000000c3 phys_addr=604b9000
-    Page(4 KiB): MR=file_data #168                     9 cap_addr=80000000000000c4 phys_addr=604ba000
-    Page(4 KiB): MR=file_data #169                     9 cap_addr=80000000000000c5 phys_addr=604bb000
-    Page(4 KiB): MR=file_data #170                     9 cap_addr=80000000000000c6 phys_addr=604bc000
-    Page(4 KiB): MR=file_data #171                     9 cap_addr=80000000000000c7 phys_addr=604bd000
-    Page(4 KiB): MR=file_data #172                     9 cap_addr=80000000000000c8 phys_addr=604be000
-    Page(4 KiB): MR=file_data #173                     9 cap_addr=80000000000000c9 phys_addr=604bf000
-    Page(4 KiB): MR=file_data #174                     9 cap_addr=80000000000000ca phys_addr=604c0000
-    Page(4 KiB): MR=file_data #175                     9 cap_addr=80000000000000cb phys_addr=604c1000
-    Page(4 KiB): MR=file_data #176                     9 cap_addr=80000000000000cc phys_addr=604c2000
-    Page(4 KiB): MR=file_data #177                     9 cap_addr=80000000000000cd phys_addr=604c3000
-    Page(4 KiB): MR=file_data #178                     9 cap_addr=80000000000000ce phys_addr=604c4000
-    Page(4 KiB): MR=file_data #179                     9 cap_addr=80000000000000cf phys_addr=604c5000
-    Page(4 KiB): MR=file_data #180                     9 cap_addr=80000000000000d0 phys_addr=604c6000
-    Page(4 KiB): MR=file_data #181                     9 cap_addr=80000000000000d1 phys_addr=604c7000
-    Page(4 KiB): MR=file_data #182                     9 cap_addr=80000000000000d2 phys_addr=604c8000
-    Page(4 KiB): MR=file_data #183                     9 cap_addr=80000000000000d3 phys_addr=604c9000
-    Page(4 KiB): MR=file_data #184                     9 cap_addr=80000000000000d4 phys_addr=604ca000
-    Page(4 KiB): MR=file_data #185                     9 cap_addr=80000000000000d5 phys_addr=604cb000
-    Page(4 KiB): MR=file_data #186                     9 cap_addr=80000000000000d6 phys_addr=604cc000
-    Page(4 KiB): MR=file_data #187                     9 cap_addr=80000000000000d7 phys_addr=604cd000
-    Page(4 KiB): MR=file_data #188                     9 cap_addr=80000000000000d8 phys_addr=604ce000
-    Page(4 KiB): MR=file_data #189                     9 cap_addr=80000000000000d9 phys_addr=604cf000
-    Page(4 KiB): MR=file_data #190                     9 cap_addr=80000000000000da phys_addr=604d0000
-    Page(4 KiB): MR=file_data #191                     9 cap_addr=80000000000000db phys_addr=604d1000
-    Page(4 KiB): MR=file_data #192                     9 cap_addr=80000000000000dc phys_addr=604d2000
-    Page(4 KiB): MR=file_data #193                     9 cap_addr=80000000000000dd phys_addr=604d3000
-    Page(4 KiB): MR=file_data #194                     9 cap_addr=80000000000000de phys_addr=604d4000
-    Page(4 KiB): MR=file_data #195                     9 cap_addr=80000000000000df phys_addr=604d5000
-    Page(4 KiB): MR=file_data #196                     9 cap_addr=80000000000000e0 phys_addr=604d6000
-    Page(4 KiB): MR=file_data #197                     9 cap_addr=80000000000000e1 phys_addr=604d7000
-    Page(4 KiB): MR=file_data #198                     9 cap_addr=80000000000000e2 phys_addr=604d8000
-    Page(4 KiB): MR=file_data #199                     9 cap_addr=80000000000000e3 phys_addr=604d9000
-    Page(4 KiB): MR=file_data #200                     9 cap_addr=80000000000000e4 phys_addr=604da000
-    Page(4 KiB): MR=file_data #201                     9 cap_addr=80000000000000e5 phys_addr=604db000
-    Page(4 KiB): MR=file_data #202                     9 cap_addr=80000000000000e6 phys_addr=604dc000
-    Page(4 KiB): MR=file_data #203                     9 cap_addr=80000000000000e7 phys_addr=604dd000
-    Page(4 KiB): MR=file_data #204                     9 cap_addr=80000000000000e8 phys_addr=604de000
-    Page(4 KiB): MR=file_data #205                     9 cap_addr=80000000000000e9 phys_addr=604df000
-    Page(4 KiB): MR=file_data #206                     9 cap_addr=80000000000000ea phys_addr=604e0000
-    Page(4 KiB): MR=file_data #207                     9 cap_addr=80000000000000eb phys_addr=604e1000
-    Page(4 KiB): MR=file_data #208                     9 cap_addr=80000000000000ec phys_addr=604e2000
-    Page(4 KiB): MR=file_data #209                     9 cap_addr=80000000000000ed phys_addr=604e3000
-    Page(4 KiB): MR=file_data #210                     9 cap_addr=80000000000000ee phys_addr=604e4000
-    Page(4 KiB): MR=file_data #211                     9 cap_addr=80000000000000ef phys_addr=604e5000
-    Page(4 KiB): MR=file_data #212                     9 cap_addr=80000000000000f0 phys_addr=604e6000
-    Page(4 KiB): MR=file_data #213                     9 cap_addr=80000000000000f1 phys_addr=604e7000
-    Page(4 KiB): MR=file_data #214                     9 cap_addr=80000000000000f2 phys_addr=604e8000
-    Page(4 KiB): MR=file_data #215                     9 cap_addr=80000000000000f3 phys_addr=604e9000
-    Page(4 KiB): MR=file_data #216                     9 cap_addr=80000000000000f4 phys_addr=604ea000
-    Page(4 KiB): MR=file_data #217                     9 cap_addr=80000000000000f5 phys_addr=604eb000
-    Page(4 KiB): MR=file_data #218                     9 cap_addr=80000000000000f6 phys_addr=604ec000
-    Page(4 KiB): MR=file_data #219                     9 cap_addr=80000000000000f7 phys_addr=604ed000
-    Page(4 KiB): MR=file_data #220                     9 cap_addr=80000000000000f8 phys_addr=604ee000
-    Page(4 KiB): MR=file_data #221                     9 cap_addr=80000000000000f9 phys_addr=604ef000
-    Page(4 KiB): MR=file_data #222                     9 cap_addr=80000000000000fa phys_addr=604f0000
-    Page(4 KiB): MR=file_data #223                     9 cap_addr=80000000000000fb phys_addr=604f1000
-    Page(4 KiB): MR=file_data #224                     9 cap_addr=80000000000000fc phys_addr=604f2000
-    Page(4 KiB): MR=file_data #225                     9 cap_addr=80000000000000fd phys_addr=604f3000
-    Page(4 KiB): MR=file_data #226                     9 cap_addr=80000000000000fe phys_addr=604f4000
-    Page(4 KiB): MR=file_data #227                     9 cap_addr=80000000000000ff phys_addr=604f5000
-    Page(4 KiB): MR=file_data #228                     9 cap_addr=8000000000000100 phys_addr=604f6000
-    Page(4 KiB): MR=file_data #229                     9 cap_addr=8000000000000101 phys_addr=604f7000
-    Page(4 KiB): MR=file_data #230                     9 cap_addr=8000000000000102 phys_addr=604f8000
-    Page(4 KiB): MR=file_data #231                     9 cap_addr=8000000000000103 phys_addr=604f9000
-    Page(4 KiB): MR=file_data #232                     9 cap_addr=8000000000000104 phys_addr=604fa000
-    Page(4 KiB): MR=file_data #233                     9 cap_addr=8000000000000105 phys_addr=604fb000
-    Page(4 KiB): MR=file_data #234                     9 cap_addr=8000000000000106 phys_addr=604fc000
-    Page(4 KiB): MR=file_data #235                     9 cap_addr=8000000000000107 phys_addr=604fd000
-    Page(4 KiB): MR=file_data #236                     9 cap_addr=8000000000000108 phys_addr=604fe000
-    Page(4 KiB): MR=file_data #237                     9 cap_addr=8000000000000109 phys_addr=604ff000
-    Page(4 KiB): MR=file_data #238                     9 cap_addr=800000000000010a phys_addr=60500000
-    Page(4 KiB): MR=file_data #239                     9 cap_addr=800000000000010b phys_addr=60501000
-    Page(4 KiB): MR=file_data #240                     9 cap_addr=800000000000010c phys_addr=60502000
-    Page(4 KiB): MR=file_data #241                     9 cap_addr=800000000000010d phys_addr=60503000
-    Page(4 KiB): MR=file_data #242                     9 cap_addr=800000000000010e phys_addr=60504000
-    Page(4 KiB): MR=file_data #243                     9 cap_addr=800000000000010f phys_addr=60505000
-    Page(4 KiB): MR=file_data #244                     9 cap_addr=8000000000000110 phys_addr=60506000
-    Page(4 KiB): MR=file_data #245                     9 cap_addr=8000000000000111 phys_addr=60507000
-    Page(4 KiB): MR=file_data #246                     9 cap_addr=8000000000000112 phys_addr=60508000
-    Page(4 KiB): MR=file_data #247                     9 cap_addr=8000000000000113 phys_addr=60509000
-    Page(4 KiB): MR=file_data #248                     9 cap_addr=8000000000000114 phys_addr=6050a000
-    Page(4 KiB): MR=file_data #249                     9 cap_addr=8000000000000115 phys_addr=6050b000
-    Page(4 KiB): MR=file_data #250                     9 cap_addr=8000000000000116 phys_addr=6050c000
-    Page(4 KiB): MR=file_data #251                     9 cap_addr=8000000000000117 phys_addr=6050d000
-    Page(4 KiB): MR=file_data #252                     9 cap_addr=8000000000000118 phys_addr=6050e000
-    Page(4 KiB): MR=file_data #253                     9 cap_addr=8000000000000119 phys_addr=6050f000
-    Page(4 KiB): MR=file_data #254                     9 cap_addr=800000000000011a phys_addr=60510000
-    Page(4 KiB): MR=file_data #255                     9 cap_addr=800000000000011b phys_addr=60511000
-    Page(4 KiB): MR=client_buffer_0 #0                 9 cap_addr=800000000000011c phys_addr=60512000
-    Page(4 KiB): MR=STACK:file_server #0               9 cap_addr=800000000000011d phys_addr=60513000
-    Page(4 KiB): MR=STACK:client_0 #0                  9 cap_addr=800000000000011e phys_addr=60514000
-    TCB: PD=file_server                                1 cap_addr=800000000000011f phys_addr=60258000
-    TCB: PD=client_0                                   1 cap_addr=8000000000000120 phys_addr=60258800
-    SchedContext: PD=file_server                       5 cap_addr=8000000000000121 phys_addr=60259000
-    SchedContext: PD=client_0                          5 cap_addr=8000000000000122 phys_addr=60259100
-    Reply: Monitor                                     6 cap_addr=8000000000000123 phys_addr=60259200
-    Reply: PD=file_server                              6 cap_addr=8000000000000124 phys_addr=60259220
-    Reply: PD=client_0                                 6 cap_addr=8000000000000125 phys_addr=60259240
-    EP: Monitor Fault                                  2 cap_addr=8000000000000126 phys_addr=60259260
-    EP: PD=file_server                                 2 cap_addr=8000000000000127 phys_addr=60259270
-    Notification: PD=file_server                       3 cap_addr=8000000000000128 phys_addr=60259280
-    Notification: PD=client_0                          3 cap_addr=8000000000000129 phys_addr=602592c0
-    VSpace: PD=file_server                             8 cap_addr=800000000000012a phys_addr=6025a000
-    VSpace: PD=client_0                                8 cap_addr=800000000000012b phys_addr=6025c000
-    PageTable: PD=file_server VADDR=0x0                11 cap_addr=800000000000012c phys_addr=60260000
-    PageTable: PD=file_server VADDR=0xffc0000000       11 cap_addr=800000000000012d phys_addr=60261000
-    PageTable: PD=client_0 VADDR=0x0                   11 cap_addr=800000000000012e phys_addr=60262000
-    PageTable: PD=client_0 VADDR=0xffc0000000          11 cap_addr=800000000000012f phys_addr=60263000
-    PageTable: PD=file_server VADDR=0x0                11 cap_addr=8000000000000130 phys_addr=60264000
-    PageTable: PD=file_server VADDR=0x200000           11 cap_addr=8000000000000131 phys_addr=60265000
-    PageTable: PD=file_server VADDR=0xffffe00000       11 cap_addr=8000000000000132 phys_addr=60266000
-    PageTable: PD=client_0 VADDR=0x0                   11 cap_addr=8000000000000133 phys_addr=60267000
-    PageTable: PD=client_0 VADDR=0x200000              11 cap_addr=8000000000000134 phys_addr=60268000
-    PageTable: PD=client_0 VADDR=0xffffe00000          11 cap_addr=8000000000000135 phys_addr=60269000
-    CNode: PD=file_server                              4 cap_addr=8000000000000136 phys_addr=6026c000
-    CNode: PD=client_0                                 4 cap_addr=8000000000000137 phys_addr=60270000
+    Page(4 KiB): MR=ELF:client_0-0 @ 6024c000          9 cap_addr=8000000000000009 phys_addr=6024c000
+    Page(4 KiB): MR=ELF:client_0-1 @ 6024d000          9 cap_addr=800000000000000a phys_addr=6024d000
+    Page(4 KiB): IPC Buffer PD=file_server             9 cap_addr=800000000000000b phys_addr=60400000
+    Page(4 KiB): IPC Buffer PD=client_0                9 cap_addr=800000000000000c phys_addr=60401000
+    Page(4 KiB): MR=file_table #0                      9 cap_addr=800000000000000d phys_addr=60402000
+    Page(4 KiB): MR=file_table #1                      9 cap_addr=800000000000000e phys_addr=60403000
+    Page(4 KiB): MR=file_table #2                      9 cap_addr=800000000000000f phys_addr=60404000
+    Page(4 KiB): MR=file_table #3                      9 cap_addr=8000000000000010 phys_addr=60405000
+    Page(4 KiB): MR=file_table #4                      9 cap_addr=8000000000000011 phys_addr=60406000
+    Page(4 KiB): MR=file_table #5                      9 cap_addr=8000000000000012 phys_addr=60407000
+    Page(4 KiB): MR=file_table #6                      9 cap_addr=8000000000000013 phys_addr=60408000
+    Page(4 KiB): MR=file_table #7                      9 cap_addr=8000000000000014 phys_addr=60409000
+    Page(4 KiB): MR=file_table #8                      9 cap_addr=8000000000000015 phys_addr=6040a000
+    Page(4 KiB): MR=file_table #9                      9 cap_addr=8000000000000016 phys_addr=6040b000
+    Page(4 KiB): MR=file_table #10                     9 cap_addr=8000000000000017 phys_addr=6040c000
+    Page(4 KiB): MR=file_table #11                     9 cap_addr=8000000000000018 phys_addr=6040d000
+    Page(4 KiB): MR=file_table #12                     9 cap_addr=8000000000000019 phys_addr=6040e000
+    Page(4 KiB): MR=file_table #13                     9 cap_addr=800000000000001a phys_addr=6040f000
+    Page(4 KiB): MR=file_table #14                     9 cap_addr=800000000000001b phys_addr=60410000
+    Page(4 KiB): MR=file_table #15                     9 cap_addr=800000000000001c phys_addr=60411000
+    Page(4 KiB): MR=file_data #0                       9 cap_addr=800000000000001d phys_addr=60412000
+    Page(4 KiB): MR=file_data #1                       9 cap_addr=800000000000001e phys_addr=60413000
+    Page(4 KiB): MR=file_data #2                       9 cap_addr=800000000000001f phys_addr=60414000
+    Page(4 KiB): MR=file_data #3                       9 cap_addr=8000000000000020 phys_addr=60415000
+    Page(4 KiB): MR=file_data #4                       9 cap_addr=8000000000000021 phys_addr=60416000
+    Page(4 KiB): MR=file_data #5                       9 cap_addr=8000000000000022 phys_addr=60417000
+    Page(4 KiB): MR=file_data #6                       9 cap_addr=8000000000000023 phys_addr=60418000
+    Page(4 KiB): MR=file_data #7                       9 cap_addr=8000000000000024 phys_addr=60419000
+    Page(4 KiB): MR=file_data #8                       9 cap_addr=8000000000000025 phys_addr=6041a000
+    Page(4 KiB): MR=file_data #9                       9 cap_addr=8000000000000026 phys_addr=6041b000
+    Page(4 KiB): MR=file_data #10                      9 cap_addr=8000000000000027 phys_addr=6041c000
+    Page(4 KiB): MR=file_data #11                      9 cap_addr=8000000000000028 phys_addr=6041d000
+    Page(4 KiB): MR=file_data #12                      9 cap_addr=8000000000000029 phys_addr=6041e000
+    Page(4 KiB): MR=file_data #13                      9 cap_addr=800000000000002a phys_addr=6041f000
+    Page(4 KiB): MR=file_data #14                      9 cap_addr=800000000000002b phys_addr=60420000
+    Page(4 KiB): MR=file_data #15                      9 cap_addr=800000000000002c phys_addr=60421000
+    Page(4 KiB): MR=file_data #16                      9 cap_addr=800000000000002d phys_addr=60422000
+    Page(4 KiB): MR=file_data #17                      9 cap_addr=800000000000002e phys_addr=60423000
+    Page(4 KiB): MR=file_data #18                      9 cap_addr=800000000000002f phys_addr=60424000
+    Page(4 KiB): MR=file_data #19                      9 cap_addr=8000000000000030 phys_addr=60425000
+    Page(4 KiB): MR=file_data #20                      9 cap_addr=8000000000000031 phys_addr=60426000
+    Page(4 KiB): MR=file_data #21                      9 cap_addr=8000000000000032 phys_addr=60427000
+    Page(4 KiB): MR=file_data #22                      9 cap_addr=8000000000000033 phys_addr=60428000
+    Page(4 KiB): MR=file_data #23                      9 cap_addr=8000000000000034 phys_addr=60429000
+    Page(4 KiB): MR=file_data #24                      9 cap_addr=8000000000000035 phys_addr=6042a000
+    Page(4 KiB): MR=file_data #25                      9 cap_addr=8000000000000036 phys_addr=6042b000
+    Page(4 KiB): MR=file_data #26                      9 cap_addr=8000000000000037 phys_addr=6042c000
+    Page(4 KiB): MR=file_data #27                      9 cap_addr=8000000000000038 phys_addr=6042d000
+    Page(4 KiB): MR=file_data #28                      9 cap_addr=8000000000000039 phys_addr=6042e000
+    Page(4 KiB): MR=file_data #29                      9 cap_addr=800000000000003a phys_addr=6042f000
+    Page(4 KiB): MR=file_data #30                      9 cap_addr=800000000000003b phys_addr=60430000
+    Page(4 KiB): MR=file_data #31                      9 cap_addr=800000000000003c phys_addr=60431000
+    Page(4 KiB): MR=file_data #32                      9 cap_addr=800000000000003d phys_addr=60432000
+    Page(4 KiB): MR=file_data #33                      9 cap_addr=800000000000003e phys_addr=60433000
+    Page(4 KiB): MR=file_data #34                      9 cap_addr=800000000000003f phys_addr=60434000
+    Page(4 KiB): MR=file_data #35                      9 cap_addr=8000000000000040 phys_addr=60435000
+    Page(4 KiB): MR=file_data #36                      9 cap_addr=8000000000000041 phys_addr=60436000
+    Page(4 KiB): MR=file_data #37                      9 cap_addr=8000000000000042 phys_addr=60437000
+    Page(4 KiB): MR=file_data #38                      9 cap_addr=8000000000000043 phys_addr=60438000
+    Page(4 KiB): MR=file_data #39                      9 cap_addr=8000000000000044 phys_addr=60439000
+    Page(4 KiB): MR=file_data #40                      9 cap_addr=8000000000000045 phys_addr=6043a000
+    Page(4 KiB): MR=file_data #41                      9 cap_addr=8000000000000046 phys_addr=6043b000
+    Page(4 KiB): MR=file_data #42                      9 cap_addr=8000000000000047 phys_addr=6043c000
+    Page(4 KiB): MR=file_data #43                      9 cap_addr=8000000000000048 phys_addr=6043d000
+    Page(4 KiB): MR=file_data #44                      9 cap_addr=8000000000000049 phys_addr=6043e000
+    Page(4 KiB): MR=file_data #45                      9 cap_addr=800000000000004a phys_addr=6043f000
+    Page(4 KiB): MR=file_data #46                      9 cap_addr=800000000000004b phys_addr=60440000
+    Page(4 KiB): MR=file_data #47                      9 cap_addr=800000000000004c phys_addr=60441000
+    Page(4 KiB): MR=file_data #48                      9 cap_addr=800000000000004d phys_addr=60442000
+    Page(4 KiB): MR=file_data #49                      9 cap_addr=800000000000004e phys_addr=60443000
+    Page(4 KiB): MR=file_data #50                      9 cap_addr=800000000000004f phys_addr=60444000
+    Page(4 KiB): MR=file_data #51                      9 cap_addr=8000000000000050 phys_addr=60445000
+    Page(4 KiB): MR=file_data #52                      9 cap_addr=8000000000000051 phys_addr=60446000
+    Page(4 KiB): MR=file_data #53                      9 cap_addr=8000000000000052 phys_addr=60447000
+    Page(4 KiB): MR=file_data #54                      9 cap_addr=8000000000000053 phys_addr=60448000
+    Page(4 KiB): MR=file_data #55                      9 cap_addr=8000000000000054 phys_addr=60449000
+    Page(4 KiB): MR=file_data #56                      9 cap_addr=8000000000000055 phys_addr=6044a000
+    Page(4 KiB): MR=file_data #57                      9 cap_addr=8000000000000056 phys_addr=6044b000
+    Page(4 KiB): MR=file_data #58                      9 cap_addr=8000000000000057 phys_addr=6044c000
+    Page(4 KiB): MR=file_data #59                      9 cap_addr=8000000000000058 phys_addr=6044d000
+    Page(4 KiB): MR=file_data #60                      9 cap_addr=8000000000000059 phys_addr=6044e000
+    Page(4 KiB): MR=file_data #61                      9 cap_addr=800000000000005a phys_addr=6044f000
+    Page(4 KiB): MR=file_data #62                      9 cap_addr=800000000000005b phys_addr=60450000
+    Page(4 KiB): MR=file_data #63                      9 cap_addr=800000000000005c phys_addr=60451000
+    Page(4 KiB): MR=file_data #64                      9 cap_addr=800000000000005d phys_addr=60452000
+    Page(4 KiB): MR=file_data #65                      9 cap_addr=800000000000005e phys_addr=60453000
+    Page(4 KiB): MR=file_data #66                      9 cap_addr=800000000000005f phys_addr=60454000
+    Page(4 KiB): MR=file_data #67                      9 cap_addr=8000000000000060 phys_addr=60455000
+    Page(4 KiB): MR=file_data #68                      9 cap_addr=8000000000000061 phys_addr=60456000
+    Page(4 KiB): MR=file_data #69                      9 cap_addr=8000000000000062 phys_addr=60457000
+    Page(4 KiB): MR=file_data #70                      9 cap_addr=8000000000000063 phys_addr=60458000
+    Page(4 KiB): MR=file_data #71                      9 cap_addr=8000000000000064 phys_addr=60459000
+    Page(4 KiB): MR=file_data #72                      9 cap_addr=8000000000000065 phys_addr=6045a000
+    Page(4 KiB): MR=file_data #73                      9 cap_addr=8000000000000066 phys_addr=6045b000
+    Page(4 KiB): MR=file_data #74                      9 cap_addr=8000000000000067 phys_addr=6045c000
+    Page(4 KiB): MR=file_data #75                      9 cap_addr=8000000000000068 phys_addr=6045d000
+    Page(4 KiB): MR=file_data #76                      9 cap_addr=8000000000000069 phys_addr=6045e000
+    Page(4 KiB): MR=file_data #77                      9 cap_addr=800000000000006a phys_addr=6045f000
+    Page(4 KiB): MR=file_data #78                      9 cap_addr=800000000000006b phys_addr=60460000
+    Page(4 KiB): MR=file_data #79                      9 cap_addr=800000000000006c phys_addr=60461000
+    Page(4 KiB): MR=file_data #80                      9 cap_addr=800000000000006d phys_addr=60462000
+    Page(4 KiB): MR=file_data #81                      9 cap_addr=800000000000006e phys_addr=60463000
+    Page(4 KiB): MR=file_data #82                      9 cap_addr=800000000000006f phys_addr=60464000
+    Page(4 KiB): MR=file_data #83                      9 cap_addr=8000000000000070 phys_addr=60465000
+    Page(4 KiB): MR=file_data #84                      9 cap_addr=8000000000000071 phys_addr=60466000
+    Page(4 KiB): MR=file_data #85                      9 cap_addr=8000000000000072 phys_addr=60467000
+    Page(4 KiB): MR=file_data #86                      9 cap_addr=8000000000000073 phys_addr=60468000
+    Page(4 KiB): MR=file_data #87                      9 cap_addr=8000000000000074 phys_addr=60469000
+    Page(4 KiB): MR=file_data #88                      9 cap_addr=8000000000000075 phys_addr=6046a000
+    Page(4 KiB): MR=file_data #89                      9 cap_addr=8000000000000076 phys_addr=6046b000
+    Page(4 KiB): MR=file_data #90                      9 cap_addr=8000000000000077 phys_addr=6046c000
+    Page(4 KiB): MR=file_data #91                      9 cap_addr=8000000000000078 phys_addr=6046d000
+    Page(4 KiB): MR=file_data #92                      9 cap_addr=8000000000000079 phys_addr=6046e000
+    Page(4 KiB): MR=file_data #93                      9 cap_addr=800000000000007a phys_addr=6046f000
+    Page(4 KiB): MR=file_data #94                      9 cap_addr=800000000000007b phys_addr=60470000
+    Page(4 KiB): MR=file_data #95                      9 cap_addr=800000000000007c phys_addr=60471000
+    Page(4 KiB): MR=file_data #96                      9 cap_addr=800000000000007d phys_addr=60472000
+    Page(4 KiB): MR=file_data #97                      9 cap_addr=800000000000007e phys_addr=60473000
+    Page(4 KiB): MR=file_data #98                      9 cap_addr=800000000000007f phys_addr=60474000
+    Page(4 KiB): MR=file_data #99                      9 cap_addr=8000000000000080 phys_addr=60475000
+    Page(4 KiB): MR=file_data #100                     9 cap_addr=8000000000000081 phys_addr=60476000
+    Page(4 KiB): MR=file_data #101                     9 cap_addr=8000000000000082 phys_addr=60477000
+    Page(4 KiB): MR=file_data #102                     9 cap_addr=8000000000000083 phys_addr=60478000
+    Page(4 KiB): MR=file_data #103                     9 cap_addr=8000000000000084 phys_addr=60479000
+    Page(4 KiB): MR=file_data #104                     9 cap_addr=8000000000000085 phys_addr=6047a000
+    Page(4 KiB): MR=file_data #105                     9 cap_addr=8000000000000086 phys_addr=6047b000
+    Page(4 KiB): MR=file_data #106                     9 cap_addr=8000000000000087 phys_addr=6047c000
+    Page(4 KiB): MR=file_data #107                     9 cap_addr=8000000000000088 phys_addr=6047d000
+    Page(4 KiB): MR=file_data #108                     9 cap_addr=8000000000000089 phys_addr=6047e000
+    Page(4 KiB): MR=file_data #109                     9 cap_addr=800000000000008a phys_addr=6047f000
+    Page(4 KiB): MR=file_data #110                     9 cap_addr=800000000000008b phys_addr=60480000
+    Page(4 KiB): MR=file_data #111                     9 cap_addr=800000000000008c phys_addr=60481000
+    Page(4 KiB): MR=file_data #112                     9 cap_addr=800000000000008d phys_addr=60482000
+    Page(4 KiB): MR=file_data #113                     9 cap_addr=800000000000008e phys_addr=60483000
+    Page(4 KiB): MR=file_data #114                     9 cap_addr=800000000000008f phys_addr=60484000
+    Page(4 KiB): MR=file_data #115                     9 cap_addr=8000000000000090 phys_addr=60485000
+    Page(4 KiB): MR=file_data #116                     9 cap_addr=8000000000000091 phys_addr=60486000
+    Page(4 KiB): MR=file_data #117                     9 cap_addr=8000000000000092 phys_addr=60487000
+    Page(4 KiB): MR=file_data #118                     9 cap_addr=8000000000000093 phys_addr=60488000
+    Page(4 KiB): MR=file_data #119                     9 cap_addr=8000000000000094 phys_addr=60489000
+    Page(4 KiB): MR=file_data #120                     9 cap_addr=8000000000000095 phys_addr=6048a000
+    Page(4 KiB): MR=file_data #121                     9 cap_addr=8000000000000096 phys_addr=6048b000
+    Page(4 KiB): MR=file_data #122                     9 cap_addr=8000000000000097 phys_addr=6048c000
+    Page(4 KiB): MR=file_data #123                     9 cap_addr=8000000000000098 phys_addr=6048d000
+    Page(4 KiB): MR=file_data #124                     9 cap_addr=8000000000000099 phys_addr=6048e000
+    Page(4 KiB): MR=file_data #125                     9 cap_addr=800000000000009a phys_addr=6048f000
+    Page(4 KiB): MR=file_data #126                     9 cap_addr=800000000000009b phys_addr=60490000
+    Page(4 KiB): MR=file_data #127                     9 cap_addr=800000000000009c phys_addr=60491000
+    Page(4 KiB): MR=file_data #128                     9 cap_addr=800000000000009d phys_addr=60492000
+    Page(4 KiB): MR=file_data #129                     9 cap_addr=800000000000009e phys_addr=60493000
+    Page(4 KiB): MR=file_data #130                     9 cap_addr=800000000000009f phys_addr=60494000
+    Page(4 KiB): MR=file_data #131                     9 cap_addr=80000000000000a0 phys_addr=60495000
+    Page(4 KiB): MR=file_data #132                     9 cap_addr=80000000000000a1 phys_addr=60496000
+    Page(4 KiB): MR=file_data #133                     9 cap_addr=80000000000000a2 phys_addr=60497000
+    Page(4 KiB): MR=file_data #134                     9 cap_addr=80000000000000a3 phys_addr=60498000
+    Page(4 KiB): MR=file_data #135                     9 cap_addr=80000000000000a4 phys_addr=60499000
+    Page(4 KiB): MR=file_data #136                     9 cap_addr=80000000000000a5 phys_addr=6049a000
+    Page(4 KiB): MR=file_data #137                     9 cap_addr=80000000000000a6 phys_addr=6049b000
+    Page(4 KiB): MR=file_data #138                     9 cap_addr=80000000000000a7 phys_addr=6049c000
+    Page(4 KiB): MR=file_data #139                     9 cap_addr=80000000000000a8 phys_addr=6049d000
+    Page(4 KiB): MR=file_data #140                     9 cap_addr=80000000000000a9 phys_addr=6049e000
+    Page(4 KiB): MR=file_data #141                     9 cap_addr=80000000000000aa phys_addr=6049f000
+    Page(4 KiB): MR=file_data #142                     9 cap_addr=80000000000000ab phys_addr=604a0000
+    Page(4 KiB): MR=file_data #143                     9 cap_addr=80000000000000ac phys_addr=604a1000
+    Page(4 KiB): MR=file_data #144                     9 cap_addr=80000000000000ad phys_addr=604a2000
+    Page(4 KiB): MR=file_data #145                     9 cap_addr=80000000000000ae phys_addr=604a3000
+    Page(4 KiB): MR=file_data #146                     9 cap_addr=80000000000000af phys_addr=604a4000
+    Page(4 KiB): MR=file_data #147                     9 cap_addr=80000000000000b0 phys_addr=604a5000
+    Page(4 KiB): MR=file_data #148                     9 cap_addr=80000000000000b1 phys_addr=604a6000
+    Page(4 KiB): MR=file_data #149                     9 cap_addr=80000000000000b2 phys_addr=604a7000
+    Page(4 KiB): MR=file_data #150                     9 cap_addr=80000000000000b3 phys_addr=604a8000
+    Page(4 KiB): MR=file_data #151                     9 cap_addr=80000000000000b4 phys_addr=604a9000
+    Page(4 KiB): MR=file_data #152                     9 cap_addr=80000000000000b5 phys_addr=604aa000
+    Page(4 KiB): MR=file_data #153                     9 cap_addr=80000000000000b6 phys_addr=604ab000
+    Page(4 KiB): MR=file_data #154                     9 cap_addr=80000000000000b7 phys_addr=604ac000
+    Page(4 KiB): MR=file_data #155                     9 cap_addr=80000000000000b8 phys_addr=604ad000
+    Page(4 KiB): MR=file_data #156                     9 cap_addr=80000000000000b9 phys_addr=604ae000
+    Page(4 KiB): MR=file_data #157                     9 cap_addr=80000000000000ba phys_addr=604af000
+    Page(4 KiB): MR=file_data #158                     9 cap_addr=80000000000000bb phys_addr=604b0000
+    Page(4 KiB): MR=file_data #159                     9 cap_addr=80000000000000bc phys_addr=604b1000
+    Page(4 KiB): MR=file_data #160                     9 cap_addr=80000000000000bd phys_addr=604b2000
+    Page(4 KiB): MR=file_data #161                     9 cap_addr=80000000000000be phys_addr=604b3000
+    Page(4 KiB): MR=file_data #162                     9 cap_addr=80000000000000bf phys_addr=604b4000
+    Page(4 KiB): MR=file_data #163                     9 cap_addr=80000000000000c0 phys_addr=604b5000
+    Page(4 KiB): MR=file_data #164                     9 cap_addr=80000000000000c1 phys_addr=604b6000
+    Page(4 KiB): MR=file_data #165                     9 cap_addr=80000000000000c2 phys_addr=604b7000
+    Page(4 KiB): MR=file_data #166                     9 cap_addr=80000000000000c3 phys_addr=604b8000
+    Page(4 KiB): MR=file_data #167                     9 cap_addr=80000000000000c4 phys_addr=604b9000
+    Page(4 KiB): MR=file_data #168                     9 cap_addr=80000000000000c5 phys_addr=604ba000
+    Page(4 KiB): MR=file_data #169                     9 cap_addr=80000000000000c6 phys_addr=604bb000
+    Page(4 KiB): MR=file_data #170                     9 cap_addr=80000000000000c7 phys_addr=604bc000
+    Page(4 KiB): MR=file_data #171                     9 cap_addr=80000000000000c8 phys_addr=604bd000
+    Page(4 KiB): MR=file_data #172                     9 cap_addr=80000000000000c9 phys_addr=604be000
+    Page(4 KiB): MR=file_data #173                     9 cap_addr=80000000000000ca phys_addr=604bf000
+    Page(4 KiB): MR=file_data #174                     9 cap_addr=80000000000000cb phys_addr=604c0000
+    Page(4 KiB): MR=file_data #175                     9 cap_addr=80000000000000cc phys_addr=604c1000
+    Page(4 KiB): MR=file_data #176                     9 cap_addr=80000000000000cd phys_addr=604c2000
+    Page(4 KiB): MR=file_data #177                     9 cap_addr=80000000000000ce phys_addr=604c3000
+    Page(4 KiB): MR=file_data #178                     9 cap_addr=80000000000000cf phys_addr=604c4000
+    Page(4 KiB): MR=file_data #179                     9 cap_addr=80000000000000d0 phys_addr=604c5000
+    Page(4 KiB): MR=file_data #180                     9 cap_addr=80000000000000d1 phys_addr=604c6000
+    Page(4 KiB): MR=file_data #181                     9 cap_addr=80000000000000d2 phys_addr=604c7000
+    Page(4 KiB): MR=file_data #182                     9 cap_addr=80000000000000d3 phys_addr=604c8000
+    Page(4 KiB): MR=file_data #183                     9 cap_addr=80000000000000d4 phys_addr=604c9000
+    Page(4 KiB): MR=file_data #184                     9 cap_addr=80000000000000d5 phys_addr=604ca000
+    Page(4 KiB): MR=file_data #185                     9 cap_addr=80000000000000d6 phys_addr=604cb000
+    Page(4 KiB): MR=file_data #186                     9 cap_addr=80000000000000d7 phys_addr=604cc000
+    Page(4 KiB): MR=file_data #187                     9 cap_addr=80000000000000d8 phys_addr=604cd000
+    Page(4 KiB): MR=file_data #188                     9 cap_addr=80000000000000d9 phys_addr=604ce000
+    Page(4 KiB): MR=file_data #189                     9 cap_addr=80000000000000da phys_addr=604cf000
+    Page(4 KiB): MR=file_data #190                     9 cap_addr=80000000000000db phys_addr=604d0000
+    Page(4 KiB): MR=file_data #191                     9 cap_addr=80000000000000dc phys_addr=604d1000
+    Page(4 KiB): MR=file_data #192                     9 cap_addr=80000000000000dd phys_addr=604d2000
+    Page(4 KiB): MR=file_data #193                     9 cap_addr=80000000000000de phys_addr=604d3000
+    Page(4 KiB): MR=file_data #194                     9 cap_addr=80000000000000df phys_addr=604d4000
+    Page(4 KiB): MR=file_data #195                     9 cap_addr=80000000000000e0 phys_addr=604d5000
+    Page(4 KiB): MR=file_data #196                     9 cap_addr=80000000000000e1 phys_addr=604d6000
+    Page(4 KiB): MR=file_data #197                     9 cap_addr=80000000000000e2 phys_addr=604d7000
+    Page(4 KiB): MR=file_data #198                     9 cap_addr=80000000000000e3 phys_addr=604d8000
+    Page(4 KiB): MR=file_data #199                     9 cap_addr=80000000000000e4 phys_addr=604d9000
+    Page(4 KiB): MR=file_data #200                     9 cap_addr=80000000000000e5 phys_addr=604da000
+    Page(4 KiB): MR=file_data #201                     9 cap_addr=80000000000000e6 phys_addr=604db000
+    Page(4 KiB): MR=file_data #202                     9 cap_addr=80000000000000e7 phys_addr=604dc000
+    Page(4 KiB): MR=file_data #203                     9 cap_addr=80000000000000e8 phys_addr=604dd000
+    Page(4 KiB): MR=file_data #204                     9 cap_addr=80000000000000e9 phys_addr=604de000
+    Page(4 KiB): MR=file_data #205                     9 cap_addr=80000000000000ea phys_addr=604df000
+    Page(4 KiB): MR=file_data #206                     9 cap_addr=80000000000000eb phys_addr=604e0000
+    Page(4 KiB): MR=file_data #207                     9 cap_addr=80000000000000ec phys_addr=604e1000
+    Page(4 KiB): MR=file_data #208                     9 cap_addr=80000000000000ed phys_addr=604e2000
+    Page(4 KiB): MR=file_data #209                     9 cap_addr=80000000000000ee phys_addr=604e3000
+    Page(4 KiB): MR=file_data #210                     9 cap_addr=80000000000000ef phys_addr=604e4000
+    Page(4 KiB): MR=file_data #211                     9 cap_addr=80000000000000f0 phys_addr=604e5000
+    Page(4 KiB): MR=file_data #212                     9 cap_addr=80000000000000f1 phys_addr=604e6000
+    Page(4 KiB): MR=file_data #213                     9 cap_addr=80000000000000f2 phys_addr=604e7000
+    Page(4 KiB): MR=file_data #214                     9 cap_addr=80000000000000f3 phys_addr=604e8000
+    Page(4 KiB): MR=file_data #215                     9 cap_addr=80000000000000f4 phys_addr=604e9000
+    Page(4 KiB): MR=file_data #216                     9 cap_addr=80000000000000f5 phys_addr=604ea000
+    Page(4 KiB): MR=file_data #217                     9 cap_addr=80000000000000f6 phys_addr=604eb000
+    Page(4 KiB): MR=file_data #218                     9 cap_addr=80000000000000f7 phys_addr=604ec000
+    Page(4 KiB): MR=file_data #219                     9 cap_addr=80000000000000f8 phys_addr=604ed000
+    Page(4 KiB): MR=file_data #220                     9 cap_addr=80000000000000f9 phys_addr=604ee000
+    Page(4 KiB): MR=file_data #221                     9 cap_addr=80000000000000fa phys_addr=604ef000
+    Page(4 KiB): MR=file_data #222                     9 cap_addr=80000000000000fb phys_addr=604f0000
+    Page(4 KiB): MR=file_data #223                     9 cap_addr=80000000000000fc phys_addr=604f1000
+    Page(4 KiB): MR=file_data #224                     9 cap_addr=80000000000000fd phys_addr=604f2000
+    Page(4 KiB): MR=file_data #225                     9 cap_addr=80000000000000fe phys_addr=604f3000
+    Page(4 KiB): MR=file_data #226                     9 cap_addr=80000000000000ff phys_addr=604f4000
+    Page(4 KiB): MR=file_data #227                     9 cap_addr=8000000000000100 phys_addr=604f5000
+    Page(4 KiB): MR=file_data #228                     9 cap_addr=8000000000000101 phys_addr=604f6000
+    Page(4 KiB): MR=file_data #229                     9 cap_addr=8000000000000102 phys_addr=604f7000
+    Page(4 KiB): MR=file_data #230                     9 cap_addr=8000000000000103 phys_addr=604f8000
+    Page(4 KiB): MR=file_data #231                     9 cap_addr=8000000000000104 phys_addr=604f9000
+    Page(4 KiB): MR=file_data #232                     9 cap_addr=8000000000000105 phys_addr=604fa000
+    Page(4 KiB): MR=file_data #233                     9 cap_addr=8000000000000106 phys_addr=604fb000
+    Page(4 KiB): MR=file_data #234                     9 cap_addr=8000000000000107 phys_addr=604fc000
+    Page(4 KiB): MR=file_data #235                     9 cap_addr=8000000000000108 phys_addr=604fd000
+    Page(4 KiB): MR=file_data #236                     9 cap_addr=8000000000000109 phys_addr=604fe000
+    Page(4 KiB): MR=file_data #237                     9 cap_addr=800000000000010a phys_addr=604ff000
+    Page(4 KiB): MR=file_data #238                     9 cap_addr=800000000000010b phys_addr=60500000
+    Page(4 KiB): MR=file_data #239                     9 cap_addr=800000000000010c phys_addr=60501000
+    Page(4 KiB): MR=file_data #240                     9 cap_addr=800000000000010d phys_addr=60502000
+    Page(4 KiB): MR=file_data #241                     9 cap_addr=800000000000010e phys_addr=60503000
+    Page(4 KiB): MR=file_data #242                     9 cap_addr=800000000000010f phys_addr=60504000
+    Page(4 KiB): MR=file_data #243                     9 cap_addr=8000000000000110 phys_addr=60505000
+    Page(4 KiB): MR=file_data #244                     9 cap_addr=8000000000000111 phys_addr=60506000
+    Page(4 KiB): MR=file_data #245                     9 cap_addr=8000000000000112 phys_addr=60507000
+    Page(4 KiB): MR=file_data #246                     9 cap_addr=8000000000000113 phys_addr=60508000
+    Page(4 KiB): MR=file_data #247                     9 cap_addr=8000000000000114 phys_addr=60509000
+    Page(4 KiB): MR=file_data #248                     9 cap_addr=8000000000000115 phys_addr=6050a000
+    Page(4 KiB): MR=file_data #249                     9 cap_addr=8000000000000116 phys_addr=6050b000
+    Page(4 KiB): MR=file_data #250                     9 cap_addr=8000000000000117 phys_addr=6050c000
+    Page(4 KiB): MR=file_data #251                     9 cap_addr=8000000000000118 phys_addr=6050d000
+    Page(4 KiB): MR=file_data #252                     9 cap_addr=8000000000000119 phys_addr=6050e000
+    Page(4 KiB): MR=file_data #253                     9 cap_addr=800000000000011a phys_addr=6050f000
+    Page(4 KiB): MR=file_data #254                     9 cap_addr=800000000000011b phys_addr=60510000
+    Page(4 KiB): MR=file_data #255                     9 cap_addr=800000000000011c phys_addr=60511000
+    Page(4 KiB): MR=client_buffer_0 #0                 9 cap_addr=800000000000011d phys_addr=60512000
+    Page(4 KiB): MR=STACK:file_server #0               9 cap_addr=800000000000011e phys_addr=60513000
+    Page(4 KiB): MR=STACK:client_0 #0                  9 cap_addr=800000000000011f phys_addr=60514000
+    TCB: PD=file_server                                1 cap_addr=8000000000000120 phys_addr=60259000
+    TCB: PD=client_0                                   1 cap_addr=8000000000000121 phys_addr=60259800
+    SchedContext: PD=file_server                       5 cap_addr=8000000000000122 phys_addr=6025a000
+    SchedContext: PD=client_0                          5 cap_addr=8000000000000123 phys_addr=6025a100
+    Reply: Monitor                                     6 cap_addr=8000000000000124 phys_addr=6025a200
+    Reply: PD=file_server                              6 cap_addr=8000000000000125 phys_addr=6025a220
+    Reply: PD=client_0                                 6 cap_addr=8000000000000126 phys_addr=6025a240
+    EP: Monitor Fault                                  2 cap_addr=8000000000000127 phys_addr=6025a260
+    EP: PD=file_server                                 2 cap_addr=8000000000000128 phys_addr=6025a270
+    Notification: PD=file_server                       3 cap_addr=8000000000000129 phys_addr=6025a280
+    Notification: PD=client_0                          3 cap_addr=800000000000012a phys_addr=6025a2c0
+    VSpace: PD=file_server                             8 cap_addr=800000000000012b phys_addr=6025c000
+    VSpace: PD=client_0                                8 cap_addr=800000000000012c phys_addr=6025e000
+    PageTable: PD=file_server VADDR=0x0                11 cap_addr=800000000000012d phys_addr=60260000
+    PageTable: PD=file_server VADDR=0xffc0000000       11 cap_addr=800000000000012e phys_addr=60261000
+    PageTable: PD=client_0 VADDR=0x0                   11 cap_addr=800000000000012f phys_addr=60262000
+    PageTable: PD=client_0 VADDR=0xffc0000000          11 cap_addr=8000000000000130 phys_addr=60263000
+    PageTable: PD=file_server VADDR=0x0                11 cap_addr=8000000000000131 phys_addr=60264000
+    PageTable: PD=file_server VADDR=0x200000           11 cap_addr=8000000000000132 phys_addr=60265000
+    PageTable: PD=file_server VADDR=0xffffe00000       11 cap_addr=8000000000000133 phys_addr=60266000
+    PageTable: PD=client_0 VADDR=0x0                   11 cap_addr=8000000000000134 phys_addr=60267000
+    PageTable: PD=client_0 VADDR=0x200000              11 cap_addr=8000000000000135 phys_addr=60268000
+    PageTable: PD=client_0 VADDR=0xffffe00000          11 cap_addr=8000000000000136 phys_addr=60269000
+    CNode: PD=file_server                              4 cap_addr=8000000000000137 phys_addr=6026c000
+    CNode: PD=client_0                                 4 cap_addr=8000000000000138 phys_addr=60270000
 
 # Bootstrap Kernel Invocations Detail
 
@@ -351,9 +352,9 @@
          root (cap)           0x0000000000000002 (CNode: init)
          node_index           0
          node_depth           0
-         node_offset          98
+         node_offset          97
          num_objects          1
-    0x0001 CNode                - Mint              - 0x0000000000000062 (CNode: root)
+    0x0001 CNode                - Mint              - 0x0000000000000061 (CNode: root)
          dest_index           0
          dest_depth           1
          src_root (cap)       0x0000000000000002 (CNode: init)
@@ -363,7 +364,7 @@
          badge                51
     0x0002 TCB                  - SetSpace          - 0x0000000000000001 (TCB: init)
          fault_ep (cap)       0x0000000000000000 (null)
-         cspace_root (cap)    0x0000000000000062 (CNode: root)
+         cspace_root (cap)    0x0000000000000061 (CNode: root)
          cspace_root_data     0
          vspace_root (cap)    0x0000000000000003 (VSpace: init)
          vspace_root_data     0
@@ -373,28 +374,28 @@
          root (cap)           0x0000000000000002 (CNode: init)
          node_index           0
          node_depth           0
-         node_offset          99
+         node_offset          98
          num_objects          1
-    0x0004 CNode                - Mint              - 0x0000000000000062 (CNode: root)
+    0x0004 CNode                - Mint              - 0x0000000000000061 (CNode: root)
          dest_index           1
          dest_depth           1
          src_root (cap)       0x0000000000000002 (CNode: init)
-         src_obj (cap)        0x0000000000000063 (CNode: system)
+         src_obj (cap)        0x0000000000000062 (CNode: system)
          src_depth            64
          rights               15
          badge                53
     0x0005 Untyped              - Retype            - 0x000000000000001d (Untyped @ 0x60244000:0x4000 (device))
          object_type          9 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
          node_offset          0
          num_objects          2
-    0x0006 Untyped              - Retype            - 0x0000000000000044 (Untyped @ 0x60257000:0x1000)
+    0x0006 Untyped              - Retype            - 0x0000000000000044 (Untyped @ 0x60258000:0x8000)
          object_type          11 (SEL4_PAGE_TABLE_OBJECT - 0x1000)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
          node_offset          2
@@ -415,7 +416,7 @@
     0x0000 Untyped              - Retype            - 0x000000000000001d (Untyped @ 0x60244000:0x4000 (device))
          object_type          9 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
          node_offset          3
@@ -423,7 +424,7 @@
     0x0001 Untyped              - Retype            - 0x000000000000001d (Untyped @ 0x60244000:0x4000 (device))
          object_type          9 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
          node_offset          4
@@ -431,7 +432,7 @@
     0x0002 Untyped              - Retype            - 0x000000000000001e (Untyped @ 0x60248000:0x4000 (device))
          object_type          9 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
          node_offset          5
@@ -439,7 +440,7 @@
     0x0003 Untyped              - Retype            - 0x000000000000001e (Untyped @ 0x60248000:0x4000 (device))
          object_type          9 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
          node_offset          6
@@ -447,7 +448,7 @@
     0x0004 Untyped              - Retype            - 0x000000000000001e (Untyped @ 0x60248000:0x4000 (device))
          object_type          9 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
          node_offset          7
@@ -455,412 +456,420 @@
     0x0005 Untyped              - Retype            - 0x000000000000001e (Untyped @ 0x60248000:0x4000 (device))
          object_type          9 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
          node_offset          8
          num_objects          1
-    0x0006 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x6024c000:0x1000 (device))
+    0x0006 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x6024c000:0x2000 (device))
          object_type          9 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
          node_offset          9
          num_objects          1
-    0x0007 Untyped              - Retype            - 0x0000000000000049 (Untyped @ 0x60400000:0x400000)
+    0x0007 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x6024c000:0x2000 (device))
          object_type          9 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
          node_offset          10
-         num_objects          256
-    0x0008 Untyped              - Retype            - 0x0000000000000049 (Untyped @ 0x60400000:0x400000)
+         num_objects          1
+    0x0008 Untyped              - Retype            - 0x0000000000000048 (Untyped @ 0x60400000:0x400000)
          object_type          9 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
-         node_offset          266
+         node_offset          11
+         num_objects          256
+    0x0009 Untyped              - Retype            - 0x0000000000000048 (Untyped @ 0x60400000:0x400000)
+         object_type          9 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x0000000000000061 (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          267
          num_objects          21
-    0x0009 Untyped              - Retype            - 0x0000000000000045 (Untyped @ 0x60258000:0x8000)
+    0x000a Untyped              - Retype            - 0x0000000000000044 (Untyped @ 0x60258000:0x8000)
          object_type          1 (SEL4_TCB_OBJECT - 0x800)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
-         node_offset          287
+         node_offset          288
          num_objects          2
-    0x000a Untyped              - Retype            - 0x0000000000000045 (Untyped @ 0x60258000:0x8000)
+    0x000b Untyped              - Retype            - 0x0000000000000044 (Untyped @ 0x60258000:0x8000)
          object_type          5 (SEL4_SCHEDCONTEXT_OBJECT - variable size)
          size_bits            8 (0x100)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
-         node_offset          289
+         node_offset          290
          num_objects          2
-    0x000b Untyped              - Retype            - 0x0000000000000045 (Untyped @ 0x60258000:0x8000)
+    0x000c Untyped              - Retype            - 0x0000000000000044 (Untyped @ 0x60258000:0x8000)
          object_type          6 (SEL4_REPLY_OBJECT - 0x20)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
-         node_offset          291
+         node_offset          292
          num_objects          3
-    0x000c Untyped              - Retype            - 0x0000000000000045 (Untyped @ 0x60258000:0x8000)
+    0x000d Untyped              - Retype            - 0x0000000000000044 (Untyped @ 0x60258000:0x8000)
          object_type          2 (SEL4_ENDPOINT_OBJECT - 0x10)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
-         node_offset          294
+         node_offset          295
          num_objects          2
-    0x000d Untyped              - Retype            - 0x0000000000000045 (Untyped @ 0x60258000:0x8000)
+    0x000e Untyped              - Retype            - 0x0000000000000044 (Untyped @ 0x60258000:0x8000)
          object_type          3 (SEL4_NOTIFICATION_OBJECT - 0x40)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
-         node_offset          296
+         node_offset          297
          num_objects          2
-    0x000e Untyped              - Retype            - 0x0000000000000045 (Untyped @ 0x60258000:0x8000)
+    0x000f Untyped              - Retype            - 0x0000000000000044 (Untyped @ 0x60258000:0x8000)
          object_type          8 (SEL4_VSPACE_OBJECT - 0x2000)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
-         node_offset          298
+         node_offset          299
          num_objects          2
-    0x000f Untyped              - Retype            - 0x0000000000000046 (Untyped @ 0x60260000:0x20000)
+    0x0010 Untyped              - Retype            - 0x0000000000000045 (Untyped @ 0x60260000:0x20000)
          object_type          11 (SEL4_PAGE_TABLE_OBJECT - 0x1000)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
-         node_offset          300
+         node_offset          301
          num_objects          4
-    0x0010 Untyped              - Retype            - 0x0000000000000046 (Untyped @ 0x60260000:0x20000)
+    0x0011 Untyped              - Retype            - 0x0000000000000045 (Untyped @ 0x60260000:0x20000)
          object_type          11 (SEL4_PAGE_TABLE_OBJECT - 0x1000)
          size_bits            0 (N/A)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
-         node_offset          304
+         node_offset          305
          num_objects          6
-    0x0011 Untyped              - Retype            - 0x0000000000000046 (Untyped @ 0x60260000:0x20000)
+    0x0012 Untyped              - Retype            - 0x0000000000000045 (Untyped @ 0x60260000:0x20000)
          object_type          4 (SEL4_CNODE_OBJECT - variable size)
          size_bits            9 (0x200)
-         root (cap)           0x0000000000000062 (CNode: root)
+         root (cap)           0x0000000000000061 (CNode: root)
          node_index           1
          node_depth           1
-         node_offset          310
+         node_offset          311
          num_objects          2
-    0x0012 ASID Pool            - Assign            - 0x0000000000000006 (ASID Pool: init)
-         vspace (cap)         0x800000000000012a (VSpace: PD=file_server)
+    0x0013 ASID Pool            - Assign            - 0x0000000000000006 (ASID Pool: init)
+         vspace (cap)         0x800000000000012b (VSpace: PD=file_server)
       REPEAT: count=2
-    0x0013 CNode                - Mint              - 0x0000000000000063 (CNode: system)
-         dest_index           312
+    0x0014 CNode                - Mint              - 0x0000000000000062 (CNode: system)
+         dest_index           313
          dest_depth           10
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x800000000000000c (Page(4 KiB): MR=file_table #0)
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x800000000000000d (Page(4 KiB): MR=file_table #0)
          src_depth            64
          rights               3
          badge                0
       REPEAT: count=16
-    0x0014 CNode                - Mint              - 0x0000000000000063 (CNode: system)
-         dest_index           328
+    0x0015 CNode                - Mint              - 0x0000000000000062 (CNode: system)
+         dest_index           329
          dest_depth           10
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x800000000000001c (Page(4 KiB): MR=file_data #0)
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x800000000000001d (Page(4 KiB): MR=file_data #0)
          src_depth            64
          rights               3
          badge                0
       REPEAT: count=256
-    0x0015 CNode                - Mint              - 0x0000000000000063 (CNode: system)
-         dest_index           584
+    0x0016 CNode                - Mint              - 0x0000000000000062 (CNode: system)
+         dest_index           585
          dest_depth           10
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x800000000000011c (Page(4 KiB): MR=client_buffer_0 #0)
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x800000000000011d (Page(4 KiB): MR=client_buffer_0 #0)
          src_depth            64
          rights               3
          badge                0
-    0x0016 CNode                - Mint              - 0x0000000000000063 (CNode: system)
-         dest_index           585
+    0x0017 CNode                - Mint              - 0x0000000000000062 (CNode: system)
+         dest_index           586
          dest_depth           10
-         src_root (cap)       0x0000000000000062 (CNode: root)
+         src_root (cap)       0x0000000000000061 (CNode: root)
          src_obj (cap)        0x8000000000000003 (Page(4 KiB): MR=ELF:file_server-0 @ 60246000)
          src_depth            64
          rights               2
          badge                0
       REPEAT: count=3
-    0x0017 CNode                - Mint              - 0x0000000000000063 (CNode: system)
-         dest_index           588
+    0x0018 CNode                - Mint              - 0x0000000000000062 (CNode: system)
+         dest_index           589
          dest_depth           10
-         src_root (cap)       0x0000000000000062 (CNode: root)
+         src_root (cap)       0x0000000000000061 (CNode: root)
          src_obj (cap)        0x8000000000000006 (Page(4 KiB): MR=ELF:file_server-1 @ 60249000)
          src_depth            64
          rights               3
          badge                0
-    0x0018 CNode                - Mint              - 0x0000000000000063 (CNode: system)
-         dest_index           589
-         dest_depth           10
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x800000000000011d (Page(4 KiB): MR=STACK:file_server #0)
-         src_depth            64
-         rights               3
-         badge                0
-    0x0019 CNode                - Mint              - 0x0000000000000063 (CNode: system)
+    0x0019 CNode                - Mint              - 0x0000000000000062 (CNode: system)
          dest_index           590
          dest_depth           10
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x800000000000011c (Page(4 KiB): MR=client_buffer_0 #0)
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x800000000000011e (Page(4 KiB): MR=STACK:file_server #0)
          src_depth            64
          rights               3
          badge                0
-    0x001a CNode                - Mint              - 0x0000000000000063 (CNode: system)
+    0x001a CNode                - Mint              - 0x0000000000000062 (CNode: system)
          dest_index           591
          dest_depth           10
-         src_root (cap)       0x0000000000000062 (CNode: root)
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x800000000000011d (Page(4 KiB): MR=client_buffer_0 #0)
+         src_depth            64
+         rights               3
+         badge                0
+    0x001b CNode                - Mint              - 0x0000000000000062 (CNode: system)
+         dest_index           592
+         dest_depth           10
+         src_root (cap)       0x0000000000000061 (CNode: root)
          src_obj (cap)        0x8000000000000007 (Page(4 KiB): MR=ELF:client_0-0 @ 6024a000)
          src_depth            64
          rights               2
          badge                0
-      REPEAT: count=2
-    0x001b CNode                - Mint              - 0x0000000000000063 (CNode: system)
-         dest_index           593
-         dest_depth           10
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x8000000000000009 (Page(4 KiB): MR=ELF:client_0-1 @ 6024c000)
-         src_depth            64
-         rights               3
-         badge                0
-    0x001c CNode                - Mint              - 0x0000000000000063 (CNode: system)
-         dest_index           594
-         dest_depth           10
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x800000000000011e (Page(4 KiB): MR=STACK:client_0 #0)
-         src_depth            64
-         rights               3
-         badge                0
-    0x001d CNode                - Mint              - 0x0000000000000063 (CNode: system)
+      REPEAT: count=3
+    0x001c CNode                - Mint              - 0x0000000000000062 (CNode: system)
          dest_index           595
          dest_depth           10
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x8000000000000126 (EP: Monitor Fault)
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x800000000000000a (Page(4 KiB): MR=ELF:client_0-1 @ 6024d000)
+         src_depth            64
+         rights               3
+         badge                0
+    0x001d CNode                - Mint              - 0x0000000000000062 (CNode: system)
+         dest_index           596
+         dest_depth           10
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x800000000000011f (Page(4 KiB): MR=STACK:client_0 #0)
+         src_depth            64
+         rights               3
+         badge                0
+    0x001e CNode                - Mint              - 0x0000000000000062 (CNode: system)
+         dest_index           597
+         dest_depth           10
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x8000000000000127 (EP: Monitor Fault)
          src_depth            64
          rights               15
          badge                1
-    0x001e CNode                - Mint              - 0x0000000000000063 (CNode: system)
-         dest_index           596
+    0x001f CNode                - Mint              - 0x0000000000000062 (CNode: system)
+         dest_index           598
          dest_depth           10
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x8000000000000126 (EP: Monitor Fault)
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x8000000000000127 (EP: Monitor Fault)
          src_depth            64
          rights               15
          badge                2
-    0x001f CNode                - Mint              - 0x8000000000000136 (CNode: PD=file_server)
+    0x0020 CNode                - Mint              - 0x8000000000000137 (CNode: PD=file_server)
          dest_index           1
          dest_depth           9
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x8000000000000127 (EP: PD=file_server)
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x8000000000000128 (EP: PD=file_server)
          src_depth            64
          rights               15
          badge                0
-    0x0020 CNode                - Mint              - 0x8000000000000137 (CNode: PD=client_0)
+    0x0021 CNode                - Mint              - 0x8000000000000138 (CNode: PD=client_0)
          dest_index           1
          dest_depth           9
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x8000000000000129 (Notification: PD=client_0)
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x800000000000012a (Notification: PD=client_0)
          src_depth            64
          rights               15
          badge                0
-    0x0021 CNode                - Mint              - 0x8000000000000136 (CNode: PD=file_server)
+    0x0022 CNode                - Mint              - 0x8000000000000137 (CNode: PD=file_server)
          dest_index           4
          dest_depth           9
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x8000000000000124 (Reply: PD=file_server)
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x8000000000000125 (Reply: PD=file_server)
          src_depth            64
          rights               15
          badge                1
       REPEAT: count=2
-    0x0022 CNode                - Mint              - 0x8000000000000136 (CNode: PD=file_server)
+    0x0023 CNode                - Mint              - 0x8000000000000137 (CNode: PD=file_server)
          dest_index           3
          dest_depth           9
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x800000000000012a (VSpace: PD=file_server)
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x800000000000012b (VSpace: PD=file_server)
          src_depth            64
          rights               15
          badge                0
       REPEAT: count=2
-    0x0023 CNode                - Mint              - 0x8000000000000136 (CNode: PD=file_server)
+    0x0024 CNode                - Mint              - 0x8000000000000137 (CNode: PD=file_server)
          dest_index           10
          dest_depth           9
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x8000000000000129 (Notification: PD=client_0)
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x800000000000012a (Notification: PD=client_0)
          src_depth            64
          rights               15
          badge                1
-    0x0024 CNode                - Mint              - 0x8000000000000137 (CNode: PD=client_0)
+    0x0025 CNode                - Mint              - 0x8000000000000138 (CNode: PD=client_0)
          dest_index           10
          dest_depth           9
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x8000000000000128 (Notification: PD=file_server)
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x8000000000000129 (Notification: PD=file_server)
          src_depth            64
          rights               15
          badge                1
-    0x0025 CNode                - Mint              - 0x8000000000000137 (CNode: PD=client_0)
+    0x0026 CNode                - Mint              - 0x8000000000000138 (CNode: PD=client_0)
          dest_index           74
          dest_depth           9
-         src_root (cap)       0x0000000000000062 (CNode: root)
-         src_obj (cap)        0x8000000000000127 (EP: PD=file_server)
+         src_root (cap)       0x0000000000000061 (CNode: root)
+         src_obj (cap)        0x8000000000000128 (EP: PD=file_server)
          src_depth            64
          rights               15
          badge                9223372036854775808
-    0x0026 Page Table           - Map               - 0x800000000000012c (PageTable: PD=file_server VADDR=0x0)
-         vspace (cap)         0x800000000000012a (VSpace: PD=file_server)
+    0x0027 Page Table           - Map               - 0x800000000000012d (PageTable: PD=file_server VADDR=0x0)
+         vspace (cap)         0x800000000000012b (VSpace: PD=file_server)
          vaddr                0x0
          attr                 3
-    0x0027 Page Table           - Map               - 0x800000000000012d (PageTable: PD=file_server VADDR=0xffc0000000)
-         vspace (cap)         0x800000000000012a (VSpace: PD=file_server)
+    0x0028 Page Table           - Map               - 0x800000000000012e (PageTable: PD=file_server VADDR=0xffc0000000)
+         vspace (cap)         0x800000000000012b (VSpace: PD=file_server)
          vaddr                0xffc0000000
          attr                 3
-    0x0028 Page Table           - Map               - 0x800000000000012e (PageTable: PD=client_0 VADDR=0x0)
-         vspace (cap)         0x800000000000012b (VSpace: PD=client_0)
+    0x0029 Page Table           - Map               - 0x800000000000012f (PageTable: PD=client_0 VADDR=0x0)
+         vspace (cap)         0x800000000000012c (VSpace: PD=client_0)
          vaddr                0x0
          attr                 3
-    0x0029 Page Table           - Map               - 0x800000000000012f (PageTable: PD=client_0 VADDR=0xffc0000000)
-         vspace (cap)         0x800000000000012b (VSpace: PD=client_0)
+    0x002a Page Table           - Map               - 0x8000000000000130 (PageTable: PD=client_0 VADDR=0xffc0000000)
+         vspace (cap)         0x800000000000012c (VSpace: PD=client_0)
          vaddr                0xffc0000000
          attr                 3
-    0x002a Page Table           - Map               - 0x8000000000000130 (PageTable: PD=file_server VADDR=0x0)
-         vspace (cap)         0x800000000000012a (VSpace: PD=file_server)
+    0x002b Page Table           - Map               - 0x8000000000000131 (PageTable: PD=file_server VADDR=0x0)
+         vspace (cap)         0x800000000000012b (VSpace: PD=file_server)
          vaddr                0x0
          attr                 3
-    0x002b Page Table           - Map               - 0x8000000000000131 (PageTable: PD=file_server VADDR=0x200000)
-         vspace (cap)         0x800000000000012a (VSpace: PD=file_server)
+    0x002c Page Table           - Map               - 0x8000000000000132 (PageTable: PD=file_server VADDR=0x200000)
+         vspace (cap)         0x800000000000012b (VSpace: PD=file_server)
          vaddr                0x200000
          attr                 3
-    0x002c Page Table           - Map               - 0x8000000000000132 (PageTable: PD=file_server VADDR=0xffffe00000)
-         vspace (cap)         0x800000000000012a (VSpace: PD=file_server)
+    0x002d Page Table           - Map               - 0x8000000000000133 (PageTable: PD=file_server VADDR=0xffffe00000)
+         vspace (cap)         0x800000000000012b (VSpace: PD=file_server)
          vaddr                0xffffe00000
          attr                 3
-    0x002d Page Table           - Map               - 0x8000000000000133 (PageTable: PD=client_0 VADDR=0x0)
-         vspace (cap)         0x800000000000012b (VSpace: PD=client_0)
+    0x002e Page Table           - Map               - 0x8000000000000134 (PageTable: PD=client_0 VADDR=0x0)
+         vspace (cap)         0x800000000000012c (VSpace: PD=client_0)
          vaddr                0x0
          attr                 3
-    0x002e Page Table           - Map               - 0x8000000000000134 (PageTable: PD=client_0 VADDR=0x200000)
-         vspace (cap)         0x800000000000012b (VSpace: PD=client_0)
+    0x002f Page Table           - Map               - 0x8000000000000135 (PageTable: PD=client_0 VADDR=0x200000)
+         vspace (cap)         0x800000000000012c (VSpace: PD=client_0)
          vaddr                0x200000
          attr                 3
-    0x002f Page Table           - Map               - 0x8000000000000135 (PageTable: PD=client_0 VADDR=0xffffe00000)
-         vspace (cap)         0x800000000000012b (VSpace: PD=client_0)
+    0x0030 Page Table           - Map               - 0x8000000000000136 (PageTable: PD=client_0 VADDR=0xffffe00000)
+         vspace (cap)         0x800000000000012c (VSpace: PD=client_0)
          vaddr                0xffffe00000
          attr                 3
-    0x0030 Page                 - Map               - 0x8000000000000138 (Page(4 KiB): MR=file_table #0 (derived))
-         vspace (cap)         0x800000000000012a (VSpace: PD=file_server)
+    0x0031 Page                 - Map               - 0x8000000000000139 (Page(4 KiB): MR=file_table #0 (derived))
+         vspace (cap)         0x800000000000012b (VSpace: PD=file_server)
          vaddr                0x0
          rights               3
          attr                 7
       REPEAT: count=16
-    0x0031 Page                 - Map               - 0x8000000000000148 (Page(4 KiB): MR=file_data #0 (derived))
-         vspace (cap)         0x800000000000012a (VSpace: PD=file_server)
+    0x0032 Page                 - Map               - 0x8000000000000149 (Page(4 KiB): MR=file_data #0 (derived))
+         vspace (cap)         0x800000000000012b (VSpace: PD=file_server)
          vaddr                0x10000
          rights               3
          attr                 7
       REPEAT: count=256
-    0x0032 Page                 - Map               - 0x8000000000000248 (Page(4 KiB): MR=client_buffer_0 #0 (derived))
-         vspace (cap)         0x800000000000012a (VSpace: PD=file_server)
+    0x0033 Page                 - Map               - 0x8000000000000249 (Page(4 KiB): MR=client_buffer_0 #0 (derived))
+         vspace (cap)         0x800000000000012b (VSpace: PD=file_server)
          vaddr                0x110000
          rights               3
          attr                 6
-    0x0033 Page                 - Map               - 0x8000000000000249 (Page(4 KiB): MR=ELF:file_server-0 @ 60246000 (derived))
-         vspace (cap)         0x800000000000012a (VSpace: PD=file_server)
+    0x0034 Page                 - Map               - 0x800000000000024a (Page(4 KiB): MR=ELF:file_server-0 @ 60246000 (derived))
+         vspace (cap)         0x800000000000012b (VSpace: PD=file_server)
          vaddr                0x200000
          rights               2
          attr                 3
       REPEAT: count=3
-    0x0034 Page                 - Map               - 0x800000000000024c (Page(4 KiB): MR=ELF:file_server-1 @ 60249000 (derived))
-         vspace (cap)         0x800000000000012a (VSpace: PD=file_server)
+    0x0035 Page                 - Map               - 0x800000000000024d (Page(4 KiB): MR=ELF:file_server-1 @ 60249000 (derived))
+         vspace (cap)         0x800000000000012b (VSpace: PD=file_server)
          vaddr                0x203000
          rights               3
          attr                 7
-    0x0035 Page                 - Map               - 0x800000000000024d (Page(4 KiB): MR=STACK:file_server #0 (derived))
-         vspace (cap)         0x800000000000012a (VSpace: PD=file_server)
+    0x0036 Page                 - Map               - 0x800000000000024e (Page(4 KiB): MR=STACK:file_server #0 (derived))
+         vspace (cap)         0x800000000000012b (VSpace: PD=file_server)
          vaddr                0xfffffff000
          rights               3
          attr                 7
-    0x0036 Page                 - Map               - 0x800000000000024e (Page(4 KiB): MR=client_buffer_0 #0 (derived))
-         vspace (cap)         0x800000000000012b (VSpace: PD=client_0)
+    0x0037 Page                 - Map               - 0x800000000000024f (Page(4 KiB): MR=client_buffer_0 #0 (derived))
+         vspace (cap)         0x800000000000012c (VSpace: PD=client_0)
          vaddr                0x0
          rights               3
          attr                 6
-    0x0037 Page                 - Map               - 0x800000000000024f (Page(4 KiB): MR=ELF:client_0-0 @ 6024a000 (derived))
-         vspace (cap)         0x800000000000012b (VSpace: PD=client_0)
+    0x0038 Page                 - Map               - 0x8000000000000250 (Page(4 KiB): MR=ELF:client_0-0 @ 6024a000 (derived))
+         vspace (cap)         0x800000000000012c (VSpace: PD=client_0)
          vaddr                0x200000
          rights               2
          attr                 3
-      REPEAT: count=2
-    0x0038 Page                 - Map               - 0x8000000000000251 (Page(4 KiB): MR=ELF:client_0-1 @ 6024c000 (derived))
-         vspace (cap)         0x800000000000012b (VSpace: PD=client_0)
-         vaddr                0x202000
-         rights               3
-         attr                 7
-    0x0039 Page                 - Map               - 0x8000000000000252 (Page(4 KiB): MR=STACK:client_0 #0 (derived))
-         vspace (cap)         0x800000000000012b (VSpace: PD=client_0)
-         vaddr                0xfffffff000
-         rights               3
-         attr                 7
-    0x003a Page                 - Map               - 0x800000000000000a (Page(4 KiB): IPC Buffer PD=file_server)
-         vspace (cap)         0x800000000000012a (VSpace: PD=file_server)
-         vaddr                0x204000
-         rights               3
-         attr                 7
-    0x003b Page                 - Map               - 0x800000000000000b (Page(4 KiB): IPC Buffer PD=client_0)
-         vspace (cap)         0x800000000000012b (VSpace: PD=client_0)
+      REPEAT: count=3
+    0x0039 Page                 - Map               - 0x8000000000000253 (Page(4 KiB): MR=ELF:client_0-1 @ 6024d000 (derived))
+         vspace (cap)         0x800000000000012c (VSpace: PD=client_0)
          vaddr                0x203000
          rights               3
          attr                 7
-    0x003c SchedControl         - ConfigureFlags    - 0x0000000000000012 (None)
-         schedcontext (cap)   0x8000000000000121 (SchedContext: PD=file_server)
+    0x003a Page                 - Map               - 0x8000000000000254 (Page(4 KiB): MR=STACK:client_0 #0 (derived))
+         vspace (cap)         0x800000000000012c (VSpace: PD=client_0)
+         vaddr                0xfffffff000
+         rights               3
+         attr                 7
+    0x003b Page                 - Map               - 0x800000000000000b (Page(4 KiB): IPC Buffer PD=file_server)
+         vspace (cap)         0x800000000000012b (VSpace: PD=file_server)
+         vaddr                0x204000
+         rights               3
+         attr                 7
+    0x003c Page                 - Map               - 0x800000000000000c (Page(4 KiB): IPC Buffer PD=client_0)
+         vspace (cap)         0x800000000000012c (VSpace: PD=client_0)
+         vaddr                0x204000
+         rights               3
+         attr                 7
+    0x003d SchedControl         - ConfigureFlags    - 0x0000000000000012 (None)
+         schedcontext (cap)   0x8000000000000122 (SchedContext: PD=file_server)
          budget               1000
          period               1000
          extra_refills        0
          badge                256
          flags                0
-    0x003d SchedControl         - ConfigureFlags    - 0x0000000000000012 (None)
-         schedcontext (cap)   0x8000000000000122 (SchedContext: PD=client_0)
+    0x003e SchedControl         - ConfigureFlags    - 0x0000000000000012 (None)
+         schedcontext (cap)   0x8000000000000123 (SchedContext: PD=client_0)
          budget               1000
          period               1000
          extra_refills        0
          badge                257
          flags                0
-    0x003e TCB                  - SetSchedParams    - 0x800000000000011f (TCB: PD=file_server)
+    0x003f TCB                  - SetSchedParams    - 0x8000000000000120 (TCB: PD=file_server)
          authority (cap)      0x0000000000000001 (TCB: init)
          mcp                  1
          priority             1
-         sched_context (cap)  0x8000000000000121 (SchedContext: PD=file_server)
-         fault_ep (cap)       0x8000000000000126 (EP: Monitor Fault)
-    0x003f TCB                  - SetSchedParams    - 0x8000000000000120 (TCB: PD=client_0)
+         sched_context (cap)  0x8000000000000122 (SchedContext: PD=file_server)
+         fault_ep (cap)       0x8000000000000127 (EP: Monitor Fault)
+    0x0040 TCB                  - SetSchedParams    - 0x8000000000000121 (TCB: PD=client_0)
          authority (cap)      0x0000000000000001 (TCB: init)
          mcp                  0
          priority             0
-         sched_context (cap)  0x8000000000000122 (SchedContext: PD=client_0)
-         fault_ep (cap)       0x8000000000000126 (EP: Monitor Fault)
-    0x0040 TCB                  - SetSpace          - 0x800000000000011f (TCB: PD=file_server)
-         fault_ep (cap)       0x8000000000000253 (None)
-         cspace_root (cap)    0x8000000000000136 (CNode: PD=file_server)
+         sched_context (cap)  0x8000000000000123 (SchedContext: PD=client_0)
+         fault_ep (cap)       0x8000000000000127 (EP: Monitor Fault)
+    0x0041 TCB                  - SetSpace          - 0x8000000000000120 (TCB: PD=file_server)
+         fault_ep (cap)       0x8000000000000255 (None)
+         cspace_root (cap)    0x8000000000000137 (CNode: PD=file_server)
          cspace_root_data     55
-         vspace_root (cap)    0x800000000000012a (VSpace: PD=file_server)
+         vspace_root (cap)    0x800000000000012b (VSpace: PD=file_server)
          vspace_root_data     0
       REPEAT: count=2
-    0x0041 TCB                  - SetIPCBuffer      - 0x800000000000011f (TCB: PD=file_server)
+    0x0042 TCB                  - SetIPCBuffer      - 0x8000000000000120 (TCB: PD=file_server)
          buffer               0x204000
-         buffer_frame (cap)   0x800000000000000a (Page(4 KiB): IPC Buffer PD=file_server)
-    0x0042 TCB                  - SetIPCBuffer      - 0x8000000000000120 (TCB: PD=client_0)
-         buffer               0x203000
-         buffer_frame (cap)   0x800000000000000b (Page(4 KiB): IPC Buffer PD=client_0)
-    0x0043 TCB                  - WriteRegisters    - 0x800000000000011f (TCB: PD=file_server)
+         buffer_frame (cap)   0x800000000000000b (Page(4 KiB): IPC Buffer PD=file_server)
+    0x0043 TCB                  - SetIPCBuffer      - 0x8000000000000121 (TCB: PD=client_0)
+         buffer               0x204000
+         buffer_frame (cap)   0x800000000000000c (Page(4 KiB): IPC Buffer PD=client_0)
+    0x0044 TCB                  - WriteRegisters    - 0x8000000000000120 (TCB: PD=file_server)
          resume               false
          arch_flags           0
          regs                 pc: 0x0000000000200000
@@ -899,7 +908,7 @@
                               x28: 0x0000000000000000
                               tpidr_el0: 0x0000000000000000
                               tpidrro_el0: 0x0000000000000000
-    0x0044 TCB                  - WriteRegisters    - 0x8000000000000120 (TCB: PD=client_0)
+    0x0045 TCB                  - WriteRegisters    - 0x8000000000000121 (TCB: PD=client_0)
          resume               false
          arch_flags           0
          regs                 pc: 0x0000000000200000
@@ -938,9 +947,9 @@
                               x28: 0x0000000000000000
                               tpidr_el0: 0x0000000000000000
                               tpidrro_el0: 0x0000000000000000
-    0x0045 TCB                  - BindNotification  - 0x800000000000011f (TCB: PD=file_server)
-         notification (cap)   0x8000000000000128 (Notification: PD=file_server)
+    0x0046 TCB                  - BindNotification  - 0x8000000000000120 (TCB: PD=file_server)
+         notification (cap)   0x8000000000000129 (Notification: PD=file_server)
       REPEAT: count=2
-    0x0046 TCB                  - Resume            - 0x800000000000011f (TCB: PD=file_server)
+    0x0047 TCB                  - Resume            - 0x8000000000000120 (TCB: PD=file_server)
 
       REPEAT: count=2

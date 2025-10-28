@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include "definitions.h"
+#include "utils.c"
 
 // ------------------------------ Definitions ----------------------------- //
 
@@ -18,17 +19,16 @@
 
 // Client memory
 #define CLIENT_BUFFER_SIZE 0x1000
-#define CLIENT_BUFFER_BASE(client_id) ((uintptr_t)lowest_client_buffer_base + (uintptr_t)(client_id * CLIENT_BUFFER_SIZE))
+#define CLIENT_BUFFER_BASE(client_id) ((uintptr_t)client_buffers_base + (uintptr_t)(client_id * CLIENT_BUFFER_SIZE))
 
 // File server memory
 #define FILE_TABLE_SIZE 0x10000
 #define FILE_DATA_SIZE 0x100000
-#define MAX_FILE_NAME_LENGTH 64 // TODO: update functions to handle null terminator reducing this by 1
 #define MAX_FILE_SIZE 0x100000
 #define FILE_ENTRY_SIZE sizeof(struct file_entry)
 #define MAX_FILE_TABLE_ENTRIES (FILE_TABLE_SIZE / FILE_ENTRY_SIZE)
-#define FILE_ENTRY_OFFSET(index) (file_table_base + (index * FILE_ENTRY_SIZE))
-#define FILE_DATA_OFFSET(offset) (file_data_base + offset)
+#define FILE_ENTRY_OFFSET(index) (file_entry_table_base + (index * FILE_ENTRY_SIZE))
+#define FILE_DATA_OFFSET(offset) (file_data_block_base + offset)
 
 // ------------------------------ Globals ------------------------------- //
 
@@ -42,58 +42,32 @@ struct file_entry
     uint8_t permissions; 
 } typedef file_entry_t;
 
-file_entry_t *file_table_base;
+uintptr_t file_table_base;
+uintptr_t file_data_base;
+uintptr_t lowest_client_buffer_base;
+
+uint8_t *file_data_block_base;
+uint8_t *client_buffers_base;
+file_entry_t *file_entry_table_base;
+
 size_t file_table_index = 0;
-uint8_t *file_data_base;
 size_t file_data_index = 0;
-uint8_t *lowest_client_buffer_base;
 
 
 // --------------------------- Helper Functions -------------------------- //
 
 file_entry_t* get_file_entry_by_id(uint32_t id) {
     for (size_t i = 0; i < file_table_index; i++) {
-        if (file_table_base[i].id == id && file_table_base[i].name[0] != '\0') {
-            return &file_table_base[i];
+        if (file_entry_table_base[i].id == id && file_entry_table_base[i].name[0] != '\0') {
+            return &file_entry_table_base[i];
         }
     }
     return NULL;
 }
 
-void copy_data_from_buffer(const uint8_t *src, uint8_t *dest, size_t length) {
-    for (size_t i = 0; i < length; i++) {
-        dest[i] = src[i];
-    }
-}
-
-size_t copy_string_from_buffer(const unsigned char *src, unsigned char *dest, size_t max_length) {
-    size_t i;
-    for (i = 0; i < max_length - 1; i++) {
-        dest[i] = src[i];
-        if (dest[i] == '\0') {
-            return i;
-        }
-    }
-    // truncate if it exceeds max_length
-    dest[max_length - 1] = '\0';
-    return max_length - 1;
-}
-
-bool string_compare(const unsigned char *str1, const unsigned char *str2, size_t max_length) {
-    for (size_t i = 0; i < max_length; i++) {
-        if (str1[i] != str2[i]) {
-            return false;
-        }
-        if (str1[i] == '\0') {
-            break;
-        }
-    }
-    return true;
-}
-
 bool file_exists(const unsigned char *name) {
     for (size_t i = 0; i < file_table_index; i++) {
-        file_entry_t* entry = &file_table_base[i];
+        file_entry_t* entry = &file_entry_table_base[i];
         if (entry->name[0] != '\0' && string_compare(name, entry->name, MAX_FILE_NAME_LENGTH)) {
             return true;
         }
@@ -103,7 +77,7 @@ bool file_exists(const unsigned char *name) {
 
 file_entry_t* get_file_entry(const unsigned char *name) {
     for (size_t i = 0; i < file_table_index; i++) {
-        file_entry_t* entry = &file_table_base[i];
+        file_entry_t* entry = &file_entry_table_base[i];
         if (entry->name[0] != '\0' && string_compare(name, entry->name, MAX_FILE_NAME_LENGTH)) {
             return entry;
         }
@@ -142,22 +116,23 @@ int create_file_operation(const uint32_t client_id, const uint32_t size, const u
         return FS_ERR_ALREADY_EXISTS;
     }
 
-    size_t empty_index = file_table_index + 1;
+    size_t empty_index = file_table_index;
 
     for (size_t i = 0; i < file_table_index; i++) {
-        file_entry_t* entry = &file_table_base[i];
+        file_entry_t* entry = &file_entry_table_base[i];
         if (entry->name[0] == '\0') {
             empty_index = i;
             break;
         }
     }
 
-    if (empty_index == file_table_index + 1) {
+    if (empty_index == file_table_index) {
         file_table_index++;
     }
 
-    file_entry_t* entry = &file_table_base[empty_index];
-    entry->id = file_table_index;
+    file_entry_t* entry = &file_entry_table_base[empty_index];
+
+    entry->id = empty_index;
     copy_string_from_buffer(name, entry->name, MAX_FILE_NAME_LENGTH);
     entry->owner_id = client_id;
     // TODO: check for deleted files and reuse their data segments
@@ -186,7 +161,8 @@ int open_file_operation(const uint32_t client_id) {
     unsigned char *name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
     file_entry_t* entry = get_file_entry(name);
 
-    if (entry == NULL) {
+    if (entry->name == NULL) {
+        microkit_dbg_puts("FILE SERVER: File not found\n");
         return FS_ERR_NOT_FOUND;
     }
 
@@ -230,6 +206,9 @@ int read_file_operation(const uint32_t client_id, const uint32_t file_id, const 
     microkit_dbg_puts("'\n");
     microkit_dbg_puts("FILE SERVER: Data: ");
     for (size_t i = 0; i < length; i++) {
+        if (i >= CLIENT_BUFFER_SIZE) {
+            break;
+        }
         microkit_dbg_putc((char)client_buffer[i]);
     }
     microkit_dbg_puts("\n");
@@ -295,7 +274,7 @@ int list_files_operation(const uint32_t client_id) {
     size_t buffer_index = 0;
 
     for (size_t i = 0; i < file_table_index; i++) {
-        file_entry_t* entry = &file_table_base[i];
+        file_entry_t* entry = &file_entry_table_base[i];
         if (entry->name[0] != '\0') {
             if ((entry->permissions > FILE_PERM_PRIVATE) || entry->owner_id == client_id) {
                 if (buffer_index + MAX_FILE_NAME_LENGTH + 1 >= CLIENT_BUFFER_SIZE) {
@@ -405,7 +384,10 @@ int get_file_size_operation(const uint32_t client_id, const uint32_t file_id) {
     if (perm != FS_OK) return perm;
 
     uint32_t *client_buffer = (uint32_t *)CLIENT_BUFFER_BASE(client_id);
-    client_buffer[0] = entry->size;
+    client_buffer[0] = (entry->size >> 0)  & 0xFF;
+    client_buffer[1] = (entry->size >> 8)  & 0xFF;
+    client_buffer[2] = (entry->size >> 16) & 0xFF;
+    client_buffer[3] = (entry->size >> 24) & 0xFF;
 
     microkit_dbg_puts("FILE SERVER: Got size for file '");
     microkit_dbg_puts((const char *)entry->name);
@@ -499,6 +481,9 @@ int copy_file_operation(const uint32_t client_id, const uint32_t source_file_id)
 
 void init(void) {
     microkit_dbg_puts("FILE SERVER: started\n");
+    file_entry_table_base = (file_entry_t *)file_table_base;
+    file_data_block_base = (uint8_t *)file_data_base;
+    client_buffers_base = (uint8_t *)lowest_client_buffer_base;
 }
 
 void notified(microkit_channel client_id) {}

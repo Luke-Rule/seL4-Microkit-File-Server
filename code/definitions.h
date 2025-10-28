@@ -1,3 +1,6 @@
+#define MAX_FILE_NAME_LENGTH 64 // TODO: update functions to handle null terminator reducing this by 1
+#define CLIENT_BUFFER_SIZE 0x1000
+
 // File operations 
 typedef enum {
     OP_CREATE = 0,
