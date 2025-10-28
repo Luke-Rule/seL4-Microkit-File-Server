@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-
+#include "definitions.h"
 
 // ------------------------------ Definitions ----------------------------- //
 
@@ -30,56 +30,11 @@
 #define FILE_ENTRY_OFFSET(index) (file_table_base + (index * FILE_ENTRY_SIZE))
 #define FILE_DATA_OFFSET(offset) (file_data_base + offset)
 
-// File operations 
-typedef enum {
-    OP_CREATE = 0,
-    OP_READ = 1,
-    OP_WRITE = 2,
-    OP_OPEN = 3, // not used yet
-    OP_CLOSE = 4, // not used yet
-    OP_DELETE = 5,
-    OP_LIST = 6,
-    OP_SET_PERMISSIONS = 7,
-    OP_GET_PERMISSIONS = 8,
-    OP_RENAME = 9,
-    OP_GET_FILE_SIZE = 10,
-    OP_EXISTS = 11,
-    OP_COPY = 12
-} file_operation_t;
-
-// File operation permissions (higher value includes lower levels)
-typedef enum {
-    FILE_PERM_PRIVATE = 0,
-    FILE_PERM_PUBLIC_EXISTS_AND_LIST = 1,
-    FILE_PERM_PUBLIC_GET_FILE_SIZE = 2,
-    FILE_PERM_PUBLIC_GET_PERMISSIONS = 3,
-    FILE_PERM_PUBLIC_READ_AND_COPY_AND_OPEN_AND_CLOSE = 4,
-    FILE_PERM_PUBLIC_WRITE_AND_DELETE_AND_RENAME = 5,
-    FILE_PERM_PUBLIC_SET_PERMISSIONS = 6
-} file_permission_t;
-
-// Result codes (0 == success, other gives failure reason)
-typedef enum {
-    FS_OK = 0,
-    FS_ERR_TABLE_FULL = 1,
-    FS_ERR_FILE_EXCEEDS_MAX_SIZE = 2,
-    FS_ERR_FILE_EXCEEDS_REMAINING_SPACE = 3,
-    FS_ERR_INVALID_NAME = 4,
-    FS_ERR_ALREADY_EXISTS = 5,
-    FS_ERR_NOT_FOUND = 6,
-    FS_ERR_PERMISSION = 7,
-    FS_ERR_OUT_OF_BOUNDS = 8,
-    FS_ERR_NAME_COLLISION = 9,
-    FS_ERR_INVALID_OP_CODE = 10,
-    FS_ERR_INCORRECT_OP_PARAM_COUNT = 11,
-    FS_ERR_UNSPECIFIED_ERROR = 12
-} fs_result_t;
-
-
 // ------------------------------ Globals ------------------------------- //
 
 struct file_entry
 {
+    uint32_t id;
     unsigned char name[MAX_FILE_NAME_LENGTH];
     uint8_t owner_id;
     uint32_t data_offset;
@@ -157,24 +112,49 @@ static int check_permission(file_entry_t *entry, uint32_t client_id, file_permis
 
 // -------------------------- File Operations --------------------------- //
 
+int open_file_operation(const uint32_t client_id) {
+    unsigned char *name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
+    file_entry_t* entry = get_file_entry(name);
+
+    if (entry == NULL) {
+        return FS_ERR_NOT_FOUND;
+    }
+
+    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC_READ_AND_COPY_AND_OPEN_AND_CLOSE);
+    if (perm != FS_OK) return perm;
+
+    uint32_t *client_buffer = (uint32_t *)CLIENT_BUFFER_BASE(client_id);
+    client_buffer[0] = (entry->id >> 0)  & 0xFF;
+    client_buffer[1] = (entry->id >> 8)  & 0xFF;
+    client_buffer[2] = (entry->id >> 16) & 0xFF;
+    client_buffer[3] = (entry->id >> 24) & 0xFF;
+
+    return FS_OK;
+}
+
 int create_file_operation(const uint32_t client_id, const uint32_t size, const uint8_t permissions) {
     if (file_table_index >= MAX_FILE_TABLE_ENTRIES) {
+        microkit_dbg_puts("FILE SERVER: File table full\n");
         return FS_ERR_TABLE_FULL;
     }
     if (size > MAX_FILE_SIZE) {
+        microkit_dbg_puts("FILE SERVER: File exceeds maximum size\n");
         return FS_ERR_FILE_EXCEEDS_MAX_SIZE;
     }
     if ((file_data_index + size) > FILE_DATA_SIZE) {
+        microkit_dbg_puts("FILE SERVER: File exceeds remaining space\n");
         return FS_ERR_FILE_EXCEEDS_REMAINING_SPACE;
     }
 
     unsigned char *name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
 
     if (string_compare(name, (unsigned char *)"\0", MAX_FILE_NAME_LENGTH)) {
+        microkit_dbg_puts("FILE SERVER: Invalid file name\n");
         return FS_ERR_INVALID_NAME;
     }
 
     if (file_exists(name)) {
+        microkit_dbg_puts("FILE SERVER: File already exists\n");
         return FS_ERR_ALREADY_EXISTS;
     }
 
@@ -193,6 +173,7 @@ int create_file_operation(const uint32_t client_id, const uint32_t size, const u
     }
 
     file_entry_t* entry = &file_table_base[empty_index];
+    entry->id = file_table_index;
     copy_string_from_buffer(name, entry->name, MAX_FILE_NAME_LENGTH);
     entry->owner_id = client_id;
     // TODO: check for deleted files and reuse their data segments
@@ -202,6 +183,16 @@ int create_file_operation(const uint32_t client_id, const uint32_t size, const u
 
     file_data_index += size;
 
+    // write file id back to client
+    uint32_t *client_buffer = (uint32_t *)CLIENT_BUFFER_BASE(client_id);
+    client_buffer[0] = (entry->id >> 0)  & 0xFF;
+    client_buffer[1] = (entry->id >> 8)  & 0xFF;
+    client_buffer[2] = (entry->id >> 16) & 0xFF;
+    client_buffer[3] = (entry->id >> 24) & 0xFF;
+
+    microkit_dbg_puts("FILE SERVER: Created file '");
+    microkit_dbg_puts((const char *)entry->name);
+    microkit_dbg_puts("'\n");
     return FS_OK;
 }
 
@@ -428,12 +419,16 @@ int copy_file_operation(const uint32_t client_id, const uint32_t new_file_name_i
 
 // ------------------------- MicroKit Interface -------------------------- //
 
-void init(void) {}
+void init(void) {
+    microkit_dbg_puts("FILE SERVER: started\n");
+}
 
 void notified(microkit_channel client_id) {}
 
 microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
+    microkit_dbg_puts("FILE SERVER: received request\n");
     if (microkit_msginfo_get_count(msginfo) < 1) {
+        microkit_dbg_puts("FILE SERVER: invalid operation code\n");
         microkit_mr_set(0, FS_ERR_INVALID_OP_CODE);
         return msginfo;
     }
@@ -443,7 +438,9 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
 
     switch (operation) {
         case OP_CREATE: {
+            microkit_dbg_puts("FILE SERVER: processing create operation\n");
             if (microkit_msginfo_get_count(msginfo) < 3) {
+                microkit_dbg_puts("FILE SERVER: incorrect operation parameter count\n");
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
@@ -454,7 +451,9 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
         }
 
         case OP_READ: {
+            microkit_dbg_puts("FILE SERVER: processing read operation\n");
             if (microkit_msginfo_get_count(msginfo) < 3) {
+                microkit_dbg_puts("FILE SERVER: incorrect operation parameter count\n");
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
@@ -465,8 +464,10 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
         }
 
         case OP_WRITE: {
+            microkit_dbg_puts("FILE SERVER: processing write operation\n");
             if (microkit_msginfo_get_count(msginfo) < 4) {
-                return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
+                microkit_dbg_puts("FILE SERVER: incorrect operation parameter count\n");
+                // return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
             uint32_t data_start_index = microkit_mr_get(1);
@@ -485,17 +486,21 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
             break;
 
         case OP_DELETE: {
+            microkit_dbg_puts("FILE SERVER: processing delete operation\n");
             return_code = delete_file_operation(channel);
             break;
         }
 
         case OP_LIST: {
+            microkit_dbg_puts("FILE SERVER: processing list operation\n");
             return_code = list_files_operation(channel);
             break;
         }
             
         case OP_SET_PERMISSIONS: {
+            microkit_dbg_puts("FILE SERVER: processing set permissions operation\n");
             if (microkit_msginfo_get_count(msginfo) < 2) {
+                microkit_dbg_puts("FILE SERVER: incorrect operation parameter count\n");
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
@@ -505,12 +510,15 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
         }
 
         case OP_GET_PERMISSIONS: {
+            microkit_dbg_puts("FILE SERVER: processing get permissions operation\n");
             return_code = get_file_permissions_operation(channel);
             break;
         }
 
         case OP_RENAME: {
+            microkit_dbg_puts("FILE SERVER: processing rename operation\n");
             if (microkit_msginfo_get_count(msginfo) < 2) {
+                microkit_dbg_puts("FILE SERVER: incorrect operation parameter count\n");
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
@@ -520,17 +528,21 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
         }
 
         case OP_GET_FILE_SIZE: {
+            microkit_dbg_puts("FILE SERVER: processing get file size operation\n");
             return_code = get_file_size_operation(channel);
             break;
         }
 
         case OP_EXISTS: {
+            microkit_dbg_puts("FILE SERVER: processing file exists operation\n");
             return_code = file_exists_operation(channel);
             break;
         }
 
         case OP_COPY: {
+            microkit_dbg_puts("FILE SERVER: processing copy file operation\n");
             if (microkit_msginfo_get_count(msginfo) < 2) {
+                microkit_dbg_puts("FILE SERVER: incorrect operation parameter count\n");
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
