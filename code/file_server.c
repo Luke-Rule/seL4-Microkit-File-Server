@@ -51,6 +51,15 @@ uint8_t *lowest_client_buffer_base;
 
 // --------------------------- Helper Functions -------------------------- //
 
+file_entry_t* get_file_entry_by_id(uint32_t id) {
+    for (size_t i = 0; i < file_table_index; i++) {
+        if (file_table_base[i].id == id && file_table_base[i].name[0] != '\0') {
+            return &file_table_base[i];
+        }
+    }
+    return NULL;
+}
+
 void copy_data_from_buffer(const uint8_t *src, uint8_t *dest, size_t length) {
     for (size_t i = 0; i < length; i++) {
         dest[i] = src[i];
@@ -112,49 +121,24 @@ static int check_permission(file_entry_t *entry, uint32_t client_id, file_permis
 
 // -------------------------- File Operations --------------------------- //
 
-int open_file_operation(const uint32_t client_id) {
-    unsigned char *name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
-    file_entry_t* entry = get_file_entry(name);
-
-    if (entry == NULL) {
-        return FS_ERR_NOT_FOUND;
-    }
-
-    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC_READ_AND_COPY_AND_OPEN_AND_CLOSE);
-    if (perm != FS_OK) return perm;
-
-    uint32_t *client_buffer = (uint32_t *)CLIENT_BUFFER_BASE(client_id);
-    client_buffer[0] = (entry->id >> 0)  & 0xFF;
-    client_buffer[1] = (entry->id >> 8)  & 0xFF;
-    client_buffer[2] = (entry->id >> 16) & 0xFF;
-    client_buffer[3] = (entry->id >> 24) & 0xFF;
-
-    return FS_OK;
-}
-
 int create_file_operation(const uint32_t client_id, const uint32_t size, const uint8_t permissions) {
     if (file_table_index >= MAX_FILE_TABLE_ENTRIES) {
-        microkit_dbg_puts("FILE SERVER: File table full\n");
         return FS_ERR_TABLE_FULL;
     }
     if (size > MAX_FILE_SIZE) {
-        microkit_dbg_puts("FILE SERVER: File exceeds maximum size\n");
         return FS_ERR_FILE_EXCEEDS_MAX_SIZE;
     }
     if ((file_data_index + size) > FILE_DATA_SIZE) {
-        microkit_dbg_puts("FILE SERVER: File exceeds remaining space\n");
         return FS_ERR_FILE_EXCEEDS_REMAINING_SPACE;
     }
 
     unsigned char *name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
 
     if (string_compare(name, (unsigned char *)"\0", MAX_FILE_NAME_LENGTH)) {
-        microkit_dbg_puts("FILE SERVER: Invalid file name\n");
         return FS_ERR_INVALID_NAME;
     }
 
     if (file_exists(name)) {
-        microkit_dbg_puts("FILE SERVER: File already exists\n");
         return FS_ERR_ALREADY_EXISTS;
     }
 
@@ -193,13 +177,39 @@ int create_file_operation(const uint32_t client_id, const uint32_t size, const u
     microkit_dbg_puts("FILE SERVER: Created file '");
     microkit_dbg_puts((const char *)entry->name);
     microkit_dbg_puts("'\n");
+
+    return entry->id;
+}
+
+
+int open_file_operation(const uint32_t client_id) {
+    unsigned char *name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
+    file_entry_t* entry = get_file_entry(name);
+
+    if (entry == NULL) {
+        return FS_ERR_NOT_FOUND;
+    }
+
+    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC_READ_AND_COPY_AND_OPEN_AND_CLOSE);
+    if (perm != FS_OK) return perm;
+
+    uint32_t *client_buffer = (uint32_t *)CLIENT_BUFFER_BASE(client_id);
+    client_buffer[0] = (entry->id >> 0)  & 0xFF;
+    client_buffer[1] = (entry->id >> 8)  & 0xFF;
+    client_buffer[2] = (entry->id >> 16) & 0xFF;
+    client_buffer[3] = (entry->id >> 24) & 0xFF;
+
+    microkit_dbg_puts("FILE SERVER: Opened file '");
+    microkit_dbg_puts((const char *)entry->name);
+    microkit_dbg_puts("'\n");
+
     return FS_OK;
 }
 
 
-int read_file_operation(const uint32_t client_id, const uint32_t offset, const size_t length) {
+int read_file_operation(const uint32_t client_id, const uint32_t file_id, const uint32_t offset, const size_t length) {
     unsigned char *client_buffer = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
-    file_entry_t* entry = get_file_entry(client_buffer);
+    file_entry_t* entry = get_file_entry_by_id(file_id);
 
     if (entry == NULL) {
         return FS_ERR_NOT_FOUND;
@@ -215,14 +225,21 @@ int read_file_operation(const uint32_t client_id, const uint32_t offset, const s
     uint8_t *file_data_ptr = FILE_DATA_OFFSET(entry->data_offset + offset);
     copy_data_from_buffer(file_data_ptr, (uint8_t *)client_buffer, length);
 
+    microkit_dbg_puts("FILE SERVER: Read file '");
+    microkit_dbg_puts((const char *)entry->name);
+    microkit_dbg_puts("'\n");
+    microkit_dbg_puts("FILE SERVER: Data: ");
+    for (size_t i = 0; i < length; i++) {
+        microkit_dbg_putc((char)client_buffer[i]);
+    }
+    microkit_dbg_puts("\n");
+
     return FS_OK;
 }
 
 
-int write_file_operation(const uint32_t client_id, const uint32_t data_start_index, const uint32_t offset, const size_t length) {
-    unsigned char *name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
-
-    file_entry_t* entry = get_file_entry(name);
+int write_file_operation(const uint32_t client_id, const uint32_t file_id, const uint32_t offset, const size_t length) {
+    file_entry_t* entry = get_file_entry_by_id(file_id);
 
     if (entry == NULL) {
         return FS_ERR_NOT_FOUND;
@@ -234,21 +251,26 @@ int write_file_operation(const uint32_t client_id, const uint32_t data_start_ind
     if (offset >= entry->size || offset + length >= entry->size) {
         return FS_ERR_OUT_OF_BOUNDS;
     }
-    if (data_start_index >= CLIENT_BUFFER_SIZE || data_start_index + length >= CLIENT_BUFFER_SIZE) {
-        return FS_ERR_OUT_OF_BOUNDS;
-    }
-    uint8_t *client_data = (uint8_t *)CLIENT_BUFFER_BASE(client_id) + data_start_index;
+
+    uint8_t *client_data = (uint8_t *)CLIENT_BUFFER_BASE(client_id);
     uint8_t *file_data_ptr = FILE_DATA_OFFSET(entry->data_offset + offset);
     copy_data_from_buffer(client_data, file_data_ptr, length);
+
+    microkit_dbg_puts("FILE SERVER: Wrote to file '");
+    microkit_dbg_puts((const char *)entry->name);
+    microkit_dbg_puts("'\n");
+    microkit_dbg_puts("FILE SERVER: Data: ");
+    for (size_t i = 0; i < length; i++) {
+        microkit_dbg_putc((char)client_data[i]);
+    }
+    microkit_dbg_puts("\n");
 
     return FS_OK;
 }
 
 
-int delete_file_operation(const uint32_t client_id) {
-    unsigned char *name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
-
-    file_entry_t* entry = get_file_entry(name);
+int delete_file_operation(const uint32_t client_id, const uint32_t file_id) {
+    file_entry_t* entry = get_file_entry_by_id(file_id);
 
     if (entry == NULL) {
         return FS_ERR_NOT_FOUND;
@@ -259,6 +281,10 @@ int delete_file_operation(const uint32_t client_id) {
 
     entry->name[0] = '\0';
     // TODO: handle file data cleanup
+
+    microkit_dbg_puts("FILE SERVER: Deleted file '");
+    microkit_dbg_puts((const char *)entry->name);
+    microkit_dbg_puts("'\n");
 
     return FS_OK;
 }
@@ -289,14 +315,16 @@ int list_files_operation(const uint32_t client_id) {
         client_buffer[0] = '\0';
     }
 
+    microkit_dbg_puts("FILE SERVER: Listed files:\n");
+    microkit_dbg_puts((const char *)client_buffer);
+    microkit_dbg_puts("\n");
+
     return FS_OK;
 }
 
 
-int set_file_permissions_operation(const uint32_t client_id, const uint8_t permissions) {
-    unsigned char *name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
-
-    file_entry_t* entry = get_file_entry(name);
+int set_file_permissions_operation(const uint32_t client_id, const uint32_t file_id, const uint8_t permissions) {
+    file_entry_t* entry = get_file_entry_by_id(file_id);
 
     if (entry == NULL) {
         return FS_ERR_NOT_FOUND;
@@ -307,14 +335,19 @@ int set_file_permissions_operation(const uint32_t client_id, const uint8_t permi
 
     entry->permissions = permissions;
 
+    microkit_dbg_puts("FILE SERVER: Set permissions for file '");
+    microkit_dbg_puts((const char *)entry->name);
+    microkit_dbg_puts("'\n");
+    microkit_dbg_puts("FILE SERVER: New permissions: ");
+    microkit_dbg_put8(permissions);
+    microkit_dbg_puts("\n");
+
     return FS_OK;
 }
 
 
-int get_file_permissions_operation(const uint32_t client_id) {
-    unsigned char *name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
-
-    file_entry_t* entry = get_file_entry(name);
+int get_file_permissions_operation(const uint32_t client_id, const uint32_t file_id) {
+    file_entry_t* entry = get_file_entry_by_id(file_id);
 
     if (entry == NULL) {
         return FS_ERR_NOT_FOUND;
@@ -325,15 +358,21 @@ int get_file_permissions_operation(const uint32_t client_id) {
 
     uint8_t *client_buffer = (uint8_t *)CLIENT_BUFFER_BASE(client_id);
     client_buffer[0] = entry->permissions;
+
+    microkit_dbg_puts("FILE SERVER: Got permissions for file '");
+    microkit_dbg_puts((const char *)entry->name);
+    microkit_dbg_puts("'\n");
+    microkit_dbg_puts("FILE SERVER: Permissions: ");
+    microkit_dbg_put8(entry->permissions);
+    microkit_dbg_puts("\n");
+
     return FS_OK;
 }
 
 
-int rename_file_operation(const uint32_t client_id, const uint32_t new_name_index) {
-    unsigned char *old_name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
-    unsigned char *new_name = (unsigned char *)CLIENT_BUFFER_BASE(client_id) + new_name_index;
-
-    file_entry_t* entry = get_file_entry(old_name);
+int rename_file_operation(const uint32_t client_id, const uint32_t file_id) {
+    unsigned char *new_name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
+    file_entry_t* entry = get_file_entry_by_id(file_id);
 
     if (entry == NULL) {
         return FS_ERR_NOT_FOUND;
@@ -344,14 +383,19 @@ int rename_file_operation(const uint32_t client_id, const uint32_t new_name_inde
 
     copy_string_from_buffer(new_name, entry->name, MAX_FILE_NAME_LENGTH);
 
+    microkit_dbg_puts("FILE SERVER: Renamed file '");
+    microkit_dbg_puts((const char *)entry->name);
+    microkit_dbg_puts("'\n");
+    microkit_dbg_puts("FILE SERVER: New name: ");
+    microkit_dbg_puts((const char *)new_name);
+    microkit_dbg_puts("\n");
+
     return FS_OK;
 }
 
 
-int get_file_size_operation(const uint32_t client_id) {
-    unsigned char *name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
-
-    file_entry_t* entry = get_file_entry(name);
+int get_file_size_operation(const uint32_t client_id, const uint32_t file_id) {
+    file_entry_t* entry = get_file_entry_by_id(file_id);
 
     if (entry == NULL) {
         return FS_ERR_NOT_FOUND;
@@ -362,6 +406,14 @@ int get_file_size_operation(const uint32_t client_id) {
 
     uint32_t *client_buffer = (uint32_t *)CLIENT_BUFFER_BASE(client_id);
     client_buffer[0] = entry->size;
+
+    microkit_dbg_puts("FILE SERVER: Got size for file '");
+    microkit_dbg_puts((const char *)entry->name);
+    microkit_dbg_puts("'\n");
+    microkit_dbg_puts("FILE SERVER: Size: ");
+    microkit_dbg_put32(entry->size);
+    microkit_dbg_puts("\n");
+
     return FS_OK;
 }
 
@@ -369,21 +421,36 @@ int get_file_size_operation(const uint32_t client_id) {
 int file_exists_operation(const uint32_t client_id) {
     unsigned char *name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
     file_entry_t* entry = get_file_entry(name);
-    if (entry == NULL) {
-        return FS_ERR_NOT_FOUND;
+    if (entry != NULL && (entry->permissions > FILE_PERM_PRIVATE || entry->owner_id == client_id)) {
+        uint8_t *client_buffer = (uint8_t *)CLIENT_BUFFER_BASE(client_id);
+        client_buffer[0] = 1; // true
+    } else {
+        uint8_t *client_buffer = (uint8_t *)CLIENT_BUFFER_BASE(client_id);
+        client_buffer[0] = 0; // false
     }
-
-    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC_EXISTS_AND_LIST);
-    if (perm != FS_OK) return perm;
+    microkit_dbg_puts("FILE SERVER: Checked existence for file '");
+    microkit_dbg_puts((const char *)name);
+    microkit_dbg_puts("'\n");
+    microkit_dbg_puts("FILE SERVER: Exists: ");
+    if (entry != NULL) {
+        microkit_dbg_puts("true\n");
+    } else {
+        microkit_dbg_puts("false\n");
+    }
     return FS_OK;
 }
 
 
-int copy_file_operation(const uint32_t client_id, const uint32_t new_file_name_index) {
-    unsigned char *old_file = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
-    unsigned char *dest_name = (unsigned char *)CLIENT_BUFFER_BASE(client_id) + new_file_name_index;
+int copy_file_operation(const uint32_t client_id, const uint32_t source_file_id) {
+    unsigned char *dest_name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
 
-    if (string_compare(old_file, dest_name, MAX_FILE_NAME_LENGTH)) {
+    file_entry_t* source_entry = get_file_entry_by_id(source_file_id);
+
+    if (source_entry == NULL) {
+        return FS_ERR_NOT_FOUND;
+    }
+
+    if (string_compare(source_entry->name, dest_name, MAX_FILE_NAME_LENGTH)) {
         return FS_ERR_NAME_COLLISION;
     }
 
@@ -391,27 +458,38 @@ int copy_file_operation(const uint32_t client_id, const uint32_t new_file_name_i
         return FS_ERR_ALREADY_EXISTS;
     }
 
-    file_entry_t* source_entry = get_file_entry(old_file);
-
-    if (source_entry == NULL) {
-        return FS_ERR_NOT_FOUND;
-    }
-
     int perm = check_permission(source_entry, client_id, FILE_PERM_PUBLIC_READ_AND_COPY_AND_OPEN_AND_CLOSE);
     if (perm != FS_OK) return perm;
 
-
-    int return_code = create_file_operation(client_id, source_entry->size, source_entry->permissions);
-    if (return_code != FS_OK) {
-        return return_code;
+    // this will write the new file id back to the client buffer
+    uint32_t file_id = create_file_operation(client_id, source_entry->size, source_entry->permissions);
+    // if negative, there was an error, otherwise file id is returned
+    if (file_id < FS_OK) {
+        return file_id;
     }
 
-    file_entry_t* dest_entry = get_file_entry(dest_name);
+    file_entry_t* dest_entry = get_file_entry_by_id((uint32_t)file_id);
+    if (dest_entry == NULL) {
+        return FS_ERR_UNSPECIFIED_ERROR;
+    }
 
     // TODO: only copy data if its later modified
     uint8_t *source_data_ptr = FILE_DATA_OFFSET(source_entry->data_offset);
     uint8_t *dest_data_ptr = FILE_DATA_OFFSET(dest_entry->data_offset);
     copy_data_from_buffer(source_data_ptr, dest_data_ptr, source_entry->size);
+
+    microkit_dbg_puts("FILE SERVER: Copied file '");
+    microkit_dbg_puts((const char *)source_entry->name);
+    microkit_dbg_puts("' to '");
+    microkit_dbg_puts((const char *)dest_entry->name);
+    microkit_dbg_puts("'\n");
+    microkit_dbg_puts("FILE SERVER: New file ID: ");
+    microkit_dbg_put32(dest_entry->id);
+    microkit_dbg_puts("\n");
+    microkit_dbg_puts("FILE SERVER: Data: ");
+    for (size_t i = 0; i < dest_entry->size; i++) {
+        microkit_dbg_putc((char)dest_data_ptr[i]);
+    }
 
     return FS_OK;
 }
@@ -447,6 +525,10 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
             uint32_t size = microkit_mr_get(1);
             uint8_t permissions = (uint8_t)microkit_mr_get(2);
             return_code = create_file_operation(channel, size, permissions);
+            // if no error, translate file id to FS_OK
+            if (return_code >= FS_OK) {
+                return_code = FS_OK;
+            }
             break;
         }
 
@@ -457,9 +539,10 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            uint32_t offset = microkit_mr_get(1);
-            size_t length = (size_t)microkit_mr_get(2);
-            return_code = read_file_operation(channel, offset, length);
+            uint32_t file_id = microkit_mr_get(1);
+            uint32_t offset = microkit_mr_get(2);
+            size_t length = (size_t)microkit_mr_get(3);
+            return_code = read_file_operation(channel, file_id, offset, length);
             break;
         }
 
@@ -470,15 +553,16 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 // return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            uint32_t data_start_index = microkit_mr_get(1);
+            uint32_t file_id = microkit_mr_get(1);
             uint32_t write_offset = microkit_mr_get(2);
             size_t write_length = (size_t)microkit_mr_get(3);
-            return_code = write_file_operation(channel, data_start_index, write_offset, write_length);
+            return_code = write_file_operation(channel, file_id, write_offset, write_length);
             break;
         }
 
         case OP_OPEN:
-            /* code */
+            microkit_dbg_puts("FILE SERVER: processing open operation\n");
+            return_code = open_file_operation(channel);
             break;
 
         case OP_CLOSE:
@@ -487,7 +571,13 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
 
         case OP_DELETE: {
             microkit_dbg_puts("FILE SERVER: processing delete operation\n");
-            return_code = delete_file_operation(channel);
+            if (microkit_msginfo_get_count(msginfo) < 2) {
+                microkit_dbg_puts("FILE SERVER: incorrect operation parameter count\n");
+                return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
+                break;
+            }
+            uint32_t file_id = microkit_mr_get(1);
+            return_code = delete_file_operation(channel, file_id);
             break;
         }
 
@@ -499,19 +589,26 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
             
         case OP_SET_PERMISSIONS: {
             microkit_dbg_puts("FILE SERVER: processing set permissions operation\n");
-            if (microkit_msginfo_get_count(msginfo) < 2) {
+            if (microkit_msginfo_get_count(msginfo) < 3) {
                 microkit_dbg_puts("FILE SERVER: incorrect operation parameter count\n");
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            uint8_t new_permissions = (uint8_t)microkit_mr_get(1);
-            return_code = set_file_permissions_operation(channel, new_permissions);
+            uint32_t file_id = microkit_mr_get(1);
+            uint8_t new_permissions = (uint8_t)microkit_mr_get(2);
+            return_code = set_file_permissions_operation(channel, file_id, new_permissions);
             break;
         }
 
         case OP_GET_PERMISSIONS: {
             microkit_dbg_puts("FILE SERVER: processing get permissions operation\n");
-            return_code = get_file_permissions_operation(channel);
+            if (microkit_msginfo_get_count(msginfo) < 2) {
+                microkit_dbg_puts("FILE SERVER: incorrect operation parameter count\n");
+                return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
+                break;
+            }
+            uint32_t file_id = microkit_mr_get(1);
+            return_code = get_file_permissions_operation(channel, file_id);
             break;
         }
 
@@ -522,14 +619,20 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            uint32_t new_name_index = microkit_mr_get(1);
-            return_code = rename_file_operation(channel, new_name_index);
+            uint32_t file_id = microkit_mr_get(1);
+            return_code = rename_file_operation(channel, file_id);
             break;
         }
 
         case OP_GET_FILE_SIZE: {
             microkit_dbg_puts("FILE SERVER: processing get file size operation\n");
-            return_code = get_file_size_operation(channel);
+            if (microkit_msginfo_get_count(msginfo) < 2) {
+                microkit_dbg_puts("FILE SERVER: incorrect operation parameter count\n");
+                return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
+                break;
+            }
+            uint32_t file_id = microkit_mr_get(1);
+            return_code = get_file_size_operation(channel, file_id);
             break;
         }
 
@@ -546,8 +649,8 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            uint32_t new_file_name_index = microkit_mr_get(1);
-            return_code = copy_file_operation(channel, new_file_name_index);
+            uint32_t file_id = microkit_mr_get(1);
+            return_code = copy_file_operation(channel, file_id);
             break;
         }
 
