@@ -6,7 +6,39 @@
 
 #define FILE_SERVER_CHANNEL_ID 0
 
-uint8_t *file_server_buffer_base;
+uintptr_t file_server_buffer_base;
+uint8_t *fs_buffer_base;
+
+typedef struct {
+    int rc;
+    uint32_t file_id;
+} fs_result_fileid_t;
+
+typedef struct {
+    int rc;
+    unsigned char *data;
+    size_t length;
+} fs_result_data_t;
+
+typedef struct {
+    int rc;
+    uint8_t permissions;
+} fs_result_permissions_t;
+
+typedef struct {
+    int rc;
+    uint32_t size;
+} fs_result_size_t;
+
+typedef struct {
+    int rc;
+    uint8_t exists;
+} fs_result_exists_t;
+
+typedef struct {
+    int rc;
+    unsigned char *list;
+} fs_result_list_t;
 
 void notified(microkit_channel client_id) {}
 
@@ -62,25 +94,25 @@ void debug_print_return_code(const char *operation, int return_code) {
 
 uint32_t get_returned_file_id(void) {
     uint32_t file_id = 0;
-    file_id |= (file_server_buffer_base[0] << 0);
-    file_id |= (file_server_buffer_base[1] << 8);
-    file_id |= (file_server_buffer_base[2] << 16);
-    file_id |= (file_server_buffer_base[3] << 24);
+    file_id |= (fs_buffer_base[0] << 0);
+    file_id |= (fs_buffer_base[1] << 8);
+    file_id |= (fs_buffer_base[2] << 16);
+    file_id |= (fs_buffer_base[3] << 24);
     return file_id;
 }
 
 
-uint32_t send_create_file_request(const unsigned char *file_name, const uint32_t size, const file_permission_t permissions) {
+fs_result_fileid_t send_create_file_request(const unsigned char *file_name, const uint32_t size, const file_permission_t permissions) {
     microkit_msginfo msg = microkit_msginfo_new(0, 3);
 
-    copy_string_from_buffer(file_name, (unsigned char *)file_server_buffer_base, MAX_FILE_NAME_LENGTH);
+    copy_string_from_buffer(file_name, (unsigned char *)fs_buffer_base, MAX_FILE_NAME_LENGTH);
 
     microkit_mr_set(0, OP_CREATE);
     microkit_mr_set(1, size);
     microkit_mr_set(2, permissions);
 
     microkit_dbg_puts("CLIENT: requested to create file: ");
-    microkit_dbg_puts((const char *)file_server_buffer_base);
+    microkit_dbg_puts((const char *)fs_buffer_base);
     microkit_dbg_puts("\n");
     microkit_dbg_puts("CLIENT: with size: ");
     microkit_dbg_put32(size);
@@ -92,32 +124,40 @@ uint32_t send_create_file_request(const unsigned char *file_name, const uint32_t
 
     const int return_code = microkit_mr_get(0);
     debug_print_return_code("create", return_code);
-    return get_returned_file_id();
+
+    fs_result_fileid_t res;
+    res.rc = return_code;
+    res.file_id = get_returned_file_id();
+    return res;
 }
 
 
-uint32_t send_open_file_request(const unsigned char *file_name) {
+fs_result_fileid_t send_open_file_request(const unsigned char *file_name) {
     microkit_msginfo msg = microkit_msginfo_new(0, 1);
 
-    copy_string_from_buffer(file_name, (unsigned char *)file_server_buffer_base, MAX_FILE_NAME_LENGTH);
+    copy_string_from_buffer(file_name, (unsigned char *)fs_buffer_base, MAX_FILE_NAME_LENGTH);
 
     microkit_mr_set(0, OP_OPEN);
 
     microkit_dbg_puts("CLIENT: requested to open file: ");
-    microkit_dbg_puts((const char *)file_server_buffer_base);
+    microkit_dbg_puts((const char *)fs_buffer_base);
     microkit_dbg_puts("\n");
     microkit_ppcall(FILE_SERVER_CHANNEL_ID, msg);
 
     const int return_code = microkit_mr_get(0);
     debug_print_return_code("open", return_code);
-    return get_returned_file_id();
+
+    fs_result_fileid_t res;
+    res.rc = return_code;
+    res.file_id = get_returned_file_id();
+    return res;
 }
 
 
 void send_close_file_request(const uint32_t file_id) {}
 
 
-unsigned char * send_read_file_request(const uint32_t file_id, const uint32_t offset, const size_t length) {
+fs_result_data_t send_read_file_request(const uint32_t file_id, const uint32_t offset, const size_t length) {
     microkit_msginfo msg = microkit_msginfo_new(0, 3);
 
     microkit_mr_set(0, OP_READ);
@@ -141,18 +181,23 @@ unsigned char * send_read_file_request(const uint32_t file_id, const uint32_t of
 
     microkit_dbg_puts("CLIENT: read data: \n");
     for (size_t i = 0; i < length; i++) {
-        // check bounds
+        /* check bounds */
         if (i >= CLIENT_BUFFER_SIZE) {
             break;
         }
-        microkit_dbg_puts((const char *)&file_server_buffer_base[i]);
+        microkit_dbg_puts((const char *)&fs_buffer_base[i]);
     }
     microkit_dbg_puts("\n");
-    return file_server_buffer_base;
+
+    fs_result_data_t res;
+    res.rc = return_code;
+    res.data = fs_buffer_base;
+    res.length = length;
+    return res;
 }
 
 
-void send_write_file_request(const uint32_t file_id, const uint32_t offset, const size_t length) {
+int send_write_file_request(const uint32_t file_id, const uint32_t offset, const size_t length) {
     microkit_msginfo msg = microkit_msginfo_new(0, 3);
 
     microkit_mr_set(0, OP_WRITE);
@@ -173,9 +218,10 @@ void send_write_file_request(const uint32_t file_id, const uint32_t offset, cons
 
     const int return_code = microkit_mr_get(0);
     debug_print_return_code("write", return_code);
+    return return_code;
 }
 
-void send_delete_file_request(const uint32_t file_id) {
+int send_delete_file_request(const uint32_t file_id) {
     microkit_msginfo msg = microkit_msginfo_new(0, 1);
 
     microkit_mr_set(0, OP_DELETE);
@@ -188,9 +234,10 @@ void send_delete_file_request(const uint32_t file_id) {
 
     const int return_code = microkit_mr_get(0);
     debug_print_return_code("delete", return_code);
+    return return_code;
 }
 
-void send_list_files_request(void) {
+fs_result_list_t send_list_files_request(void) {
     microkit_msginfo msg = microkit_msginfo_new(0, 0);
 
     microkit_mr_set(0, OP_LIST);
@@ -202,11 +249,16 @@ void send_list_files_request(void) {
     debug_print_return_code("list", return_code);
 
     microkit_dbg_puts("CLIENT: listed files:\n");
-    microkit_dbg_puts((const char *)file_server_buffer_base);
+    microkit_dbg_puts((const char *)fs_buffer_base);
     microkit_dbg_puts("\n");
+
+    fs_result_list_t res;
+    res.rc = return_code;
+    res.list = fs_buffer_base;
+    return res;
 }
 
-void send_set_file_permissions_request(const uint32_t file_id, const file_permission_t permissions) {
+int send_set_file_permissions_request(const uint32_t file_id, const file_permission_t permissions) {
     microkit_msginfo msg = microkit_msginfo_new(0, 2);
 
     microkit_mr_set(0, OP_SET_PERMISSIONS);
@@ -223,9 +275,10 @@ void send_set_file_permissions_request(const uint32_t file_id, const file_permis
 
     const int return_code = microkit_mr_get(0);
     debug_print_return_code("set permissions", return_code);
+    return return_code;
 }
 
-uint8_t send_get_file_permissions_request(const uint32_t file_id) {
+fs_result_permissions_t send_get_file_permissions_request(const uint32_t file_id) {
     microkit_msginfo msg = microkit_msginfo_new(0, 1);
 
     microkit_mr_set(0, OP_GET_PERMISSIONS);
@@ -239,34 +292,38 @@ uint8_t send_get_file_permissions_request(const uint32_t file_id) {
     const int return_code = microkit_mr_get(0);
     debug_print_return_code("get permissions", return_code);
 
-    uint8_t permissions = (uint8_t)file_server_buffer_base[0];
+    uint8_t permissions = (uint8_t)fs_buffer_base[0];
     microkit_dbg_puts("CLIENT: got permissions: ");
     microkit_dbg_put8(permissions);
     microkit_dbg_puts("\n");
 
-    return permissions;
+    fs_result_permissions_t res;
+    res.rc = return_code;
+    res.permissions = permissions;
+    return res;
 }
 
-void send_rename_file_request(const uint32_t file_id, const unsigned char *new_name) {
+int send_rename_file_request(const uint32_t file_id, const unsigned char *new_name) {
     microkit_msginfo msg = microkit_msginfo_new(0, 2);
 
     microkit_mr_set(0, OP_RENAME);
     microkit_mr_set(1, file_id);
-    copy_string_from_buffer(new_name, (unsigned char *)file_server_buffer_base, MAX_FILE_NAME_LENGTH);
+    copy_string_from_buffer(new_name, (unsigned char *)fs_buffer_base, MAX_FILE_NAME_LENGTH);
 
     microkit_dbg_puts("CLIENT: requested to rename file: ");
     microkit_dbg_put32(file_id);
     microkit_dbg_puts("\n");
     microkit_dbg_puts("CLIENT: to new name: ");
-    microkit_dbg_puts((const char *)file_server_buffer_base);
+    microkit_dbg_puts((const char *)fs_buffer_base);
     microkit_dbg_puts("\n");
     microkit_ppcall(FILE_SERVER_CHANNEL_ID, msg);
 
     const int return_code = microkit_mr_get(0);
     debug_print_return_code("rename", return_code);
+    return return_code;
 }
 
-uint32_t send_get_file_size_request(const uint32_t file_id) {
+fs_result_size_t send_get_file_size_request(const uint32_t file_id) {
     microkit_msginfo msg = microkit_msginfo_new(0, 1);
 
     microkit_mr_set(0, OP_GET_FILE_SIZE);
@@ -281,65 +338,80 @@ uint32_t send_get_file_size_request(const uint32_t file_id) {
     debug_print_return_code("get file size", return_code);
 
     uint32_t file_size = 0;
-    file_size |= (file_server_buffer_base[0] << 0);
-    file_size |= (file_server_buffer_base[1] << 8);
-    file_size |= (file_server_buffer_base[2] << 16);
-    file_size |= (file_server_buffer_base[3] << 24);
+    file_size |= (fs_buffer_base[0] << 0);
+    file_size |= (fs_buffer_base[1] << 8);
+    file_size |= (fs_buffer_base[2] << 16);
+    file_size |= (fs_buffer_base[3] << 24);
 
     microkit_dbg_puts("CLIENT: got file size: ");
     microkit_dbg_put32(file_size);
     microkit_dbg_puts("\n");
 
-    return file_size;
+    fs_result_size_t res;
+    res.rc = return_code;
+    res.size = file_size;
+    return res;
 }
 
-uint8_t send_file_exists_request(const unsigned char *file_name) {
+fs_result_exists_t send_file_exists_request(const unsigned char *file_name) {
     microkit_msginfo msg = microkit_msginfo_new(0, 1);
 
-    copy_string_from_buffer(file_name, (unsigned char *)file_server_buffer_base, MAX_FILE_NAME_LENGTH);
+    copy_string_from_buffer(file_name, (unsigned char *)fs_buffer_base, MAX_FILE_NAME_LENGTH);
 
     microkit_mr_set(0, OP_EXISTS);
 
     microkit_dbg_puts("CLIENT: requested to check existence of file: ");
-    microkit_dbg_puts((const char *)file_server_buffer_base);
+    microkit_dbg_puts((const char *)fs_buffer_base);
     microkit_dbg_puts("\n");
     microkit_ppcall(FILE_SERVER_CHANNEL_ID, msg);
 
     const int return_code = microkit_mr_get(0);
     debug_print_return_code("exists", return_code);
 
-    const uint8_t exists = file_server_buffer_base[0];
+    const uint8_t exists = fs_buffer_base[0];
     microkit_dbg_puts("CLIENT: file existence: ");
     microkit_dbg_put8(exists);
     microkit_dbg_puts("\n");
 
-    return exists;
+    fs_result_exists_t res;
+    res.rc = return_code;
+    res.exists = exists;
+    return res;
 }
 
-uint32_t send_copy_file_request(const uint32_t source_file_id, const unsigned char *dest_name) {
+fs_result_fileid_t send_copy_file_request(const uint32_t source_file_id, const unsigned char *dest_name) {
     microkit_msginfo msg = microkit_msginfo_new(0, 2);
 
     microkit_mr_set(0, OP_COPY);
     microkit_mr_set(1, source_file_id);
-    copy_string_from_buffer(dest_name, (unsigned char *)file_server_buffer_base, MAX_FILE_NAME_LENGTH);
+    copy_string_from_buffer(dest_name, (unsigned char *)fs_buffer_base, MAX_FILE_NAME_LENGTH);
 
     microkit_dbg_puts("CLIENT: requested to copy file: ");
     microkit_dbg_put32(source_file_id);
     microkit_dbg_puts("\n");
     microkit_dbg_puts("CLIENT: to new name: ");
-    microkit_dbg_puts((const char *)file_server_buffer_base);
+    microkit_dbg_puts((const char *)fs_buffer_base);
     microkit_dbg_puts("\n");
     microkit_ppcall(FILE_SERVER_CHANNEL_ID, msg);
 
     const int return_code = microkit_mr_get(0);
     debug_print_return_code("copy", return_code);
-    return get_returned_file_id();
+
+    fs_result_fileid_t res;
+    res.rc = return_code;
+    res.file_id = get_returned_file_id();
+    return res;
 }
 
 void init(void) {
+    fs_buffer_base = (uint8_t *)file_server_buffer_base;
     microkit_dbg_puts("CLIENT: started\n");
 
-    send_create_file_request(
+    fs_result_fileid_t result = send_create_file_request(
         (const unsigned char *)"hello.txt", 1024, FILE_PERM_PUBLIC_READ_AND_COPY_AND_OPEN_AND_CLOSE
     );
+    int return_code = result.rc;
+    uint32_t hello_file = result.file_id;
+    microkit_dbg_put8(return_code);
+    microkit_dbg_put32(hello_file);
 }

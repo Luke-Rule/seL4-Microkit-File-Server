@@ -9,7 +9,7 @@
 
        <Region name=PD-ELF file_server-0 addr=0x60246000 size=10808>
        <Region name=PD-ELF file_server-1 addr=0x60249000 size=224>
-       <Region name=PD-ELF client_0-0 addr=0x6024a000 size=9912>
+       <Region name=PD-ELF client_0-0 addr=0x6024a000 size=10352>
        <Region name=PD-ELF client_0-1 addr=0x6024d000 size=192>
 
 # Monitor (Initial Task) Info
