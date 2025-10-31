@@ -7,9 +7,9 @@
 
 # Loader Regions
 
-       <Region name=PD-ELF file_server-0 addr=0x60246000 size=10808>
+       <Region name=PD-ELF file_server-0 addr=0x60246000 size=10640>
        <Region name=PD-ELF file_server-1 addr=0x60249000 size=224>
-       <Region name=PD-ELF client_0-0 addr=0x6024a000 size=17208>
+       <Region name=PD-ELF client_0-0 addr=0x6024a000 size=17344>
        <Region name=PD-ELF client_0-1 addr=0x6024f000 size=208>
 
 # Monitor (Initial Task) Info
@@ -786,19 +786,19 @@
          attr                 3
     0x0033 Page                 - Map               - 0x800000000000013b (Page(4 KiB): MR=file_table #0 (derived))
          vspace (cap)         0x800000000000012d (VSpace: PD=file_server)
-         vaddr                0x0
+         vaddr                0x1000
          rights               3
          attr                 7
       REPEAT: count=16
     0x0034 Page                 - Map               - 0x800000000000014b (Page(4 KiB): MR=file_data #0 (derived))
          vspace (cap)         0x800000000000012d (VSpace: PD=file_server)
-         vaddr                0x10000
+         vaddr                0x11000
          rights               3
          attr                 7
       REPEAT: count=256
     0x0035 Page                 - Map               - 0x800000000000024b (Page(4 KiB): MR=client_buffer_0 #0 (derived))
          vspace (cap)         0x800000000000012d (VSpace: PD=file_server)
-         vaddr                0x110000
+         vaddr                0x111000
          rights               3
          attr                 6
     0x0036 Page                 - Map               - 0x800000000000024c (Page(4 KiB): MR=ELF:file_server-0 @ 60246000 (derived))

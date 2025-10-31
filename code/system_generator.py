@@ -3,7 +3,7 @@ import sys
 def generate_synchronous_system_file(number_of_clients, buffer_size):
     file_table_size = 10000
     file_data_size = 100000
-    file_table_vaddr = 0
+    file_table_vaddr = 1000
     file_data_vaddr = file_table_vaddr + file_table_size
     client_buffer_base_vaddr = file_data_vaddr + file_data_size
         

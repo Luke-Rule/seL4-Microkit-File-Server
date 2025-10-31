@@ -144,14 +144,14 @@ int create_file_operation(const uint32_t client_id, const uint32_t size, const u
 
     // write file id back to client
     uint32_t *client_buffer = (uint32_t *)CLIENT_BUFFER_BASE(client_id);
-    client_buffer[0] = (entry->id >> 0)  & 0xFF;
-    client_buffer[1] = (entry->id >> 8)  & 0xFF;
-    client_buffer[2] = (entry->id >> 16) & 0xFF;
-    client_buffer[3] = (entry->id >> 24) & 0xFF;
+    client_buffer[0] = (entry->id);
 
     microkit_dbg_puts("FILE SERVER: Created file '");
     microkit_dbg_puts((const char *)entry->name);
     microkit_dbg_puts("'\n");
+    microkit_dbg_puts("FILE SERVER: with id: ");
+    microkit_dbg_put32(entry->id);
+    microkit_dbg_puts("\n");
 
     return entry->id;
 }
@@ -161,7 +161,7 @@ int open_file_operation(const uint32_t client_id) {
     unsigned char *name = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
     file_entry_t* entry = get_file_entry(name);
 
-    if (entry->name == NULL) {
+    if (entry == NULL) {
         microkit_dbg_puts("FILE SERVER: File not found\n");
         return FS_ERR_NOT_FOUND;
     }
@@ -357,6 +357,10 @@ int rename_file_operation(const uint32_t client_id, const uint32_t file_id) {
         return FS_ERR_NOT_FOUND;
     }
 
+    if (file_exists(new_name)) {
+        return FS_ERR_NAME_COLLISION;
+    }
+
     int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC_WRITE_AND_DELETE_AND_RENAME);
     if (perm != FS_OK) return perm;
 
@@ -384,16 +388,12 @@ int get_file_size_operation(const uint32_t client_id, const uint32_t file_id) {
     if (perm != FS_OK) return perm;
 
     uint32_t *client_buffer = (uint32_t *)CLIENT_BUFFER_BASE(client_id);
-    client_buffer[0] = (entry->size >> 0)  & 0xFF;
-    client_buffer[1] = (entry->size >> 8)  & 0xFF;
-    client_buffer[2] = (entry->size >> 16) & 0xFF;
-    client_buffer[3] = (entry->size >> 24) & 0xFF;
+    client_buffer[0] = (entry->size);
 
     microkit_dbg_puts("FILE SERVER: Got size for file '");
     microkit_dbg_puts((const char *)entry->name);
     microkit_dbg_puts("'\n");
     microkit_dbg_puts("FILE SERVER: Size: ");
-    microkit_dbg_put32(entry->size);
     microkit_dbg_puts("\n");
 
     return FS_OK;
@@ -430,14 +430,6 @@ int copy_file_operation(const uint32_t client_id, const uint32_t source_file_id)
 
     if (source_entry == NULL) {
         return FS_ERR_NOT_FOUND;
-    }
-
-    if (string_compare(source_entry->name, dest_name, MAX_FILE_NAME_LENGTH)) {
-        return FS_ERR_NAME_COLLISION;
-    }
-
-    if (file_exists(dest_name)) {
-        return FS_ERR_ALREADY_EXISTS;
     }
 
     int perm = check_permission(source_entry, client_id, FILE_PERM_PUBLIC_READ_AND_COPY_AND_OPEN_AND_CLOSE);

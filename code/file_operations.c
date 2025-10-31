@@ -77,16 +77,6 @@ void debug_print_return_code(const char *operation, int return_code) {
 }
 
 
-uint32_t get_returned_file_id(uint8_t *fs_buffer_base) {
-    uint32_t file_id = 0;
-    file_id |= (fs_buffer_base[0] << 0);
-    file_id |= (fs_buffer_base[1] << 8);
-    file_id |= (fs_buffer_base[2] << 16);
-    file_id |= (fs_buffer_base[3] << 24);
-    return file_id;
-}
-
-
 fs_result_fileid_t send_create_file_request(const unsigned char *file_name, const uint32_t size, const file_permission_t permissions, uint8_t *fs_buffer_base, int channel_id) {
     microkit_msginfo msg = microkit_msginfo_new(0, 3);
 
@@ -112,7 +102,7 @@ fs_result_fileid_t send_create_file_request(const unsigned char *file_name, cons
 
     fs_result_fileid_t res;
     res.rc = return_code;
-    res.file_id = get_returned_file_id(fs_buffer_base);
+    res.file_id = *((uint32_t *)fs_buffer_base);
     return res;
 }
 
@@ -134,7 +124,7 @@ fs_result_fileid_t send_open_file_request(const unsigned char *file_name, uint8_
 
     fs_result_fileid_t res;
     res.rc = return_code;
-    res.file_id = get_returned_file_id(fs_buffer_base);
+    res.file_id = *((uint32_t *)fs_buffer_base);
     return res;
 }
 
@@ -179,7 +169,7 @@ int send_read_file_request(const uint32_t file_id, const uint32_t offset, const 
 
 
 int send_write_file_request(const uint32_t file_id, const uint32_t offset, const size_t length, uint8_t *data, uint8_t *fs_buffer_base, int channel_id) {
-    microkit_msginfo msg = microkit_msginfo_new(0, 3);
+    microkit_msginfo msg = microkit_msginfo_new(0, 4);
 
     microkit_mr_set(0, OP_WRITE);
     microkit_mr_set(1, file_id);
@@ -204,7 +194,7 @@ int send_write_file_request(const uint32_t file_id, const uint32_t offset, const
 }
 
 int send_delete_file_request(const uint32_t file_id, uint8_t *fs_buffer_base, int channel_id) {
-    microkit_msginfo msg = microkit_msginfo_new(0, 1);
+    microkit_msginfo msg = microkit_msginfo_new(0, 2);
 
     microkit_mr_set(0, OP_DELETE);
     microkit_mr_set(1, file_id);
@@ -238,7 +228,7 @@ int send_list_files_request(uint8_t *fs_buffer_base, int channel_id) {
 }
 
 int send_set_file_permissions_request(const uint32_t file_id, const file_permission_t permissions, uint8_t *fs_buffer_base, int channel_id) {
-    microkit_msginfo msg = microkit_msginfo_new(0, 2);
+    microkit_msginfo msg = microkit_msginfo_new(0, 3);
 
     microkit_mr_set(0, OP_SET_PERMISSIONS);
     microkit_mr_set(1, file_id);
@@ -258,7 +248,7 @@ int send_set_file_permissions_request(const uint32_t file_id, const file_permiss
 }
 
 fs_result_permissions_t send_get_file_permissions_request(const uint32_t file_id, uint8_t *fs_buffer_base, int channel_id) {
-    microkit_msginfo msg = microkit_msginfo_new(0, 1);
+    microkit_msginfo msg = microkit_msginfo_new(0, 2);
 
     microkit_mr_set(0, OP_GET_PERMISSIONS);
     microkit_mr_set(1, file_id);
@@ -316,11 +306,7 @@ fs_result_size_t send_get_file_size_request(const uint32_t file_id, uint8_t *fs_
     const int return_code = microkit_mr_get(0);
     debug_print_return_code("get file size", return_code);
 
-    uint32_t file_size = 0;
-    file_size |= (fs_buffer_base[0] << 0);
-    file_size |= (fs_buffer_base[1] << 8);
-    file_size |= (fs_buffer_base[2] << 16);
-    file_size |= (fs_buffer_base[3] << 24);
+    uint32_t file_size = *((uint32_t *)fs_buffer_base);
 
     microkit_dbg_puts("CLIENT: got file size: ");
     microkit_dbg_put32(file_size);
@@ -378,6 +364,6 @@ fs_result_fileid_t send_copy_file_request(const uint32_t source_file_id, const u
 
     fs_result_fileid_t res;
     res.rc = return_code;
-    res.file_id = get_returned_file_id(fs_buffer_base);
+    res.file_id = *((uint32_t *)fs_buffer_base);
     return res;
 }
