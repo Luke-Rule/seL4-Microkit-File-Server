@@ -114,12 +114,42 @@ void expect_equal_to_client_buffer(const unsigned char *expected, size_t length,
     tests_passed++;
 }
 
+void expect_equal_to_buffer(const uint8_t *actual, const uint8_t *expected, size_t length, const char *test_message) {
+    for (size_t i = 0; i < length; i++) {
+        if (actual[i] != expected[i]) {
+            microkit_dbg_puts(ANSI_COLOR_RED);
+            microkit_dbg_puts("[FAIL] ");
+            microkit_dbg_puts(ANSI_COLOR_RESET);
+            microkit_dbg_puts(test_message);
+            microkit_dbg_puts(": Expected: ");
+            for (size_t j = 0; j < length; j++) {
+                microkit_dbg_putc(((const char *)expected)[j]);
+            }
+            microkit_dbg_puts(", Got: ");
+            for (size_t j = 0; j < length; j++) {
+                microkit_dbg_putc(((const char *)actual)[j]);
+            }
+            microkit_dbg_puts("\n");
+            tests_failed++;
+            return;
+        }
+    }
+    microkit_dbg_puts(ANSI_COLOR_GREEN);
+    microkit_dbg_puts("[PASS] ");
+    microkit_dbg_puts(ANSI_COLOR_RESET);
+    microkit_dbg_puts(test_message);
+    microkit_dbg_puts("\n");
+    tests_passed++;
+}
+
 void run_tests() {
     microkit_dbg_puts(ANSI_COLOR_YELLOW);
     microkit_dbg_puts("\n\nStarting filesystem tests...\n");
     microkit_dbg_puts(ANSI_COLOR_RESET);
     clear_client_buffer();
     int rc;
+    fs_result_write_t write_res;
+    fs_result_read_t read_res;
 
     // Test cases 
 
@@ -210,32 +240,122 @@ void run_tests() {
     fs_result_fileid_t res_open_nonexistent = send_open_file_request((const unsigned char *)"nonexistent.txt", fs_buffer_base, FILE_SERVER_CHANNEL_ID);
     expect_eq_int(res_open_nonexistent.rc, FS_ERR_NOT_FOUND, "Open non-existent file");
 
-    // Write and read in-bounds as owner
+    // Block write and read from file
     microkit_dbg_puts(ANSI_COLOR_YELLOW);
-    microkit_dbg_puts("\n\nTest: Write and read in-bounds as owner\n");
+    microkit_dbg_puts("\n\nTest: Block write to file\n");
     microkit_dbg_puts(ANSI_COLOR_RESET);
     clear_client_buffer();
-    rc = send_write_file_request((uint32_t)res_open.file_id, 0, 13, (uint8_t *)"Hello, World!", fs_buffer_base, FILE_SERVER_CHANNEL_ID);
-    expect_eq_int(rc, FS_OK, "Write in-bounds as owner");
-    rc = send_read_file_request((uint32_t)res_open.file_id, 0, 13, fs_buffer_base, FILE_SERVER_CHANNEL_ID);
-    expect_eq_int(rc, FS_OK, "Read in-bounds as owner");
-    expect_equal_to_client_buffer((const unsigned char *)"Hello, World!", 13, "Read in-bounds as owner - correct data");
+    uint8_t write_data[16] = "Hello, World!";
+    write_res = send_write_block_file_request((uint32_t)res_open.file_id, 2, 16, write_data, fs_buffer_base, FILE_SERVER_CHANNEL_ID);
+    expect_eq_int(write_res.rc, FS_OK, "Block write to file");
+    expect_eq_uint32(write_res.bytes_written, 16, "Block write to file - correct bytes written");
+    microkit_dbg_puts(ANSI_COLOR_YELLOW);
+    microkit_dbg_puts("\n\nTest: Block read from file\n");
+    microkit_dbg_puts(ANSI_COLOR_RESET);
+    clear_client_buffer();
+    read_res = send_read_block_file_request((uint32_t)res_open.file_id, 2, 16, fs_buffer_base, FILE_SERVER_CHANNEL_ID);
+    expect_eq_int(read_res.rc, FS_OK, "Block read from file");
+    expect_eq_uint32(read_res.bytes_read, 16, "Block read from file - correct bytes read");
+    expect_equal_to_buffer(read_res.data_address, write_data, 16, "Block read from file - correct data");
 
-    // Read out-of-bounds
+    // Seek and read from file
     microkit_dbg_puts(ANSI_COLOR_YELLOW);
-    microkit_dbg_puts("\n\nTest: Read out-of-bounds\n");
+    microkit_dbg_puts("\n\nTest: Seek and read from file\n");
     microkit_dbg_puts(ANSI_COLOR_RESET);
     clear_client_buffer();
-    rc = send_read_file_request((uint32_t)res_open.file_id, 600, 20, fs_buffer_base, FILE_SERVER_CHANNEL_ID);
-    expect_eq_int(rc, FS_ERR_OUT_OF_BOUNDS, "Read out-of-bounds");
+    rc = send_seek_file_request((uint32_t)res_open.file_id, 2, FILE_SERVER_CHANNEL_ID);
+    expect_eq_int(rc, FS_OK, "Seek in file");
+    read_res = send_read_file_request((uint32_t)res_open.file_id, 16, fs_buffer_base, FILE_SERVER_CHANNEL_ID);
+    expect_eq_int(read_res.rc, FS_OK, "Read from file after seek");
+    expect_eq_uint32(read_res.bytes_read, 16, "Read from file after seek - correct bytes read");
+    expect_equal_to_buffer(read_res.data_address, write_data, 16, "Read from file after seek - correct data");
 
-    // Write out-of-bounds
+    // Seek and write to file
     microkit_dbg_puts(ANSI_COLOR_YELLOW);
-    microkit_dbg_puts("\n\nTest: Write out-of-bounds\n");
+    microkit_dbg_puts("\n\nTest: Seek and write to file\n");
     microkit_dbg_puts(ANSI_COLOR_RESET);
     clear_client_buffer();
-    int res_write_oob = send_write_file_request((uint32_t)res_open.file_id, 600, 20, (uint8_t *)"Hello, World!", fs_buffer_base, FILE_SERVER_CHANNEL_ID);
-    expect_eq_int(res_write_oob, FS_ERR_OUT_OF_BOUNDS, "Write out-of-bounds");
+    rc = send_seek_file_request((uint32_t)res_open.file_id, 0, FILE_SERVER_CHANNEL_ID);
+    expect_eq_int(rc, FS_OK, "Seek in file - to beginning");
+    uint8_t write_data2[13] = "Goodbye, All!";
+    write_res = send_write_file_request((uint32_t)res_open.file_id, 13, write_data2, fs_buffer_base, FILE_SERVER_CHANNEL_ID);
+    expect_eq_int(write_res.rc, FS_OK, "Write to file after seek");
+    expect_eq_uint32(write_res.bytes_written, 13, "Write to file after seek - correct bytes written");
+    expect_eq_uint32(write_res.new_cursor_position, 13, "Write to file after seek - correct new cursor position");
+    // Read back to verify
+    clear_client_buffer();
+    rc = send_seek_file_request((uint32_t)res_open.file_id, 0, FILE_SERVER_CHANNEL_ID);
+    expect_eq_int(rc, FS_OK, "Seek in file - to beginning again");
+    read_res = send_read_file_request((uint32_t)res_open.file_id, 13, fs_buffer_base, FILE_SERVER_CHANNEL_ID);
+    expect_eq_int(read_res.rc, FS_OK, "Read from file after write");
+    expect_eq_uint32(read_res.bytes_read, 13, "Read from file after write - correct bytes read");
+    expect_equal_to_buffer(read_res.data_address, write_data2, 13, "Read from file after write - correct data");
+
+    // Out-of-bounds tests (block and regular read/write and seek)
+    microkit_dbg_puts(ANSI_COLOR_YELLOW);
+    microkit_dbg_puts("\n\nTest: Out-of-bounds block read\n");
+    microkit_dbg_puts(ANSI_COLOR_RESET);
+
+    // Block read OOB: offset == file size should produce no data and typically an OOB return
+    clear_client_buffer();
+    uint32_t file_size = 512; // testfile.txt was created with size 512 above
+    read_res= send_read_block_file_request((uint32_t)res_open.file_id, file_size, 16, fs_buffer_base, FILE_SERVER_CHANNEL_ID);
+    expect_true(read_res.rc == FS_ERR_OUT_OF_BOUNDS, "Block read OOB - return code is OOB");
+    expect_true(read_res.bytes_read == 0, "Block read OOB - no bytes read");
+
+    microkit_dbg_puts(ANSI_COLOR_YELLOW);
+    microkit_dbg_puts("\n\nTest: Out-of-bounds block write\n");
+    microkit_dbg_puts(ANSI_COLOR_RESET);
+
+    // Block write OOB: offset == file size should not write data
+    clear_client_buffer();
+    uint8_t block_oob_data[8] = "BLOCKOOB";
+    write_res = send_write_block_file_request((uint32_t)res_open.file_id, file_size, 8, block_oob_data, fs_buffer_base, FILE_SERVER_CHANNEL_ID);
+    expect_true(write_res.rc == FS_ERR_OUT_OF_BOUNDS, "Block write OOB - return code is OOB");
+    expect_true(write_res.bytes_written == 0, "Block write OOB - no bytes written");
+
+    microkit_dbg_puts(ANSI_COLOR_YELLOW);
+    microkit_dbg_puts("\n\nTest: Out-of-bounds seek and regular read/write\n");
+    microkit_dbg_puts(ANSI_COLOR_RESET);
+
+    // Seek OOB: seeking to file_size should return OOB
+    clear_client_buffer();
+    rc = send_seek_file_request((uint32_t)res_open.file_id, file_size, FILE_SERVER_CHANNEL_ID);
+    expect_eq_int(rc, FS_ERR_OUT_OF_BOUNDS, "Seek beyond EOF returns OOB");
+
+    microkit_dbg_puts(ANSI_COLOR_YELLOW);
+    microkit_dbg_puts("\n\nTest: Out-of-bounds regular read and write via cursor\n");
+    microkit_dbg_puts(ANSI_COLOR_RESET);
+
+    // Regular read OOB via cursor: set cursor near EOF and request past EOF
+    clear_client_buffer();
+    rc = send_seek_file_request((uint32_t)res_open.file_id, file_size - 2, FILE_SERVER_CHANNEL_ID);
+    expect_eq_int(rc, FS_OK, "Seek near EOF for read OOB test");
+    clear_client_buffer();
+    read_res = send_read_file_request((uint32_t)res_open.file_id, 10, fs_buffer_base, FILE_SERVER_CHANNEL_ID);
+    expect_eq_int(read_res.rc, FS_ERR_OUT_OF_BOUNDS, "Regular read OOB returns OOB");
+    expect_eq_uint32(read_res.bytes_read, 2, "Regular read OOB - bytes read is truncated to 2");
+    expect_eq_uint32((uint32_t)read_res.new_cursor_position, file_size, "Regular read OOB - cursor at EOF after read");
+    
+    microkit_dbg_puts(ANSI_COLOR_YELLOW);
+    microkit_dbg_puts("\n\nTest: Out-of-bounds regular write via cursor\n");
+    microkit_dbg_puts(ANSI_COLOR_RESET);
+
+    // Regular write OOB via cursor: write 10 bytes starting 2 bytes before EOF -> expect truncated write
+    clear_client_buffer();
+    uint8_t write_oob_data[11] = "ABCDEFGHIJ"; // 10 bytes
+    rc = send_seek_file_request((uint32_t)res_open.file_id, file_size - 2, FILE_SERVER_CHANNEL_ID);
+    expect_eq_int(rc, FS_OK, "Seek near EOF for write OOB test");
+    write_res = send_write_file_request((uint32_t)res_open.file_id, 10, write_oob_data, fs_buffer_base, FILE_SERVER_CHANNEL_ID);
+    expect_true(write_res.rc == FS_ERR_OUT_OF_BOUNDS, "Regular write OOB - return code is OOB");
+    expect_true(write_res.bytes_written == 2, "Regular write OOB - bytes written is truncated to 2");
+    expect_true(write_res.new_cursor_position == file_size, "Regular write OOB - cursor at EOF after write");
+    // Read back truncated bytes (2 bytes expected)
+    clear_client_buffer();
+    read_res = send_read_block_file_request((uint32_t)res_open.file_id, file_size - 2, 2, fs_buffer_base, FILE_SERVER_CHANNEL_ID);
+    expect_eq_int(read_res.rc, FS_OK, "Read back truncated bytes after write OOB");
+    expect_eq_uint32(read_res.bytes_read, 2, "Read back truncated bytes after write OOB - correct bytes read");
+    expect_equal_to_buffer(read_res.data_address, write_oob_data, 2, "Read back truncated bytes after write OOB - correct data");
 
     // Delete 
     microkit_dbg_puts(ANSI_COLOR_YELLOW);
@@ -335,6 +455,8 @@ void run_tests() {
     rc = send_list_files_request(fs_buffer_base, FILE_SERVER_CHANNEL_ID);
     expect_eq_int(rc, FS_OK, "List files - after copy");
     expect_equal_to_client_buffer((const unsigned char *)"copy_of_renamedfile.txt\0\nrenamedfile.txt\0\0", 41, "List files - contains copied file");
+
+    // 
 
     // Permissions tests ...
     microkit_dbg_puts(ANSI_COLOR_YELLOW);

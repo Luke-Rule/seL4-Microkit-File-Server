@@ -40,6 +40,7 @@ struct file_entry
     uint32_t data_offset;
     uint32_t size;
     uint8_t permissions; 
+    uint32_t cursor_position;
 } typedef file_entry_t;
 
 uintptr_t file_table_base;
@@ -139,12 +140,13 @@ int create_file_operation(const uint32_t client_id, const uint32_t size, const u
     entry->data_offset = file_data_index;
     entry->size = size;
     entry->permissions = permissions;
+    entry->cursor_position = 0;
 
     file_data_index += size;
 
     // write file id back to client
     uint32_t *client_buffer = (uint32_t *)CLIENT_BUFFER_BASE(client_id);
-    client_buffer[0] = (entry->id);
+    client_buffer[0] = entry->id;
 
     microkit_dbg_puts("FILE SERVER: Created file '");
     microkit_dbg_puts((const char *)entry->name);
@@ -170,10 +172,7 @@ int open_file_operation(const uint32_t client_id) {
     if (perm != FS_OK) return perm;
 
     uint32_t *client_buffer = (uint32_t *)CLIENT_BUFFER_BASE(client_id);
-    client_buffer[0] = (entry->id >> 0)  & 0xFF;
-    client_buffer[1] = (entry->id >> 8)  & 0xFF;
-    client_buffer[2] = (entry->id >> 16) & 0xFF;
-    client_buffer[3] = (entry->id >> 24) & 0xFF;
+    client_buffer[0] = entry->id;
 
     microkit_dbg_puts("FILE SERVER: Opened file '");
     microkit_dbg_puts((const char *)entry->name);
@@ -183,8 +182,7 @@ int open_file_operation(const uint32_t client_id) {
 }
 
 
-int read_file_operation(const uint32_t client_id, const uint32_t file_id, const uint32_t offset, const size_t length) {
-    unsigned char *client_buffer = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
+int read_file_operation(const uint32_t client_id, const uint32_t file_id, const size_t length) {
     file_entry_t* entry = get_file_entry_by_id(file_id);
 
     if (entry == NULL) {
@@ -194,30 +192,111 @@ int read_file_operation(const uint32_t client_id, const uint32_t file_id, const 
     int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC_READ_AND_COPY_AND_OPEN_AND_CLOSE);
     if (perm != FS_OK) return perm;
 
-    if (offset >= entry->size || offset + length >= entry->size) {
-        return FS_ERR_OUT_OF_BOUNDS;
+    int return_code = FS_OK;
+    size_t bytes_to_read = length;
+
+    if (length >= entry->size || entry->cursor_position + length > entry->size) {
+        return_code = FS_ERR_OUT_OF_BOUNDS;
+        bytes_to_read = entry->size - entry->cursor_position;
     }
 
-    uint8_t *file_data_ptr = FILE_DATA_OFFSET(entry->data_offset + offset);
-    copy_data_from_buffer(file_data_ptr, (uint8_t *)client_buffer, length);
+    microkit_dbg_puts("FILE SERVER: Reading ");
+    microkit_dbg_put32(bytes_to_read);
+    microkit_dbg_puts(" bytes from position ");
+    microkit_dbg_put32(entry->cursor_position);
+    microkit_dbg_puts("\n");
+
+    uint32_t *client_buffer = (uint32_t *)CLIENT_BUFFER_BASE(client_id);
+    if (bytes_to_read <= 0) {
+        client_buffer[0] = 0;
+        client_buffer[1] = entry->cursor_position;
+        return return_code;
+    }
+
+    if (bytes_to_read > CLIENT_BUFFER_SIZE) {
+        return_code = FS_BUFFER_TOO_SMALL;
+        bytes_to_read = CLIENT_BUFFER_SIZE;
+    }
+
+    uint8_t *file_data_ptr = FILE_DATA_OFFSET(entry->data_offset + entry->cursor_position);
+    entry->cursor_position += bytes_to_read;
+    client_buffer[0] = bytes_to_read;
+    client_buffer[1] = entry->cursor_position;
+    copy_data_from_buffer(file_data_ptr, (uint8_t *)(&client_buffer[2]), bytes_to_read);
 
     microkit_dbg_puts("FILE SERVER: Read file '");
     microkit_dbg_puts((const char *)entry->name);
     microkit_dbg_puts("'\n");
     microkit_dbg_puts("FILE SERVER: Data: ");
-    for (size_t i = 0; i < length; i++) {
+    for (size_t i = 0; i < bytes_to_read; i++) {
         if (i >= CLIENT_BUFFER_SIZE) {
             break;
         }
-        microkit_dbg_putc((char)client_buffer[i]);
+        microkit_dbg_putc(((char *)client_buffer)[i + 8]);
     }
     microkit_dbg_puts("\n");
 
-    return FS_OK;
+    return return_code;
 }
 
 
-int write_file_operation(const uint32_t client_id, const uint32_t file_id, const uint32_t offset, const size_t length) {
+int read_block_file_operation(const uint32_t client_id, const uint32_t file_id, const uint32_t offset, const size_t length) {
+    file_entry_t* entry = get_file_entry_by_id(file_id);
+
+    if (entry == NULL) {
+        return FS_ERR_NOT_FOUND;
+    }
+
+    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC_READ_AND_COPY_AND_OPEN_AND_CLOSE);
+    if (perm != FS_OK) return perm;
+
+    int return_code = FS_OK;
+    size_t bytes_to_read = length;
+
+    if (offset >= entry->size || offset + length > entry->size) {
+        return_code = FS_ERR_OUT_OF_BOUNDS;
+        bytes_to_read = entry->size - offset;
+    }
+
+    microkit_dbg_puts("FILE SERVER: Reading ");
+    microkit_dbg_put32(bytes_to_read);
+    microkit_dbg_puts(" bytes from offset ");
+    microkit_dbg_put32(offset);
+    microkit_dbg_puts("\n");
+
+    uint32_t *client_buffer = (uint32_t *)CLIENT_BUFFER_BASE(client_id);
+
+    if (bytes_to_read <= 0) {
+        client_buffer[0] = 0;
+        return return_code;
+    }
+
+    if (bytes_to_read > CLIENT_BUFFER_SIZE) {
+        return_code = FS_BUFFER_TOO_SMALL;
+        bytes_to_read = CLIENT_BUFFER_SIZE;
+    }
+
+    uint8_t *file_data_ptr = FILE_DATA_OFFSET(entry->data_offset + offset);
+    client_buffer[0] = bytes_to_read;
+    copy_data_from_buffer(file_data_ptr, (uint8_t *)(&client_buffer[1]), bytes_to_read);
+
+    microkit_dbg_puts("FILE SERVER: Read file '");
+    microkit_dbg_puts((const char *)entry->name);
+    microkit_dbg_puts("'\n");
+    microkit_dbg_puts("FILE SERVER: Data: ");
+    for (size_t i = 0; i < bytes_to_read; i++) {
+        if (i >= CLIENT_BUFFER_SIZE) {
+            break;
+        }
+        microkit_dbg_putc(((char *)client_buffer)[i + 4]);
+    }
+    microkit_dbg_puts("\n");
+
+    return return_code;
+}
+
+
+int write_file_operation(const uint32_t client_id, const uint32_t file_id, const size_t length) {
     file_entry_t* entry = get_file_entry_by_id(file_id);
 
     if (entry == NULL) {
@@ -227,24 +306,102 @@ int write_file_operation(const uint32_t client_id, const uint32_t file_id, const
     int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC_WRITE_AND_DELETE_AND_RENAME);
     if (perm != FS_OK) return perm;
 
-    if (offset >= entry->size || offset + length >= entry->size) {
-        return FS_ERR_OUT_OF_BOUNDS;
+    int return_code = FS_OK;
+    size_t bytes_to_write = length;
+
+    if (length >= entry->size || entry->cursor_position + length > entry->size) {
+        return_code = FS_ERR_OUT_OF_BOUNDS;
+        bytes_to_write = entry->size - entry->cursor_position;
     }
 
-    uint8_t *client_data = (uint8_t *)CLIENT_BUFFER_BASE(client_id);
-    uint8_t *file_data_ptr = FILE_DATA_OFFSET(entry->data_offset + offset);
-    copy_data_from_buffer(client_data, file_data_ptr, length);
+    microkit_dbg_puts("FILE SERVER: Writing ");
+    microkit_dbg_put32(bytes_to_write);
+    microkit_dbg_puts(" bytes to position ");
+    microkit_dbg_put32(entry->cursor_position);
+    microkit_dbg_puts("\n");
+
+    uint8_t *client_buffer = (uint8_t *)CLIENT_BUFFER_BASE(client_id);
+    if (bytes_to_write <= 0) {
+        ((uint32_t *)client_buffer)[0] = 0;
+        ((uint32_t *)client_buffer)[1] = entry->cursor_position;
+        return return_code;
+    }
+
+    if (bytes_to_write > CLIENT_BUFFER_SIZE) {
+        return_code = FS_BUFFER_TOO_SMALL;
+        bytes_to_write = CLIENT_BUFFER_SIZE;
+    }
+
+    uint8_t *file_data_ptr = FILE_DATA_OFFSET(entry->data_offset + entry->cursor_position);
+    copy_data_from_buffer(client_buffer, file_data_ptr, bytes_to_write);
 
     microkit_dbg_puts("FILE SERVER: Wrote to file '");
     microkit_dbg_puts((const char *)entry->name);
     microkit_dbg_puts("'\n");
     microkit_dbg_puts("FILE SERVER: Data: ");
-    for (size_t i = 0; i < length; i++) {
+    for (size_t i = 0; i < bytes_to_write; i++) {
+        microkit_dbg_putc((char)client_buffer[i]);
+    }
+    microkit_dbg_puts("\n");
+
+    entry->cursor_position += bytes_to_write;
+    ((uint32_t *)client_buffer)[0] = bytes_to_write;
+    ((uint32_t *)client_buffer)[1] = entry->cursor_position;
+
+    return return_code;
+}
+
+
+int write_block_file_operation(const uint32_t client_id, const uint32_t file_id, const uint32_t offset, const size_t length) {
+    file_entry_t* entry = get_file_entry_by_id(file_id);
+
+    if (entry == NULL) {
+        return FS_ERR_NOT_FOUND;
+    }
+
+    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC_WRITE_AND_DELETE_AND_RENAME);
+    if (perm != FS_OK) return perm;
+
+    int return_code = FS_OK;
+    size_t bytes_to_write = length;
+
+    if (offset >= entry->size || offset + length > entry->size) {
+        return_code = FS_ERR_OUT_OF_BOUNDS;
+        bytes_to_write = entry->size - offset;
+    }
+
+    microkit_dbg_puts("FILE SERVER: Writing ");
+    microkit_dbg_put32(bytes_to_write);
+    microkit_dbg_puts(" bytes to offset ");
+    microkit_dbg_put32(offset);
+    microkit_dbg_puts("\n");
+    
+    uint8_t *client_data = (uint8_t *)CLIENT_BUFFER_BASE(client_id);
+    if (bytes_to_write <= 0) {
+        ((uint32_t *)client_data)[0] = 0;
+        return return_code;
+    }
+
+    if (bytes_to_write > CLIENT_BUFFER_SIZE) {
+        return_code = FS_BUFFER_TOO_SMALL;
+        bytes_to_write = CLIENT_BUFFER_SIZE;
+    }
+
+    uint8_t *file_data_ptr = FILE_DATA_OFFSET(entry->data_offset + offset);
+    copy_data_from_buffer(client_data, file_data_ptr, bytes_to_write);
+
+    microkit_dbg_puts("FILE SERVER: Wrote to file '");
+    microkit_dbg_puts((const char *)entry->name);
+    microkit_dbg_puts("'\n");
+    microkit_dbg_puts("FILE SERVER: Data: ");
+    for (size_t i = 0; i < bytes_to_write; i++) {
         microkit_dbg_putc((char)client_data[i]);
     }
     microkit_dbg_puts("\n");
 
-    return FS_OK;
+    ((uint32_t *)client_data)[0] = bytes_to_write;
+
+    return return_code;
 }
 
 
@@ -272,12 +429,14 @@ int delete_file_operation(const uint32_t client_id, const uint32_t file_id) {
 int list_files_operation(const uint32_t client_id) {
     unsigned char *client_buffer = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
     size_t buffer_index = 0;
+    int return_code = FS_OK;
 
     for (size_t i = 0; i < file_table_index; i++) {
         file_entry_t* entry = &file_entry_table_base[i];
         if (entry->name[0] != '\0') {
             if ((entry->permissions > FILE_PERM_PRIVATE) || entry->owner_id == client_id) {
                 if (buffer_index + MAX_FILE_NAME_LENGTH + 1 >= CLIENT_BUFFER_SIZE) {
+                    return_code = FS_BUFFER_TOO_SMALL;
                     break;
                 }
                 size_t name_length = copy_string_from_buffer(entry->name, &client_buffer[buffer_index], MAX_FILE_NAME_LENGTH);
@@ -298,7 +457,7 @@ int list_files_operation(const uint32_t client_id) {
     microkit_dbg_puts((const char *)client_buffer);
     microkit_dbg_puts("\n");
 
-    return FS_OK;
+    return return_code;
 }
 
 
@@ -468,6 +627,32 @@ int copy_file_operation(const uint32_t client_id, const uint32_t source_file_id)
     return FS_OK;
 }
 
+int seek_file_operation(const uint32_t client_id, const uint32_t file_id, const uint32_t position) {
+    file_entry_t* entry = get_file_entry_by_id(file_id);
+
+    if (entry == NULL) {
+        return FS_ERR_NOT_FOUND;
+    }
+
+    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC_READ_AND_COPY_AND_OPEN_AND_CLOSE);
+    if (perm != FS_OK) return perm;
+
+    if (position >= entry->size) {
+        return FS_ERR_OUT_OF_BOUNDS;
+    }
+
+    entry->cursor_position = position;
+
+    microkit_dbg_puts("FILE SERVER: Seeked file '");
+    microkit_dbg_puts((const char *)entry->name);
+    microkit_dbg_puts("'\n");
+    microkit_dbg_puts("FILE SERVER: New cursor position: ");
+    microkit_dbg_put32(position);
+    microkit_dbg_puts("\n");
+
+    return FS_OK;
+}
+
 
 // ------------------------- MicroKit Interface -------------------------- //
 
@@ -517,14 +702,40 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 break;
             }
             uint32_t file_id = microkit_mr_get(1);
+            size_t length = (size_t)microkit_mr_get(2);
+            return_code = read_file_operation(channel, file_id, length);
+            break;
+        }
+
+        case OP_BLOCK_READ: {
+            microkit_dbg_puts("FILE SERVER: processing block read operation\n");
+            if (microkit_msginfo_get_count(msginfo) < 4) {
+                microkit_dbg_puts("FILE SERVER: incorrect operation parameter count\n");
+                return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
+                break;
+            }
+            uint32_t file_id = microkit_mr_get(1);
             uint32_t offset = microkit_mr_get(2);
             size_t length = (size_t)microkit_mr_get(3);
-            return_code = read_file_operation(channel, file_id, offset, length);
+            return_code = read_block_file_operation(channel, file_id, offset, length);
             break;
         }
 
         case OP_WRITE: {
             microkit_dbg_puts("FILE SERVER: processing write operation\n");
+            if (microkit_msginfo_get_count(msginfo) < 3) {
+                microkit_dbg_puts("FILE SERVER: incorrect operation parameter count\n");
+                // return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
+                break;
+            }
+            uint32_t file_id = microkit_mr_get(1);
+            size_t write_length = (size_t)microkit_mr_get(2);
+            return_code = write_file_operation(channel, file_id, write_length);
+            break;
+        }
+
+        case OP_BLOCK_WRITE: {
+            microkit_dbg_puts("FILE SERVER: processing block write operation\n");
             if (microkit_msginfo_get_count(msginfo) < 4) {
                 microkit_dbg_puts("FILE SERVER: incorrect operation parameter count\n");
                 // return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
@@ -533,7 +744,7 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
             uint32_t file_id = microkit_mr_get(1);
             uint32_t write_offset = microkit_mr_get(2);
             size_t write_length = (size_t)microkit_mr_get(3);
-            return_code = write_file_operation(channel, file_id, write_offset, write_length);
+            return_code = write_block_file_operation(channel, file_id, write_offset, write_length);
             break;
         }
 
@@ -628,6 +839,19 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
             }
             uint32_t file_id = microkit_mr_get(1);
             return_code = copy_file_operation(channel, file_id);
+            break;
+        }
+
+        case OP_SEEK: {
+            microkit_dbg_puts("FILE SERVER: processing seek file operation\n");
+            if (microkit_msginfo_get_count(msginfo) < 3) {
+                microkit_dbg_puts("FILE SERVER: incorrect operation parameter count\n");
+                return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
+                break;
+            }
+            uint32_t file_id = microkit_mr_get(1);
+            uint32_t position = microkit_mr_get(2);
+            return_code = seek_file_operation(channel, file_id, position);
             break;
         }
 

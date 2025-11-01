@@ -24,6 +24,19 @@ typedef struct {
     uint8_t exists;
 } fs_result_exists_t;
 
+typedef struct {
+    int rc;
+    uint8_t *data_address;
+    uint32_t bytes_read;
+    uint32_t new_cursor_position;
+} fs_result_read_t;
+
+typedef struct {
+    int rc;
+    uint32_t bytes_written;
+    uint32_t new_cursor_position;
+} fs_result_write_t;
+
 
 void debug_print_return_code(const char *operation, int return_code) {
     microkit_dbg_puts("CLIENT: ");
@@ -69,6 +82,9 @@ void debug_print_return_code(const char *operation, int return_code) {
             break;
         case FS_ERR_UNSPECIFIED_ERROR:
             microkit_dbg_puts("FS_ERR_UNSPECIFIED_ERROR: An unspecified error occurred during the operation.\n");
+            break;
+    case FS_BUFFER_TOO_SMALL:
+            microkit_dbg_puts("FS_BUFFER_TOO_SMALL: The provided buffer is too small for the operation.\n");
             break;
         default:
             microkit_dbg_puts("Unknown error code.\n");
@@ -132,10 +148,10 @@ fs_result_fileid_t send_open_file_request(const unsigned char *file_name, uint8_
 void send_close_file_request(const uint32_t file_id, uint8_t *fs_buffer_base, int channel_id) {}
 
 
-int send_read_file_request(const uint32_t file_id, const uint32_t offset, const size_t length, uint8_t *fs_buffer_base, int channel_id) {
-    microkit_msginfo msg = microkit_msginfo_new(0, 3);
+fs_result_read_t send_read_block_file_request(const uint32_t file_id, const uint32_t offset, const size_t length, uint8_t *fs_buffer_base, int channel_id) {
+    microkit_msginfo msg = microkit_msginfo_new(0, 4);
 
-    microkit_mr_set(0, OP_READ);
+    microkit_mr_set(0, OP_BLOCK_READ);
     microkit_mr_set(1, file_id);
     microkit_mr_set(2, offset);
     microkit_mr_set(3, length);
@@ -154,6 +170,43 @@ int send_read_file_request(const uint32_t file_id, const uint32_t offset, const 
     const int return_code = microkit_mr_get(0);
     debug_print_return_code("read", return_code);
 
+    fs_result_read_t res;
+    res.rc = return_code;
+    res.data_address = &(fs_buffer_base[4]);
+    res.bytes_read = ((uint32_t *)fs_buffer_base)[0];
+    res.new_cursor_position = ((uint32_t *)(fs_buffer_base))[1];
+
+    microkit_dbg_puts("CLIENT: read data: \n");
+    for (size_t i = 0; i < res.bytes_read; i++) {
+        /* check bounds */
+        if (i >= CLIENT_BUFFER_SIZE) {
+            break;
+        }
+        microkit_dbg_putc(((const char *)res.data_address)[i]);
+    }
+    microkit_dbg_puts("\n");
+
+    return res;
+}
+
+fs_result_read_t send_read_file_request(const uint32_t file_id, const size_t length, uint8_t *fs_buffer_base, int channel_id) {
+    microkit_msginfo msg = microkit_msginfo_new(0, 3);
+
+    microkit_mr_set(0, OP_READ);
+    microkit_mr_set(1, file_id);
+    microkit_mr_set(2, length);
+
+    microkit_dbg_puts("CLIENT: requested to read file: ");
+    microkit_dbg_put32(file_id);
+    microkit_dbg_puts("\n");
+    microkit_dbg_puts("CLIENT: with length: ");
+    microkit_dbg_put32((uint32_t)length);
+    microkit_dbg_puts("\n");
+    microkit_ppcall(channel_id, msg);
+
+    const int return_code = microkit_mr_get(0);
+    debug_print_return_code("read", return_code);
+
     microkit_dbg_puts("CLIENT: read data: \n");
     for (size_t i = 0; i < length; i++) {
         /* check bounds */
@@ -164,17 +217,23 @@ int send_read_file_request(const uint32_t file_id, const uint32_t offset, const 
     }
     microkit_dbg_puts("\n");
 
-    return return_code;
+    fs_result_read_t res;
+    res.rc = return_code;
+    res.data_address = &(fs_buffer_base[8]);
+    res.bytes_read = ((uint32_t *)fs_buffer_base)[0];
+    res.new_cursor_position = ((uint32_t *)(fs_buffer_base))[1];
+    return res;
 }
 
 
-int send_write_file_request(const uint32_t file_id, const uint32_t offset, const size_t length, uint8_t *data, uint8_t *fs_buffer_base, int channel_id) {
+fs_result_write_t send_write_block_file_request(const uint32_t file_id, const uint32_t offset, const size_t length, uint8_t *data, uint8_t *fs_buffer_base, int channel_id) {
     microkit_msginfo msg = microkit_msginfo_new(0, 4);
 
-    microkit_mr_set(0, OP_WRITE);
+    microkit_mr_set(0, OP_BLOCK_WRITE);
     microkit_mr_set(1, file_id);
     microkit_mr_set(2, offset);
     microkit_mr_set(3, length);
+
     copy_data_from_buffer(data, fs_buffer_base, length);
 
     microkit_dbg_puts("CLIENT: requested to write file: ");
@@ -190,8 +249,61 @@ int send_write_file_request(const uint32_t file_id, const uint32_t offset, const
 
     const int return_code = microkit_mr_get(0);
     debug_print_return_code("write", return_code);
+    fs_result_write_t res;
+    res.rc = return_code;
+    res.bytes_written = ((uint32_t *)fs_buffer_base)[0];
+    res.new_cursor_position = ((uint32_t *)(fs_buffer_base))[1];
+    return res;
+}
+
+
+fs_result_write_t send_write_file_request(const uint32_t file_id, const size_t length, uint8_t *data, uint8_t *fs_buffer_base, int channel_id) {
+    microkit_msginfo msg = microkit_msginfo_new(0, 3);
+
+    microkit_mr_set(0, OP_WRITE);
+    microkit_mr_set(1, file_id);
+    microkit_mr_set(2, length);
+
+    copy_data_from_buffer(data, fs_buffer_base, length);
+
+    microkit_dbg_puts("CLIENT: requested to write file: ");
+    microkit_dbg_put32(file_id);
+    microkit_dbg_puts("\n");
+    microkit_dbg_puts("CLIENT: with length: ");
+    microkit_dbg_put32((uint32_t)length);
+    microkit_dbg_puts("\n");
+    microkit_ppcall(channel_id, msg);
+
+    const int return_code = microkit_mr_get(0);
+    debug_print_return_code("write", return_code);
+    fs_result_write_t res;
+    res.rc = return_code;
+    res.bytes_written = ((uint32_t *)fs_buffer_base)[0];
+    res.new_cursor_position = ((uint32_t *)(fs_buffer_base))[1];
+    return res;
+}
+
+
+int send_seek_file_request(const uint32_t file_id, const uint32_t position, int channel_id) {
+    microkit_msginfo msg = microkit_msginfo_new(0, 3);
+
+    microkit_mr_set(0, OP_SEEK);
+    microkit_mr_set(1, file_id);
+    microkit_mr_set(2, position);
+
+    microkit_dbg_puts("CLIENT: requested to seek file: ");
+    microkit_dbg_put32(file_id);
+    microkit_dbg_puts("\n");
+    microkit_dbg_puts("CLIENT: to position: ");
+    microkit_dbg_put32(position);
+    microkit_dbg_puts("\n");
+    microkit_ppcall(channel_id, msg);
+
+    const int return_code = microkit_mr_get(0);
+    debug_print_return_code("seek", return_code);
     return return_code;
 }
+
 
 int send_delete_file_request(const uint32_t file_id, uint8_t *fs_buffer_base, int channel_id) {
     microkit_msginfo msg = microkit_msginfo_new(0, 2);

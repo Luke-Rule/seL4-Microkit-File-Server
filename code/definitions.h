@@ -13,8 +13,8 @@ typedef enum {
     OP_CREATE = 0,
     OP_READ = 1,
     OP_WRITE = 2,
-    OP_OPEN = 3, // not used yet
-    OP_CLOSE = 4, // not used yet
+    OP_OPEN = 3, 
+    OP_CLOSE = 4,
     OP_DELETE = 5,
     OP_LIST = 6,
     OP_SET_PERMISSIONS = 7,
@@ -22,7 +22,10 @@ typedef enum {
     OP_RENAME = 9,
     OP_GET_FILE_SIZE = 10,
     OP_EXISTS = 11,
-    OP_COPY = 12
+    OP_COPY = 12,
+    OP_BLOCK_READ = 13,
+    OP_BLOCK_WRITE = 14,
+    OP_SEEK = 15
 } file_operation_t;
 
 // File operation permissions (higher value includes lower levels)
@@ -50,5 +53,6 @@ typedef enum {
     FS_ERR_NAME_COLLISION = -9,
     FS_ERR_INVALID_OP_CODE = -10,
     FS_ERR_INCORRECT_OP_PARAM_COUNT = -11,
-    FS_ERR_UNSPECIFIED_ERROR = -12
+    FS_ERR_UNSPECIFIED_ERROR = -12,
+    FS_BUFFER_TOO_SMALL = -13
 } fs_result_t;
