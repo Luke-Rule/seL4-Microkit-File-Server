@@ -1,24 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <system>
      <!-- File Server Memory Regions -->
-    <memory_region name="file_table" size="0x10000" />
-    <memory_region name="file_data" size="0x100000" />
+    <memory_region name="block_table" size="0x4000" />
+    <memory_region name="blocks" size="0x1F3FC000" />
+    <memory_region name="file_descriptor_table" size="0x10000" />
+    <memory_region name="i_node_table" size="0x60000" />
 
     <!-- File Server Protection Domain -->
     <protection_domain name="file_server" priority="1" >
         <program_image path="file_server.elf"/>
 
-        <map mr="file_table" vaddr="0x1000" perms="rw" cached="true"
-          setvar_vaddr="file_table_base"/>
-        <map mr="file_data" vaddr="0x11000" perms="rw" cached="true"
-          setvar_vaddr="file_data_base"/>
-        <map mr="client_buffer_0" vaddr="0x111000" perms="rw" cached="false"
+        <map mr="block_table" vaddr="0x4000000" perms="rw" cached="true"
+          setvar_vaddr="block_table_base"/>
+        <map mr="blocks" vaddr="0x4004000" perms="rw" cached="true"
+          setvar_vaddr="blocks_base"/>
+        <map mr="file_descriptor_table" vaddr="0x24004000" perms="rw" cached="true"
+          setvar_vaddr="file_descriptor_table_base"/>
+        <map mr="i_node_table" vaddr="0x24014000" perms="rw" cached="true"
+          setvar_vaddr="i_node_table_base"/>
+        <map mr="client_buffer_0" vaddr="0x24074000" perms="rw" cached="false"
           setvar_vaddr="lowest_client_buffer_base"/>
 
     </protection_domain>
 
      <!-- Client Memory Regions -->
-    <memory_region name="client_buffer_0" size="0x1000" />
+    <memory_region name="client_buffer_0" size="0x40000" />
 
     <!-- Client Protection Domains -->
     <protection_domain name="client_0" priority="0" >

@@ -9,6 +9,7 @@ void copy_data_from_buffer(const uint8_t *src, uint8_t *dest, size_t length) {
     }
 }
 
+// maybe add a to
 size_t copy_string_from_buffer(const unsigned char *src, unsigned char *dest, size_t max_length) {
     size_t i;
     for (i = 0; i < max_length - 1; i++) {

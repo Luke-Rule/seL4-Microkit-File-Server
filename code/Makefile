@@ -17,6 +17,7 @@ MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 CLIENT_OBJS := client.o
 TESTS_OBJS := fs_tests.o
 FILESERVER_OBJS := file_server.o
+FILESERVER_DYNAMIC_OBJS := file_dynamic_server.o
 
 BOARD_DIR := $(MICROKIT_SDK)/board/$(BOARD)/$(MICROKIT_CONFIG)
 
@@ -29,6 +30,7 @@ LIBS := -lmicrokit -Tmicrokit.ld
 CLIENT_ELF := $(BUILD_DIR)/client.elf
 TESTS_ELF := $(BUILD_DIR)/fs_tests.elf
 FILESERVER_ELF := $(BUILD_DIR)/file_server.elf
+FILESERVER_DYNAMIC_ELF := $(BUILD_DIR)/file_dynamic_server.elf
 IMAGE_FILE = $(BUILD_DIR)/loader.img
 TEST_IMAGE_FILE = $(BUILD_DIR)/fs_tests_loader.img
 REPORT_FILE = $(BUILD_DIR)/report.txt
@@ -57,13 +59,16 @@ $(TESTS_ELF): $(addprefix $(BUILD_DIR)/, $(TESTS_OBJS))
 $(FILESERVER_ELF): $(addprefix $(BUILD_DIR)/, $(FILESERVER_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
+$(FILESERVER_DYNAMIC_ELF): $(addprefix $(BUILD_DIR)/, $(FILESERVER_DYNAMIC_OBJS))
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
+
 # Build Microkit image
 $(IMAGE_FILE): $(CLIENT_ELF) $(FILESERVER_ELF) $(SYSTEM_FILE)
 	$(MICROKIT_TOOL) $(SYSTEM_FILE) --search-path $(BUILD_DIR) \
 		--board $(BOARD) --config $(MICROKIT_CONFIG) \
 		-o $(IMAGE_FILE) -r $(REPORT_FILE)
 
-$(TEST_IMAGE_FILE): $(TESTS_ELF) $(FILESERVER_ELF) $(TEST_SYSTEM_FILE)
+$(TEST_IMAGE_FILE): $(TESTS_ELF) $(FILESERVER_DYNAMIC_ELF) $(TEST_SYSTEM_FILE)
 	$(MICROKIT_TOOL) $(TEST_SYSTEM_FILE) --search-path $(BUILD_DIR) \
 		--board $(BOARD) --config $(MICROKIT_CONFIG) \
 		-o $(TEST_IMAGE_FILE) -r $(REPORT_FILE)

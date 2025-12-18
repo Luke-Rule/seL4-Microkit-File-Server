@@ -1,32 +1,34 @@
 import sys
 
 def generate_synchronous_system_file(number_of_clients, buffer_size):
-    file_table_size = 10000
-    file_data_size = 100000
-    file_table_vaddr = 1000
-    file_data_vaddr = file_table_vaddr + file_table_size
-    client_buffer_base_vaddr = file_data_vaddr + file_data_size
+    client_buffer_base_vaddr = 24074000
         
     with open("file.system", "w") as f:
         f.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
         f.write("<system>\n")
 
         f.write("     <!-- File Server Memory Regions -->\n")
-        f.write(f"    <memory_region name=\"file_table\" size=\"0x{file_table_size}\" />\n")
-        f.write(f"    <memory_region name=\"file_data\" size=\"0x{file_data_size}\" />\n")
+        f.write(f"    <memory_region name=\"block_table\" size=\"0x4000\" />\n")
+        f.write(f"    <memory_region name=\"blocks\" size=\"0x1F3FC000\" />\n")
+        f.write(f"    <memory_region name=\"file_descriptor_table\" size=\"0x10000\" />\n")
+        f.write(f"    <memory_region name=\"i_node_table\" size=\"0x60000\" />\n")
         f.write("\n")
         
         f.write("    <!-- File Server Protection Domain -->\n")
         f.write(f"    <protection_domain name=\"file_server\" priority=\"1\" >\n")
         f.write(f"        <program_image path=\"file_server.elf\"/>\n")
         f.write("\n")
-        
-        f.write(f"        <map mr=\"file_table\" vaddr=\"0x{file_table_vaddr}\" perms=\"rw\" cached=\"true\"\n")
-        f.write(f"          setvar_vaddr=\"file_table_base\"/>\n")
-        f.write(f"        <map mr=\"file_data\" vaddr=\"0x{file_data_vaddr}\" perms=\"rw\" cached=\"true\"\n")
-        f.write(f"          setvar_vaddr=\"file_data_base\"/>\n")
 
-        f.write(f"        <map mr=\"client_buffer_0\" vaddr=\"0x{client_buffer_base_vaddr}\" perms=\"rw\" cached=\"false\"\n")
+        f.write(f"        <map mr=\"block_table\" vaddr=\"0x4000000\" perms=\"rw\" cached=\"true\"\n")
+        f.write(f"          setvar_vaddr=\"block_table_base\"/>\n")
+        f.write(f"        <map mr=\"blocks\" vaddr=\"0x4004000\" perms=\"rw\" cached=\"true\"\n")
+        f.write(f"          setvar_vaddr=\"blocks_base\"/>\n")
+        f.write(f"        <map mr=\"file_descriptor_table\" vaddr=\"0x24004000\" perms=\"rw\" cached=\"true\"\n")
+        f.write(f"          setvar_vaddr=\"file_descriptor_table_base\"/>\n")
+        f.write(f"        <map mr=\"i_node_table\" vaddr=\"0x24014000\" perms=\"rw\" cached=\"true\"\n")
+        f.write(f"          setvar_vaddr=\"i_node_table_base\"/>\n")
+
+        f.write(f"        <map mr=\"client_buffer_0\" vaddr=\"0x24074000\" perms=\"rw\" cached=\"false\"\n")
         f.write(f"          setvar_vaddr=\"lowest_client_buffer_base\"/>\n")
         
         for i in range(1, number_of_clients):
@@ -62,7 +64,7 @@ def generate_synchronous_system_file(number_of_clients, buffer_size):
 
 
 num_clients = int(sys.argv[1])
-buffer_size = sys.argv[2] if len(sys.argv) > 2 else 1000
+buffer_size = sys.argv[2] if len(sys.argv) > 2 else 40000
 asynchronous = sys.argv[3].lower() == "true" if len(sys.argv) > 3 else False
 
 # maximum PDs is 63

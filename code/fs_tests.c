@@ -6,7 +6,7 @@
 #include "file_operations.c"
 
 #define FILE_SERVER_CHANNEL_ID 0
-#define MAX_FILE_SIZE 0x100000
+#define MAX_FILE_SIZE 0x19000000
 
 uintptr_t file_server_buffer_base;
 uint8_t *fs_buffer_base;
@@ -384,11 +384,11 @@ void run_tests() {
     microkit_dbg_puts("\n\nTest: Set and get permissions as owner\n");
     microkit_dbg_puts(ANSI_COLOR_RESET);
     clear_client_buffer();
-    rc = send_set_file_permissions_request((uint32_t)res_create2.file_id, FILE_PERM_PUBLIC_WRITE_AND_DELETE_AND_RENAME, fs_buffer_base, FILE_SERVER_CHANNEL_ID);
+    rc = send_set_file_permissions_request((uint32_t)res_create2.file_id, FILE_PERM_PUBLIC, fs_buffer_base, FILE_SERVER_CHANNEL_ID);
     expect_eq_int(rc, FS_OK, "Set permissions as owner");
     fs_result_permissions_t res_get_perm = send_get_file_permissions_request((uint32_t)res_create2.file_id, fs_buffer_base, FILE_SERVER_CHANNEL_ID);
     expect_eq_int(res_get_perm.rc, FS_OK, "Get permissions as owner");
-    expect_eq_uint32((uint32_t)res_get_perm.permissions, (uint32_t)FILE_PERM_PUBLIC_WRITE_AND_DELETE_AND_RENAME, "Get permissions as owner - correct value");
+    expect_eq_uint32((uint32_t)res_get_perm.permissions, (uint32_t)FILE_PERM_PUBLIC, "Get permissions as owner - correct value");
 
     // Rename file to new unique name
     microkit_dbg_puts(ANSI_COLOR_YELLOW);

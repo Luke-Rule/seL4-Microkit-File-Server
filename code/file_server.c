@@ -22,9 +22,9 @@
 #define CLIENT_BUFFER_BASE(client_id) ((uintptr_t)client_buffers_base + (uintptr_t)(client_id * CLIENT_BUFFER_SIZE))
 
 // File server memory
-#define FILE_TABLE_SIZE 0x10000
-#define FILE_DATA_SIZE 0x100000
-#define MAX_FILE_SIZE 0x100000
+#define FILE_TABLE_SIZE 0x1000000
+#define FILE_DATA_SIZE 0x19000000
+#define MAX_FILE_SIZE 0x19000000
 #define FILE_ENTRY_SIZE sizeof(struct file_entry)
 #define MAX_FILE_TABLE_ENTRIES (FILE_TABLE_SIZE / FILE_ENTRY_SIZE)
 #define FILE_ENTRY_OFFSET(index) (file_entry_table_base + (index * FILE_ENTRY_SIZE))
@@ -41,6 +41,7 @@ struct file_entry
     uint32_t size;
     uint8_t permissions; 
     uint32_t cursor_position;
+    uint32_t is_directory;
 } typedef file_entry_t;
 
 uintptr_t file_table_base;
@@ -141,6 +142,7 @@ int create_file_operation(const uint32_t client_id, const uint32_t size, const u
     entry->size = size;
     entry->permissions = permissions;
     entry->cursor_position = 0;
+    entry->is_directory = 0;
 
     file_data_index += size;
 
@@ -303,7 +305,7 @@ int write_file_operation(const uint32_t client_id, const uint32_t file_id, const
         return FS_ERR_NOT_FOUND;
     }
 
-    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC_WRITE_AND_DELETE_AND_RENAME);
+    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC);
     if (perm != FS_OK) return perm;
 
     int return_code = FS_OK;
@@ -359,7 +361,7 @@ int write_block_file_operation(const uint32_t client_id, const uint32_t file_id,
         return FS_ERR_NOT_FOUND;
     }
 
-    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC_WRITE_AND_DELETE_AND_RENAME);
+    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC);
     if (perm != FS_OK) return perm;
 
     int return_code = FS_OK;
@@ -412,7 +414,7 @@ int delete_file_operation(const uint32_t client_id, const uint32_t file_id) {
         return FS_ERR_NOT_FOUND;
     }
 
-    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC_WRITE_AND_DELETE_AND_RENAME);
+    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC);
     if (perm != FS_OK) return perm;
 
     entry->name[0] = '\0';
@@ -468,7 +470,7 @@ int set_file_permissions_operation(const uint32_t client_id, const uint32_t file
         return FS_ERR_NOT_FOUND;
     }
 
-    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC_SET_PERMISSIONS);
+    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC);
     if (perm != FS_OK) return perm;
 
     entry->permissions = permissions;
@@ -520,7 +522,7 @@ int rename_file_operation(const uint32_t client_id, const uint32_t file_id) {
         return FS_ERR_NAME_COLLISION;
     }
 
-    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC_WRITE_AND_DELETE_AND_RENAME);
+    int perm = check_permission(entry, client_id, FILE_PERM_PUBLIC);
     if (perm != FS_OK) return perm;
 
     copy_string_from_buffer(new_name, entry->name, MAX_FILE_NAME_LENGTH);
