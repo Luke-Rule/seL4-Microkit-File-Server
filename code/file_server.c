@@ -48,6 +48,11 @@ uintptr_t file_table_base;
 uintptr_t file_data_base;
 uintptr_t lowest_client_buffer_base;
 
+uintptr_t block_table_base;
+uintptr_t i_node_table_base;
+uintptr_t file_descriptor_table_base;
+uintptr_t blocks_base;
+
 uint8_t *file_data_block_base;
 uint8_t *client_buffers_base;
 file_entry_t *file_entry_table_base;

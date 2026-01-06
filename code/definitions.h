@@ -1,5 +1,5 @@
 #pragma once
-#define MAX_FILE_NAME_LENGTH 64 // TODO: update functions to handle null terminator reducing this by 1
+#define MAX_NAME_LENGTH 64 // TODO: update functions to handle null terminator reducing this by 1
 #define CLIENT_BUFFER_SIZE 0x40000
 
 // ANSI color codes for terminal output (used by tests)
@@ -29,7 +29,7 @@ typedef enum {
     OP_SET_PERMISSIONS = 8,
     OP_GET_PERMISSIONS = 9,
     OP_RENAME = 10,
-    OP_GET_FILE_SIZE = 11,
+    OP_GET_SIZE = 11,
     OP_EXISTS = 12,
     OP_COPY = 13,
     OP_BLOCK_READ = 14,
@@ -55,6 +55,12 @@ typedef enum {
     PERM_EXECUTE = 0b100,
     PERM_PUBLIC = 0b111
 } permissions_t;
+
+typedef enum {
+    READ_OP = 0b01,
+    WRITE_OP = 0b10,
+    READ_WRITE_OP = 0b11
+} file_open_operations_t;
 
 // Result codes (0 == success, other gives failure reason)
 typedef enum {
