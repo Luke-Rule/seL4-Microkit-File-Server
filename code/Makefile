@@ -15,9 +15,9 @@ MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
 # Source files and objects
 CLIENT_OBJS := client.o
-TESTS_OBJS := fs_tests.o
+TESTS_OBJS := fs_tests_async.o
 # FILESERVER_OBJS := file_server.o
-FILESERVER_DYNAMIC_OBJS := file_server_dynamic.o
+FILESERVER_DYNAMIC_OBJS := file_server_async.o
 
 BOARD_DIR := $(MICROKIT_SDK)/board/$(BOARD)/$(MICROKIT_CONFIG)
 
@@ -28,9 +28,9 @@ LIBS := -lmicrokit -Tmicrokit.ld
 
 # Output files
 CLIENT_ELF := $(BUILD_DIR)/client.elf
-TESTS_ELF := $(BUILD_DIR)/fs_tests.elf
+TESTS_ELF := $(BUILD_DIR)/fs_tests_async.elf
 # FILESERVER_ELF := $(BUILD_DIR)/file_server.elf
-FILESERVER_DYNAMIC_ELF := $(BUILD_DIR)/file_server_dynamic.elf
+FILESERVER_DYNAMIC_ELF := $(BUILD_DIR)/file_server_async.elf
 # IMAGE_FILE = $(BUILD_DIR)/loader.img
 TEST_IMAGE_FILE = $(BUILD_DIR)/fs_tests_loader.img
 REPORT_FILE = $(BUILD_DIR)/report.txt

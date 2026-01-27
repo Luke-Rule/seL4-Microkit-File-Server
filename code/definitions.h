@@ -1,6 +1,6 @@
 #pragma once
 #define MAX_NAME_LENGTH 64 // TODO: update functions to handle null terminator reducing this by 1
-#define CLIENT_BUFFER_SIZE 0x40000
+#define CLIENT_BUFFER_SIZE 0x1000
 
 // ANSI color codes for terminal output (used by tests)
 #define ANSI_COLOR_GREEN "\x1b[32m"
@@ -48,6 +48,7 @@ typedef enum {
 //     FILE_PERM_PUBLIC = 5
 // } file_permission_t;
 
+
 typedef enum {
     PERM_PRIVATE = 0b000,
     PERM_READ = 0b001,
@@ -56,6 +57,30 @@ typedef enum {
     PERM_PUBLIC = 0b111
 } permissions_t;
 
+struct submission_queue_entry
+{
+    uint8_t operation_code;
+    uint32_t parameter1;
+    uint32_t parameter2;
+    uint32_t buffer_index;
+} typedef submission_queue_entry_t;
+
+struct completion_queue_entry
+{
+    uint8_t return_code;
+    uint32_t parameter1;
+    uint32_t parameter2;
+    uint32_t buffer_index;
+} typedef completion_queue_entry_t;
+
+struct file_server_interface {
+    submission_queue_entry_t *file_server_submission_queue;
+    completion_queue_entry_t *file_server_completion_queue;
+    uint8_t *file_server_submission_buffer;
+    uint8_t *file_server_completion_buffer;
+    uint8_t *buffer_table;
+} typedef file_server_interface_t;
+
 typedef enum {
     READ_OP = 0b01,
     WRITE_OP = 0b10,
@@ -63,21 +88,27 @@ typedef enum {
 } file_open_operations_t;
 
 // Result codes (0 == success, other gives failure reason)
+//TODO: add more error codes 
 typedef enum {
     FS_OK = 0,
-    FS_ERR_INODE_TABLE_FULL = -1,
-    FS_ERR_FILE_DESCRIPTOR_NOT_FOUND = -2,
-    FS_ERR_NO_BLOCKS_REMAINING = -3,
-    FS_ERR_INVALID_PATH = -4,
-    FS_ERR_ALREADY_EXISTS = -5,
-    FS_ERR_NOT_FOUND = -6,
-    FS_ERR_PERMISSION = -7,
-    FS_ERR_OUT_OF_BOUNDS = -8,
-    FS_ERR_INVALID_OP_CODE = -9,
-    FS_ERR_INCORRECT_OP_PARAM_COUNT = -10,
-    FS_ERR_UNSPECIFIED_ERROR = -11,
-    FS_ERR_BUFFER_TOO_SMALL = -12,
-    FS_ERR_MAX_OPEN_FILES_REACHED = -13,
-    FS_ERR_MAX_FILE_SIZE_REACHED = -14,
-    FS_ERR_MAX_DIR_SIZE_REACHED = -15
+    FS_ERR_INODE_TABLE_FULL = 1,
+    FS_ERR_FILE_DESCRIPTOR_NOT_FOUND = 2,
+    FS_ERR_NO_BLOCKS_REMAINING = 3,
+    FS_ERR_INVALID_PATH = 4,
+    FS_ERR_ALREADY_EXISTS = 5,
+    FS_ERR_NOT_FOUND = 6,
+    FS_ERR_PERMISSION = 7,
+    FS_ERR_OUT_OF_BOUNDS = 8,
+    FS_ERR_INVALID_OP_CODE = 9,
+    FS_ERR_INCORRECT_OP_PARAM_COUNT = 10,
+    FS_ERR_UNSPECIFIED_ERROR = 11,
+    FS_ERR_BUFFER_TOO_SMALL = 12,
+    FS_ERR_MAX_OPEN_FILES_REACHED = 13,
+    FS_ERR_MAX_FILE_SIZE_REACHED = 14,
+    FS_ERR_MAX_DIR_SIZE_REACHED = 15,
+    FS_ERROR_NO_FREE_SUBMISSION_QUEUE_SLOTS = 16,
+    FS_ERROR_NO_FREE_COMPLETION_QUEUE_SLOTS = 17,
+    FS_ERROR_NO_FREE_SUBMISSION_BUFFERS = 18,
+    FS_ERROR_NO_FREE_COMPLETION_BUFFERS = 19,
+    FS_ERROR_NO_COMPLETION_ENTRIES_AVAILABLE = 20
 } fs_result_t;

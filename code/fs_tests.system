@@ -1,42 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <system>
      <!-- File Server Memory Regions -->
-    <memory_region name="block_table" size="0x4000" />
-    <memory_region name="i_node_table" size="0x60000" />
-    <memory_region name="file_descriptor_table" size="0x10000" />
-    <memory_region name="blocks" size="0x1F3FC000" />
+    <memory_region name="block_table" size="0x1F000" />
+    <memory_region name="i_node_table" size="0x5B8000" />
+    <memory_region name="file_descriptor_table" size="0xC000" />
+    <memory_region name="blocks" size="0x1F018000" />
 
-    <!-- File Server Protection Domain -->
-    <protection_domain name="file_server_dynamic" priority="1" >
-        <program_image path="file_server_dynamic.elf"/>
+    <!-- File Server Protection Domain TODO: decide on budget -->
+    <protection_domain name="file_server_async" priority="1" >
+        <program_image path="file_server_async.elf"/>
 
         <map mr="block_table" vaddr="0x4000000" perms="rw" cached="true"
           setvar_vaddr="block_table_base"/>
-        <map mr="file_descriptor_table" vaddr="0x4004000" perms="rw" cached="true"
+        <map mr="file_descriptor_table" vaddr="0x401F000" perms="rw" cached="true"
           setvar_vaddr="file_descriptor_table_base"/>
-        <map mr="i_node_table" vaddr="0x4014000" perms="rw" cached="true"
+        <map mr="i_node_table" vaddr="0x4313000" perms="rw" cached="true"
           setvar_vaddr="i_node_table_base"/>
-        <map mr="blocks" vaddr="0x4074000" perms="rw" cached="true"
+        <map mr="blocks" vaddr="0x48CB000" perms="rw" cached="true"
           setvar_vaddr="blocks_base"/>
-        <map mr="client_buffer_0" vaddr="0x30000000" perms="rw" cached="false"
-          setvar_vaddr="lowest_client_buffer_base"/>
+
+        <map mr="client_submission_queue_0" vaddr="0x30000000" perms="rw" cached="false"
+          setvar_vaddr="lowest_client_queue_base"/>
+        <map mr="client_completion_queue_0" vaddr="0x30001000" perms="rw" cached="false"/>
+        <map mr="client_submission_buffer_0" vaddr="0x30002000" perms="rw" cached="false"/>
+        <map mr="client_completion_buffer_0" vaddr="0x30042000" perms="rw" cached="false"/>
+        <map mr="client_buffer_table_0" vaddr="0x30082000" perms="rw" cached="false"/>
 
     </protection_domain>
 
      <!-- Client Memory Regions -->
-    <memory_region name="client_buffer_0" size="0x40000" />
+    <memory_region name="client_submission_queue_0" size="0x1000" />
+    <memory_region name="client_completion_queue_0" size="0x1000" />
+    <memory_region name="client_submission_buffer_0" size="0x40000" />
+    <memory_region name="client_completion_buffer_0" size="0x40000" />
+    <memory_region name="client_buffer_table_0" size="0x1000" />
+
 
     <!-- Client Protection Domains -->
     <protection_domain name="client_0" priority="0" >
-        <program_image path="fs_tests.elf"/>
-        <map mr="client_buffer_0" vaddr="0x0" perms="rw" cached="false"
-          setvar_vaddr="file_server_buffer_base"/>
+        <program_image path="fs_tests_async.elf"/>
+        <map mr="client_submission_queue_0" vaddr="0x100000" perms="rw" cached="false"
+          setvar_vaddr="file_server_submission_queue_base"/>
+        <map mr="client_completion_queue_0" vaddr="0x101000" perms="rw" cached="false"
+          setvar_vaddr="file_server_completion_queue_base"/>
+        <map mr="client_submission_buffer_0" vaddr="0x102000" perms="rw" cached="false"
+          setvar_vaddr="file_server_submission_buffer_base"/>
+        <map mr="client_completion_buffer_0" vaddr="0x142000" perms="rw" cached="false"
+          setvar_vaddr="file_server_completion_buffer_base"/>
+        <map mr="client_buffer_table_0" vaddr="0x182000" perms="rw" cached="false"
+          setvar_vaddr="buffer_table_base"/>
     </protection_domain>
 
 
     <!-- Communication Channels -->
     <channel>
-        <end pd="file_server_dynamic" id="0"/>
+        <end pd="file_server_async" id="0"/>
         <end pd="client_0" id="0" pp="true"/>
     </channel>
 </system>
