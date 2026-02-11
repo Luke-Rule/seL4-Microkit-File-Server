@@ -1,5 +1,5 @@
 #pragma once
-#define MAX_NAME_LENGTH 64 // TODO: update functions to handle null terminator reducing this by 1
+#define MAX_NAME_LENGTH 63
 #define CLIENT_BUFFER_SIZE 0x1000
 
 // ANSI color codes for terminal output (used by tests)
@@ -88,7 +88,6 @@ typedef enum {
 } file_open_operations_t;
 
 // Result codes (0 == success, other gives failure reason)
-//TODO: add more error codes 
 typedef enum {
     FS_OK = 0,
     FS_ERR_INODE_TABLE_FULL = 1,

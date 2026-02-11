@@ -1065,6 +1065,7 @@ void run_tests() {
     //add max number of files to dir - make child entries massive
     //max open files - make max open files small
     //i node table full - make i node table small
+    //defrag - make children per block small
 
 
     // Batched create file write seek and read
@@ -1102,8 +1103,7 @@ void run_tests() {
     expect_eq_uint32(rc_batched_read.parameter2, sizeof(write_data), "Cursor position after batched read");
     expect_equal_to_client_buffer((const unsigned char *)write_data, sizeof(write_data), "Data read matches data written in batched operation", rc_batched_read.buffer_index);
 
-    // Permission tests
-
+    // Multiclient tests (permissions)
 
     microkit_dbg_puts(ANSI_COLOR_YELLOW);
     microkit_dbg_puts("\n\nFilesystem tests completed.\n");

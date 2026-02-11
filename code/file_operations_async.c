@@ -227,7 +227,6 @@ void add_submission_entry(submission_queue_entry_t *submission_queue, uint8_t op
     increment_submission_queue_tail(submission_queue_tail);
 }
 
-//TODO maybe cast to op specific result structs
 int get_next_completion_entry(file_server_interface_t *file_server_interface, completion_queue_entry_t *out) {
     uint32_t *completion_queue_head = COMPLETION_QUEUE_HEAD(file_server_interface->file_server_completion_queue);
     if (*completion_queue_head == *COMPLETION_QUEUE_TAIL(file_server_interface->file_server_completion_queue)) {

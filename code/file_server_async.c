@@ -11,7 +11,6 @@
 #include <stdbool.h>
 #include "definitions.h"
 #include "utils.c"
-//TODO: do something about ending file names with 0
 // ------------------------------ Definitions ----------------------------- //
 
 // System parameters
@@ -58,7 +57,6 @@
 #define MAX_CHILD_ENTRIES_PER_BLOCK ((int)(BLOCK_SIZE / sizeof(child_entry_t)))
 #define MAX_BLOCK_POINTERS_PER_INDIRECT_BLOCK ((int)(BLOCK_SIZE / sizeof(uint32_t)))
 #define MAX_BLOCKS_PER_FILE (DIRECT_BLOCKS_PER_INODE + MAX_BLOCK_POINTERS_PER_INDIRECT_BLOCK)
-#define NUMBER_OF_BLOCKS(entry_size) ((int)(entry_size / BLOCK_SIZE) + 1) // TODO: need to be exact?
 #define MAX_CHILDREN_PER_DIRECTORY (MAX_BLOCKS_PER_FILE * MAX_CHILD_ENTRIES_PER_BLOCK)
 #define GET_PARENT_I_NODE 1
 #define GET_TARGET_I_NODE 0
@@ -66,8 +64,6 @@
 #define WRITE 0
 
 // ------------------------------ Globals ------------------------------- //
-//TODO maybe change to 16 bit
-// TODO need to check all sizes of structures 
 
 struct file_descriptor
 {
@@ -380,7 +376,6 @@ i_node_result_t add_entry(const uint32_t parent_i_node_index, unsigned char *nam
         return (i_node_result_t){-1, new_block.return_code};
     }
 
-    // TODO: could do size of bytes
     parent_i_node->entry_size += 1;
 
     i_node_table[new_i_node_info.index].mode = 0b00001 | (is_directory << 1) | (permissions << 2); // in use, dir, permissions
@@ -576,6 +571,17 @@ void increment_submission_queue_head(const uint32_t client_id) {
 }
 
 
+int is_free_completion_buffer(int client_id) {
+    uint8_t *completion_buffer_table = CLIENT_COMPLETION_BUFFER_TABLE_BASE(client_id);
+    for (size_t i = 0; i < NUMBER_OF_BUFFERS_PER_CLIENT; i++) {
+        if (completion_buffer_table[i] == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
 int get_free_completion_buffer(int client_id) {
     uint8_t *completion_buffer_table = CLIENT_COMPLETION_BUFFER_TABLE_BASE(client_id);
     for (size_t i = 0; i < NUMBER_OF_BUFFERS_PER_CLIENT; i++) {
@@ -747,10 +753,9 @@ void write_file_operation(const uint32_t client_id, const uint32_t file_descript
     }
     fs_result_t return_code = FS_OK;
     i_node_t *i_node = &i_node_table[fd.descriptor->i_node_index];
-    //TODO this is grim
-    if ((long long int)i_node->entry_size + (long long int)length - (long long int)fd.descriptor->cursor_position > (long long int)MAX_BLOCKS_PER_FILE * (long long int)BLOCK_SIZE) {
+    if (length + fd.descriptor->cursor_position >= MAX_BLOCKS_PER_FILE * BLOCK_SIZE) {
         return_code = FS_ERR_MAX_FILE_SIZE_REACHED;
-        length = (long long int)MAX_BLOCKS_PER_FILE * (long long int)BLOCK_SIZE - (long long int)(i_node->entry_size + length - fd.descriptor->cursor_position);
+        length = MAX_BLOCKS_PER_FILE * BLOCK_SIZE - (fd.descriptor->cursor_position) - 1;
     }
     microkit_dbg_puts("writing ");
     microkit_dbg_put32(length);
@@ -820,6 +825,61 @@ fs_result_t delete_directory_contents(const uint32_t i_node_index) {
     return FS_OK;
 }
 
+void defragment_directory(i_node_t *parent_i_node) {
+    microkit_dbg_puts("defragmenting directory i node ");
+    microkit_dbg_put32(parent_i_node - i_node_table);
+    microkit_dbg_puts("\n");
+    uint32_t *indirect_block = BLOCK_ADDRESS(parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]);
+    int filling_block_index = 0;
+    int last_free_child_index = -1;
+    int current_child_index = 0;
+    uint32_t filling_block;
+    for (int i = 0; i < parent_i_node->blocks_used; i++) {
+        uint32_t block_index;
+        if (i < DIRECT_BLOCKS_PER_INODE) {
+            block_index = parent_i_node->block_indices[i];
+        } else {
+            block_index = indirect_block[i - DIRECT_BLOCKS_PER_INODE];
+        }
+        child_entry_t *child_entries = (child_entry_t *)BLOCK_ADDRESS(block_index);
+        for (size_t j = 0; j < MAX_CHILD_ENTRIES_PER_BLOCK; j++) {
+            if (child_entries[j].name[0] == '\0') {
+                if (last_free_child_index == -1) {
+                    last_free_child_index = current_child_index;
+                    filling_block_index = i;
+                    if (i < DIRECT_BLOCKS_PER_INODE) {
+                        filling_block = parent_i_node->block_indices[filling_block_index];
+                    } else {
+                        filling_block = indirect_block[filling_block_index - DIRECT_BLOCKS_PER_INODE];
+                    }
+                }
+            } else {
+                if (last_free_child_index != -1) {
+                    copy_string_from_buffer(child_entries[j].name, ((child_entry_t *)BLOCK_ADDRESS(filling_block))[last_free_child_index].name, MAX_NAME_LENGTH);
+                    ((child_entry_t *)BLOCK_ADDRESS(filling_block))[last_free_child_index].i_node_index = child_entries[j].i_node_index;
+                    child_entries[j].name[0] = '\0';
+                    while (((child_entry_t *)BLOCK_ADDRESS(filling_block))[last_free_child_index].name[0] != '\0') {
+                        last_free_child_index++;
+                        if (block_index == filling_block && last_free_child_index >= j) {
+                            last_free_child_index = -1;
+                            break;
+                        }
+                        if (last_free_child_index >= MAX_CHILD_ENTRIES_PER_BLOCK) {
+                            last_free_child_index = 0;
+                            filling_block_index += 1;
+                            if (filling_block_index < DIRECT_BLOCKS_PER_INODE) {
+                                filling_block = parent_i_node->block_indices[filling_block_index];
+                            } else {
+                                filling_block = indirect_block[filling_block_index - DIRECT_BLOCKS_PER_INODE];
+                            }
+                        }
+                    }
+                }
+            }
+            current_child_index++;
+        }
+    }
+}
 
 void delete_entry_operation(const uint32_t client_id, unsigned char *path) {
     i_node_result_t parent_i_node = get_i_node_index(path, ROOT_DIRECTORY_I_NODE_INDEX, client_id, GET_PARENT_I_NODE);
@@ -836,7 +896,7 @@ void delete_entry_operation(const uint32_t client_id, unsigned char *path) {
         add_completion_entry(client_id, FS_ERR_PERMISSION, 0, 0, -1);
         return;
     }
-    // TODO: could reuse other func here if mod
+
     i_node_t *parent_i_node_ptr = &i_node_table[parent_i_node.index];
     uint32_t *indirect_block = BLOCK_ADDRESS(parent_i_node_ptr->block_indices[DIRECT_BLOCKS_PER_INODE]);
     for (int i = 0; i < parent_i_node_ptr->blocks_used; i++) {
@@ -846,7 +906,6 @@ void delete_entry_operation(const uint32_t client_id, unsigned char *path) {
         } else {
             block_index = indirect_block[i - DIRECT_BLOCKS_PER_INODE];
         }
-        //TODO: could move items to fill gap rather than just nulling, or remove if at end
         child_entry_t *child_entries = (child_entry_t *)BLOCK_ADDRESS(block_index);
         for (size_t j = 0; j < MAX_CHILD_ENTRIES_PER_BLOCK; j++) {
             if (child_entries[j].i_node_index == i_node_index.index) {
@@ -855,6 +914,26 @@ void delete_entry_operation(const uint32_t client_id, unsigned char *path) {
                 break;
             }
         }
+    }
+    microkit_dbg_puts("checking if can free block\n");
+    microkit_dbg_puts("entry size: ");
+    microkit_dbg_put32((int)(parent_i_node_ptr->entry_size / MAX_CHILD_ENTRIES_PER_BLOCK) + 1);
+    microkit_dbg_puts("\nblocks used: ");
+    microkit_dbg_put32(parent_i_node_ptr->blocks_used);
+    microkit_dbg_puts("\n");
+    if ((int)(parent_i_node_ptr->entry_size / MAX_CHILD_ENTRIES_PER_BLOCK) + 1 < parent_i_node_ptr->blocks_used) {
+        defragment_directory(parent_i_node_ptr);
+        int block_to_free_index = parent_i_node_ptr->blocks_used - 1;
+        uint32_t block_index;
+        if (block_to_free_index < DIRECT_BLOCKS_PER_INODE) {
+            block_index = parent_i_node_ptr->block_indices[block_to_free_index];
+            parent_i_node_ptr->block_indices[block_to_free_index] = 0;
+        } else {
+            block_index = indirect_block[block_to_free_index - DIRECT_BLOCKS_PER_INODE];
+            indirect_block[block_to_free_index - DIRECT_BLOCKS_PER_INODE] = 0;
+        }
+        release_block(block_index);
+        parent_i_node_ptr->blocks_used -= 1;
     }
     if (i_node_table[i_node_index.index].mode & 0b10) {
         fs_result_t res = delete_directory_contents(i_node_index.index);
@@ -961,132 +1040,9 @@ void list_directory_operation(const uint32_t client_id, unsigned char *path) {
 
         }
     }
-    //TODO: elsewhere?
     ((unsigned char *)CLIENT_COMPLETION_BUFFER(client_id, buffer_index))[chars_written] = '\0';
     add_completion_entry(client_id, FS_OK, 0, 0, buffer_index);
 }
-
-// //TODO change to get name from parent directory
-// fs_result_t rename_entry_operation(const uint32_t client_id, unsigned char *path, unsigned char *new_name) {
-//     unsigned char *path = (unsigned char *)CLIENT_BUFFER_BASE(client_id);
-//     if (!valid_name(new_name)) {
-//         return FS_ERR_INVALID_PATH;
-//     }
-//     if (compare_names(path, new_name) == FULL_PATH_EQUAL) {
-//         return FS_OK;
-//     }
-//     i_node_result_t parent_i_node_index = get_i_node_index(path, ROOT_DIRECTORY_I_NODE_INDEX, client_id, GET_PARENT_I_NODE);
-//     if (parent_i_node_index.return_code != FS_OK) {
-//         return parent_i_node_index.return_code;
-//     }
-//     i_node_t *dir_i_node = &i_node_table[parent_i_node_index.index];
-//     if (!(dir_i_node->mode & 0b10)) {
-//         return FS_ERR_INVALID_PATH;
-//     }
-//     if (!valid_permissions(*dir_i_node, client_id, PERM_WRITE)) {
-//         return FS_ERR_PERMISSION;
-//     }
-//     uint32_t *indirect_block = BLOCK_ADDRESS(dir_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]);
-//     for (int i = 0; i < NUMBER_OF_BLOCKS(dir_i_node->entry_size); i++) {
-//         uint32_t block_index;
-//         if (i < DIRECT_BLOCKS_PER_INODE) {
-//             block_index = dir_i_node->block_indices[i];
-//         } else {
-//             block_index = indirect_block[i - DIRECT_BLOCKS_PER_INODE];
-//         }
-//         child_entry_t *child_entries = (child_entry_t *)BLOCK_ADDRESS(block_index);
-//         for (size_t j = 0; j < MAX_CHILD_ENTRIES_PER_BLOCK; j++) {
-//             if (child_entries[j].name[0] == '\0') {
-//                 continue;
-//             }
-//             // path here needs to be only the name of the entry, need func
-//             if (compare_names(path, child_entries[j].name)) {
-//                 copy_string_from_buffer(new_name, child_entries[j].name, MAX_NAME_LENGTH);
-//                 return FS_OK;
-//             }
-//         }
-//     }
-//     return FS_ERR_UNSPECIFIED_ERROR;
-// }
-
-// //TODO change to get name from parent directory
-// fs_result_t copy_entry_operation(const uint32_t client_id, unsigned char *source_path, unsigned char *dest_dir, unsigned char *dest_name) {
-//     if (compare_names(source_path, dest_dir) == FULL_PATH_EQUAL) {
-//         return FS_ERR_INVALID_PATH;
-//     }
-//     i_node_result_t source_i_node_index = get_i_node_index(source_path, ROOT_DIRECTORY_I_NODE_INDEX, client_id, GET_TARGET_I_NODE);
-//     if (source_i_node_index.return_code != FS_OK) {
-//         return source_i_node_index.return_code;
-//     }
-//     if (!valid_permissions(i_node_table[source_i_node_index.index], client_id, PERM_READ)) {
-//         return FS_ERR_PERMISSION;
-//     }
-//     i_node_result_t dest_parent_i_node_index = get_i_node_index(dest_dir, ROOT_DIRECTORY_I_NODE_INDEX, client_id, GET_PARENT_I_NODE);
-//     if (dest_parent_i_node_index.return_code != FS_OK) {
-//         return dest_parent_i_node_index.return_code;
-//     }
-//     if (!valid_permissions(i_node_table[dest_parent_i_node_index.index], client_id, PERM_WRITE)) {
-//         return FS_ERR_PERMISSION;
-//     }
-//     if (!(i_node_table[source_i_node_index.index].mode & 0b10)) {
-//         return FS_ERR_INVALID_PATH;
-//     }
-//     child_slot_and_block_result_t slot_info = get_free_child_slot(dest_parent_i_node_index.index);
-//     if (slot_info.return_code != FS_OK) {
-//         return slot_info.return_code;
-//     }
-//     i_node_result_t new_i_node = add_entry(dest_parent_i_node_index.index, dest_name, (i_node_table[source_i_node_index.index].mode >> 2) & 0b111, client_id, slot_info.block_index, slot_info.entry_index, ((i_node_table[source_i_node_index.index].mode & 0b10) >> 1) & 0b1);
-//     if (new_i_node.return_code != FS_OK) {
-//         return new_i_node.return_code;
-//     }
-//     i_node_t *source_node = &i_node_table[source_i_node_index.index];
-//     i_node_t *dest_node = &i_node_table[new_i_node.index];
-//     dest_node->entry_size = source_node->entry_size;
-//     for (size_t i = 0; i < DIRECT_BLOCKS_PER_INODE; i++) {
-//         if (source_node->block_indices[i] != -1) {
-//             block_id_result_t new_block = allocate_block();
-//             if (new_block.return_code != FS_OK) {
-//                 return new_block.return_code;
-//             }
-//             dest_node->block_indices[i] = new_block.index;
-//             int8_t *source_block = (int8_t *)BLOCK_ADDRESS(source_node->block_indices[i]);
-//             int8_t *dest_block = (int8_t *)BLOCK_ADDRESS(new_block.index);
-//             copy_data_from_buffer(source_block, dest_block, BLOCK_SIZE);
-//         }
-//     }
-//     const uint32_t indirect_block_index = source_node->block_indices[DIRECT_BLOCKS_PER_INODE];
-//     if (indirect_block_index != -1) {
-//         block_id_result_t new_indirect_block = allocate_block();
-//         if (new_indirect_block.return_code != FS_OK) {
-//             return new_indirect_block.return_code;
-//         }
-//         dest_node->block_indices[DIRECT_BLOCKS_PER_INODE] = new_indirect_block.index;
-//         uint32_t *source_indirect_block = BLOCK_ADDRESS(indirect_block_index);
-//         uint32_t *dest_indirect_block = BLOCK_ADDRESS(new_indirect_block.index);
-//         for (size_t i = 0; i < NUMBER_OF_BLOCKS(source_node->entry_size) - DIRECT_BLOCKS_PER_INODE; i++) {
-//             if (source_indirect_block[i] != -1) {
-//                 block_id_result_t new_block = allocate_block();
-//                 if (new_block.return_code != FS_OK) {
-//                     return new_block.return_code;
-//                 }
-//                 dest_indirect_block[i] = new_block.index;
-//                 int8_t *source_block = (int8_t *)BLOCK_ADDRESS(source_indirect_block[i]);
-//                 int8_t *dest_block = (int8_t *)BLOCK_ADDRESS(new_block.index);
-//                 copy_data_from_buffer(source_block, dest_block, BLOCK_SIZE);
-//             }
-//         }
-//     }
-//     return FS_OK;
-// }
-
-// //TODO change to get name from parent directory
-// fs_result_t move_entry_operation(const uint32_t client_id, unsigned char *source_path, unsigned char *dest_dir, unsigned char *dest_name) {
-//     fs_result_t copy_result = copy_entry_operation(client_id, source_path, dest_dir, dest_name);
-//     if (copy_result != FS_OK) {
-//         return copy_result;
-//     }
-//     return delete_entry_operation(client_id, source_path);
-// }
 
 
 // ------------------------- MicroKit Interface -------------------------- //
@@ -1160,8 +1116,8 @@ void set_free_submission_buffer(int client_id, int buffer_index) {
 }
 
 
-// TODO prob return value whether entry existed, then can loop over this for certain amount of ops or all entries? Or loop within here.
 void service_client(uint32_t client_id) {
+    // TODO: limit number of operations per service to prevent starvation of other clients
     while (1) {
         microkit_dbg_puts("FILE SERVER: servicing client: ");
         microkit_dbg_put32(client_id);
@@ -1178,9 +1134,13 @@ void service_client(uint32_t client_id) {
             microkit_dbg_puts("FILE SERVER: no free completion entries\n");
             break;
         }
-        // TODO: depending on op, check completion buffer space too
         submission_queue_entry_t *submission_entry = CLIENT_SUBMISSION_QUEUE_INDEX(client_id, submission_head);
         uint32_t operation = submission_entry->operation_code;
+
+        if ((operation == OP_READ || operation == OP_LIST) && !is_free_completion_buffer(client_id)) {
+            microkit_dbg_puts("FILE SERVER: no free completion buffer for operation\n");
+            break;
+        }
 
         switch (operation) {
             case OP_CREATE_FILE: {
@@ -1194,7 +1154,7 @@ void service_client(uint32_t client_id) {
                     microkit_dbg_puts("opening created file\n");
                     open_file_operation(client_id, permissions, (char *)(CLIENT_SUBMISSION_BUFFER(client_id, submission_entry->buffer_index)));
                 }
-                set_free_submission_buffer(client_id, submission_entry->buffer_index); //TODO could put this somewhere better
+                set_free_submission_buffer(client_id, submission_entry->buffer_index);
                 break;
             }
 
@@ -1291,34 +1251,6 @@ void service_client(uint32_t client_id) {
                 break;
             }
 
-            // TODO: need to add a function to get the separate paths from client buffer
-            // case OP_RENAME: {
-            //     if (microkit_msginfo_get_count(msginfo) < 1) {
-            //         return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
-            //         break;
-            //     }
-            //     return_code = rename_entry_operation(channel);
-            //     break;
-            // }
-
-            // case OP_COPY: {
-            //     if (microkit_msginfo_get_count(msginfo) < 1) {
-            //         return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
-            //         break;
-            //     }
-            //     return_code = copy_entry_operation(channel);
-            //     break;
-            // }
-
-            // case OP_MOVE: {
-            //     if (microkit_msginfo_get_count(msginfo) < 1) {
-            //         return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
-            //         break;
-            //     }
-            //     return_code = move_entry_operation(channel);
-            //     break;
-            // }
-
             default:
                 microkit_dbg_puts("FILE SERVER: INVALID OPERATION CODE\n");
                 break;
@@ -1326,7 +1258,7 @@ void service_client(uint32_t client_id) {
 
         increment_submission_queue_head(client_id);
     }
-    //TODO: if we arent looping
+
     *CLIENT_READY_FLAG(client_id) = 0;
     *CLIENT_COMPLETE_FLAG(client_id) = 1;
 }
