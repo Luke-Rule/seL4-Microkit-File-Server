@@ -1,0 +1,14 @@
+# Build artifacts
+build/
+*.o
+*.elf
+*.bin
+
+# Temporary files
+*~
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db

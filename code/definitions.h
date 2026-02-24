@@ -1,5 +1,7 @@
 #pragma once
 #define MAX_NAME_LENGTH 63
+#define MAX_QUEUE_ENTRIES 64
+#define NUMBER_OF_BUFFERS_PER_CLIENT 64
 #define CLIENT_BUFFER_SIZE 0x1000
 
 // ANSI color codes for terminal output (used by tests)
