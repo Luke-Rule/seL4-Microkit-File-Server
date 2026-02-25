@@ -1,8 +1,9 @@
 #pragma once
 #define MAX_NAME_LENGTH 63
+#define CLIENT_BUFFER_SIZE 0x1000
 #define MAX_QUEUE_ENTRIES 64
 #define NUMBER_OF_BUFFERS_PER_CLIENT 64
-#define CLIENT_BUFFER_SIZE 0x1000
+#define CLIENT_DATA_PAGE_SIZE 0x81000
 
 // ANSI color codes for terminal output (used by tests)
 #define ANSI_COLOR_GREEN "\x1b[32m"
@@ -18,7 +19,6 @@
 #define CREATE_FILE 0
 #define ROOT_DIRECTORY_I_NODE_INDEX 0
 
-// File operations 
 typedef enum {
     OP_CREATE_FILE = 0,
     OP_CREATE_DIRECTORY = 1,
@@ -40,16 +40,48 @@ typedef enum {
     OP_MOVE = 17
 } file_operation_t;
 
-// File operation permissions (higher value includes lower levels)
-// typedef enum {
-//     FILE_PERM_PRIVATE = 0,
-//     FILE_PERM_PUBLIC_EXISTS_AND_LIST = 1,
-//     FILE_PERM_PUBLIC_GET_FILE_SIZE = 2,
-//     FILE_PERM_PUBLIC_GET_PERMISSIONS = 3,
-//     FILE_PERM_PUBLIC_READ_AND_COPY_AND_OPEN_AND_CLOSE = 4,
-//     FILE_PERM_PUBLIC = 5
-// } file_permission_t;
+struct client_flags {
+    uint8_t ready_flag;
+    uint8_t complete_flag;
+    uint8_t padding[2];
+} typedef client_flags_t;
 
+struct buffer {
+    uint8_t data[CLIENT_BUFFER_SIZE];
+} typedef buffer_t;
+
+struct submission_queue_entry
+{
+    uint32_t operation_code;
+    uint32_t parameter1;
+    uint32_t parameter2;
+    uint32_t buffer_index;
+} typedef submission_queue_entry_t;
+
+struct completion_queue_entry
+{
+    uint32_t return_code;
+    uint32_t parameter1;
+    uint32_t parameter2;
+    uint32_t buffer_index;
+} typedef completion_queue_entry_t;
+
+#define CLIENT_DATA_PADDING_AMOUNT (CLIENT_DATA_PAGE_SIZE - (sizeof(client_flags_t) + sizeof(uint32_t) * 4 + sizeof(submission_queue_entry_t) * MAX_QUEUE_ENTRIES + sizeof(completion_queue_entry_t) * MAX_QUEUE_ENTRIES + sizeof(uint8_t) * NUMBER_OF_BUFFERS_PER_CLIENT * 2 + sizeof(buffer_t) * NUMBER_OF_BUFFERS_PER_CLIENT * 2))
+
+struct client {
+    uint32_t submission_queue_head;
+    uint32_t submission_queue_tail;
+    uint32_t completion_queue_head;
+    uint32_t completion_queue_tail;
+    client_flags_t flags;
+    submission_queue_entry_t submission_queue[MAX_QUEUE_ENTRIES];
+    completion_queue_entry_t completion_queue[MAX_QUEUE_ENTRIES];
+    uint8_t submission_buffer_table[NUMBER_OF_BUFFERS_PER_CLIENT];
+    uint8_t completion_buffer_table[NUMBER_OF_BUFFERS_PER_CLIENT];
+    buffer_t submission_buffers[NUMBER_OF_BUFFERS_PER_CLIENT];
+    buffer_t completion_buffers[NUMBER_OF_BUFFERS_PER_CLIENT];
+    uint8_t padding[CLIENT_DATA_PADDING_AMOUNT];
+} typedef client_t;
 
 typedef enum {
     PERM_PRIVATE = 0b000,
@@ -58,30 +90,6 @@ typedef enum {
     PERM_EXECUTE = 0b100,
     PERM_PUBLIC = 0b111
 } permissions_t;
-
-struct submission_queue_entry
-{
-    uint8_t operation_code;
-    uint32_t parameter1;
-    uint32_t parameter2;
-    uint32_t buffer_index;
-} typedef submission_queue_entry_t;
-
-struct completion_queue_entry
-{
-    uint8_t return_code;
-    uint32_t parameter1;
-    uint32_t parameter2;
-    uint32_t buffer_index;
-} typedef completion_queue_entry_t;
-
-struct file_server_interface {
-    submission_queue_entry_t *file_server_submission_queue;
-    completion_queue_entry_t *file_server_completion_queue;
-    uint8_t *file_server_submission_buffer;
-    uint8_t *file_server_completion_buffer;
-    uint8_t *buffer_table;
-} typedef file_server_interface_t;
 
 typedef enum {
     READ_OP = 0b01,

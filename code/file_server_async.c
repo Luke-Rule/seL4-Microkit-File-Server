@@ -15,47 +15,18 @@
 
 // System parameters
 #define NUMBER_OF_CLIENTS 1
-
-// Client memory definitions
-#define CLIENT_TOTAL_BUFFER_SIZE 0x40000
-#define CLIENT_INDIVIDUAL_BUFFER_SIZE CLIENT_BUFFER_SIZE
-#define CLIENT_QUEUE_SIZE 0x1000
-#define BUFFER_TABLE_SIZE 0x1000
-#define CLIENT_OFFSET (2 * (CLIENT_TOTAL_BUFFER_SIZE + CLIENT_QUEUE_SIZE) + BUFFER_TABLE_SIZE)
-#define CLIENT_SUBMISSION_QUEUE_BASE(client_id) ((uintptr_t)clients + (uintptr_t)(client_id * CLIENT_OFFSET))
-#define CLIENT_COMPLETION_QUEUE_BASE(client_id) ((uintptr_t)clients + (uintptr_t)(client_id * CLIENT_OFFSET + CLIENT_QUEUE_SIZE))
-#define CLIENT_SUBMISSION_BUFFER_BASE(client_id) ((uintptr_t)clients + (uintptr_t)(client_id * CLIENT_OFFSET + 2 * CLIENT_QUEUE_SIZE))
-#define CLIENT_COMPLETION_BUFFER_BASE(client_id) ((uintptr_t)clients + (uintptr_t)(client_id * CLIENT_OFFSET + 2 * CLIENT_QUEUE_SIZE + CLIENT_TOTAL_BUFFER_SIZE))
-#define CLIENT_BUFFER_TABLE_BASE(client_id) ((uintptr_t)clients + (uintptr_t)(client_id * CLIENT_OFFSET + 2 * CLIENT_QUEUE_SIZE + 2 * CLIENT_TOTAL_BUFFER_SIZE))
-#define CLIENT_SUBMISSION_BUFFER_TABLE_BASE(client_id) ((uint8_t *)(CLIENT_BUFFER_TABLE_BASE(client_id)))
-#define CLIENT_COMPLETION_BUFFER_TABLE_BASE(client_id) ((uint8_t *)(CLIENT_BUFFER_TABLE_BASE(client_id) + (NUMBER_OF_BUFFERS_PER_CLIENT)))
-#define CLIENT_READY_FLAG(client_id) (((uint32_t *)(CLIENT_SUBMISSION_QUEUE_BASE(client_id)) + 2))
-#define CLIENT_COMPLETE_FLAG(client_id) (((uint32_t *)(CLIENT_COMPLETION_QUEUE_BASE(client_id)) + 2))
-#define CLIENT_SUBMISSION_QUEUE_HEAD(client_id) (((uint32_t *)(CLIENT_SUBMISSION_QUEUE_BASE(client_id)) + 0))
-#define CLIENT_SUBMISSION_QUEUE_TAIL(client_id) (((uint32_t *)(CLIENT_SUBMISSION_QUEUE_BASE(client_id)) + 1))
-#define CLIENT_COMPLETION_QUEUE_HEAD(client_id) (((uint32_t *)(CLIENT_COMPLETION_QUEUE_BASE(client_id)) + 0))
-#define CLIENT_COMPLETION_QUEUE_TAIL(client_id) (((uint32_t *)(CLIENT_COMPLETION_QUEUE_BASE(client_id)) + 1))
-#define CLIENT_SUBMISSION_QUEUE_INDEX(client_id, index) (&((submission_queue_entry_t *)CLIENT_SUBMISSION_QUEUE_BASE(client_id))[index])
-#define CLIENT_COMPLETION_QUEUE_INDEX(client_id, index) (&((completion_queue_entry_t *)CLIENT_COMPLETION_QUEUE_BASE(client_id))[index])
-#define CLIENT_SUBMISSION_BUFFER(client_id, buffer_index) ((uint8_t *)(CLIENT_SUBMISSION_BUFFER_BASE(client_id) + (buffer_index * CLIENT_INDIVIDUAL_BUFFER_SIZE)))
-#define CLIENT_COMPLETION_BUFFER(client_id, buffer_index) ((uint8_t *)(CLIENT_COMPLETION_BUFFER_BASE(client_id) + (buffer_index * CLIENT_INDIVIDUAL_BUFFER_SIZE)))
-
-// File server definitions
 #define BLOCK_SIZE 0x1000
-#define BLOCK_TABLE_SIZE 0x1F000
-#define BLOCK_DATA_SIZE 0x1F018000
-#define MAX_NUMBER_OF_BLOCKS (((int)(BLOCK_DATA_SIZE / BLOCK_SIZE)) > (BLOCK_TABLE_SIZE) ? (BLOCK_TABLE_SIZE) : ((int)(BLOCK_DATA_SIZE / BLOCK_SIZE)))
+#define MAX_NUMBER_OF_BLOCKS 0x10000
+#define MAX_NUMBER_OF_INODES 0x10000
 #define DIRECT_BLOCKS_PER_INODE 11
-#define BLOCK_ADDRESS(block_index) (uint32_t *)((uintptr_t)blocks + (block_index * BLOCK_SIZE))
 #define MAX_OPEN_FILES_PER_CLIENT 256
-#define INODE_TABLE_SIZE 0x5B8000
-#define MAX_INODES ((int)(INODE_TABLE_SIZE / sizeof(i_node_t)))
-#define FILE_DESCRIPTOR_ENTRY_SIZE sizeof(struct file_descriptor)
-#define FILE_DESCRIPTOR_OFFSET(client_id, file_index) ((uintptr_t)file_descriptor_table + client_id * MAX_OPEN_FILES_PER_CLIENT + file_index)
+
+// Maximums to check against
 #define MAX_CHILD_ENTRIES_PER_BLOCK ((int)(BLOCK_SIZE / sizeof(child_entry_t)))
 #define MAX_BLOCK_POINTERS_PER_INDIRECT_BLOCK ((int)(BLOCK_SIZE / sizeof(uint32_t)))
 #define MAX_BLOCKS_PER_FILE (DIRECT_BLOCKS_PER_INODE + MAX_BLOCK_POINTERS_PER_INDIRECT_BLOCK)
-#define MAX_CHILDREN_PER_DIRECTORY (MAX_BLOCKS_PER_FILE * MAX_CHILD_ENTRIES_PER_BLOCK)
+
+// Function parameters
 #define GET_PARENT_I_NODE 1
 #define GET_TARGET_I_NODE 0
 #define READ 1
@@ -65,12 +36,35 @@
 
 // ------------------------------ Structs ------------------------------- //
 
+struct block {
+    uint8_t data[BLOCK_SIZE];
+} typedef block_t;
+
 struct file_descriptor
 {
     uint32_t i_node_index;
     uint32_t cursor_position;
     uint8_t valid_operations;
+    uint8_t padding[3];
 } typedef file_descriptor_t;
+
+struct i_node
+{
+    uint32_t entry_size;
+    uint32_t blocks_used;
+    uint32_t block_indices[DIRECT_BLOCKS_PER_INODE + 1]; // last is indirect block
+    uint8_t mode; // 3 for perm, 1 for dir, 1 for in use 
+    uint8_t owner_id;
+    uint8_t padding[2];
+} typedef i_node_t;
+
+struct child_entry
+{
+    unsigned char name[MAX_NAME_LENGTH];
+    uint32_t i_node_index;
+} typedef child_entry_t;
+
+// ----------------- Result function return structs --------------------- //
 
 struct file_descriptor_result
 {
@@ -85,26 +79,11 @@ struct file_index_and_cursor_result
     int return_code;
 } typedef file_index_and_cursor_result_t;
 
-struct i_node
-{
-    uint8_t mode; // 3 for perm, 1 for dir, 1 for in use 
-    uint8_t owner_id;
-    uint32_t entry_size;
-    uint32_t blocks_used;
-    uint32_t block_indices[DIRECT_BLOCKS_PER_INODE + 1]; // last is indirect block
-} typedef i_node_t;
-
 struct i_node_result
 {
     int32_t index;
     int return_code;
 } typedef i_node_result_t;
-
-struct child_entry
-{
-    unsigned char name[MAX_NAME_LENGTH];
-    uint32_t i_node_index;
-} typedef child_entry_t;
 
 struct block_id_result
 {
@@ -125,23 +104,19 @@ struct child_slot_and_block_result {
     int return_code;
 } typedef child_slot_and_block_result_t;
 
+
 // ------------------------------ Globals ------------------------------- //
 
-uintptr_t block_table_base;
-uintptr_t i_node_table_base;
-uintptr_t file_descriptor_table_base;
-uintptr_t blocks_base;
+uintptr_t fs_memory_base;
+uintptr_t clients_memory_base;
 
-uintptr_t lowest_client_queue_base;
-
-int8_t *block_table;
+uint8_t *block_table;
 file_descriptor_t *file_descriptor_table;
 i_node_t *i_node_table;
-int8_t *blocks;
-int8_t *clients;
+block_t *blocks;
+client_t *clients;
 
-
-// ------------------------------ Function Prototypes ------------------------------- //
+// ------------------------------ Utility Functions ------------------------------- //
 
 int32_t compare_names(const unsigned char *name1, const unsigned char *name2) {
     for (size_t i = 0; i < MAX_NAME_LENGTH; i++) {
@@ -241,16 +216,16 @@ void release_block(const uint32_t block_index) {
 
 
 void release_indirect_block(const uint32_t indirect_block_index, const int size_in_blocks) {
-    uint32_t *indirect_block = BLOCK_ADDRESS(indirect_block_index);
+    uint32_t *indirect_entries = (uint32_t *)&blocks[indirect_block_index].data;
     for (size_t i = 0; i < size_in_blocks; i++) {
-        release_block(indirect_block[i]);
+        release_block(indirect_entries[i]);
     }
 }
 
 // ------------------------------ I Node management functions ------------------------------- //
 
 i_node_result_t allocate_i_node() {
-    for (size_t i = 0; i < MAX_INODES; i++) {
+    for (size_t i = 0; i < MAX_NUMBER_OF_INODES; i++) {
         if ((i_node_table[i].mode & 0x1) == 0) {
             i_node_table[i].mode |= 0x1;
             return (i_node_result_t){i, FS_OK};
@@ -263,7 +238,7 @@ i_node_result_t allocate_i_node() {
 
 
 void release_i_node(const uint32_t i_node_index) {
-    if (i_node_index < MAX_INODES) {
+    if (i_node_index < MAX_NUMBER_OF_INODES) {
         i_node_table[i_node_index].mode = 0;
         for (size_t i = 0; i < i_node_table[i_node_index].blocks_used; i++) {
             uint32_t block_index;
@@ -291,15 +266,15 @@ i_node_result_t get_i_node_index(unsigned char *path, const uint32_t parent_i_no
         return (i_node_result_t){parent_i_node_index, FS_OK};
     }
     i_node_t *parent_i_node = &i_node_table[parent_i_node_index];
-    uint32_t *indirect_block = BLOCK_ADDRESS(parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]);
+    uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
     for (int i = 0; i < parent_i_node->blocks_used; i++) {
         uint32_t block_index;
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = parent_i_node->block_indices[i];
         } else {
-            block_index = indirect_block[i - DIRECT_BLOCKS_PER_INODE];
+            block_index = indirect_block_data[i - DIRECT_BLOCKS_PER_INODE];
         }
-        child_entry_t *child_entries = (child_entry_t *)BLOCK_ADDRESS(block_index);
+        child_entry_t *child_entries = (child_entry_t *)&blocks[block_index].data;
         for (size_t j = 0; j < MAX_CHILD_ENTRIES_PER_BLOCK; j++) {
             if (child_entries[j].name[0] == '\0') {
                 continue;
@@ -332,22 +307,20 @@ i_node_result_t get_i_node_index(unsigned char *path, const uint32_t parent_i_no
 // ------------------------------ Client queue management functions ------------------------------- //
 
 void increment_completion_queue_tail(const uint32_t client_id) {
-    uint32_t *completion_queue_tail = CLIENT_COMPLETION_QUEUE_TAIL(client_id);
-    if (*completion_queue_tail >= MAX_QUEUE_ENTRIES - 1) {
+    if (clients[client_id].completion_queue_tail >= MAX_QUEUE_ENTRIES - 1) {
         // already checked theres space
-        *completion_queue_tail = 1;
+        clients[client_id].completion_queue_tail = 0;
         return;
     }
-    *completion_queue_tail = (*completion_queue_tail + 1);
+    clients[client_id].completion_queue_tail = clients[client_id].completion_queue_tail + 1;
 }
 
 
 void add_completion_entry(const uint32_t client_id, const uint8_t return_code, const uint32_t parameter1, const uint32_t parameter2, const uint32_t buffer_index) {
-    uint32_t completion_tail_index = *CLIENT_COMPLETION_QUEUE_TAIL(client_id);
     microkit_dbg_puts("Adding completion entry at tail index: ");
-    microkit_dbg_put32(completion_tail_index);
+    microkit_dbg_put32(clients[client_id].completion_queue_tail);
     microkit_dbg_puts("\n");
-    completion_queue_entry_t *completion_queue_entry = CLIENT_COMPLETION_QUEUE_INDEX(client_id, completion_tail_index);
+    completion_queue_entry_t *completion_queue_entry = &clients[client_id].completion_queue[clients[client_id].completion_queue_tail];
     completion_queue_entry->return_code = return_code;
     completion_queue_entry->parameter1 = parameter1;
     completion_queue_entry->parameter2 = parameter2;
@@ -357,20 +330,18 @@ void add_completion_entry(const uint32_t client_id, const uint8_t return_code, c
 
 
 void increment_submission_queue_head(const uint32_t client_id) {
-    uint32_t *submission_queue_head = CLIENT_SUBMISSION_QUEUE_HEAD(client_id);
-    if (*submission_queue_head >= MAX_QUEUE_ENTRIES - 1) {
-        *submission_queue_head = 1;
+    if (clients[client_id].submission_queue_head >= MAX_QUEUE_ENTRIES - 1) {
+        clients[client_id].submission_queue_head = 0;
         return;
     }
-    *submission_queue_head = (*submission_queue_head + 1);
+    clients[client_id].submission_queue_head = clients[client_id].submission_queue_head + 1;
 }
 
 // ------------------------------ Client buffer management functions ------------------------------- //
 
 int is_free_completion_buffer(int client_id) {
-    uint8_t *completion_buffer_table = CLIENT_COMPLETION_BUFFER_TABLE_BASE(client_id);
     for (size_t i = 0; i < NUMBER_OF_BUFFERS_PER_CLIENT; i++) {
-        if (completion_buffer_table[i] == 0) {
+        if (clients[client_id].completion_buffer_table[i] == 0) {
             return 1;
         }
     }
@@ -379,10 +350,9 @@ int is_free_completion_buffer(int client_id) {
 
 
 int get_free_completion_buffer(int client_id) {
-    uint8_t *completion_buffer_table = CLIENT_COMPLETION_BUFFER_TABLE_BASE(client_id);
     for (size_t i = 0; i < NUMBER_OF_BUFFERS_PER_CLIENT; i++) {
-        if (completion_buffer_table[i] == 0) {
-            completion_buffer_table[i] = 1;
+        if (clients[client_id].completion_buffer_table[i] == 0) {
+            clients[client_id].completion_buffer_table[i] = 1;
             return i;
         }
     }
@@ -458,18 +428,18 @@ block_search_result_t get_inode_block_index_from_file_index(const uint32_t file_
 }
 
 
-fs_result_t copy_bytes_i_node(i_node_t *i_node, int8_t *client_buffer, size_t length, file_descriptor_t *fd, const int rnw) {
+fs_result_t copy_bytes_i_node(i_node_t *i_node, uint8_t *client_buffer, size_t length, file_descriptor_t *fd, const int rnw) {
     size_t buffer_index = 0;
     block_search_result_t block_info = get_inode_block_index_from_file_index(fd->cursor_position);
-    uint32_t *indirect_block = BLOCK_ADDRESS(i_node->block_indices[DIRECT_BLOCKS_PER_INODE]);
+    uint32_t *indirect_block_data = (uint32_t *)&blocks[i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
     while (length > 0) {
         uint32_t block_index;
         if (block_info.is_indirect) {
-            block_index = indirect_block[block_info.i_node_block_index];
+            block_index = indirect_block_data[block_info.i_node_block_index];
         } else {
             block_index = i_node->block_indices[block_info.i_node_block_index];
         }
-        int8_t *block_data = (int8_t *)BLOCK_ADDRESS(block_index);
+        uint8_t *block_data = &blocks[block_index].data[0];
         size_t bytes_available_in_block = BLOCK_SIZE - block_info.block_offset;
         size_t bytes_this_iteration = (length < bytes_available_in_block) ? length : bytes_available_in_block;
         if (rnw) {
@@ -496,7 +466,7 @@ fs_result_t copy_bytes_i_node(i_node_t *i_node, int8_t *client_buffer, size_t le
                         return FS_ERR_NO_BLOCKS_REMAINING;
                     }
                     i_node->block_indices[DIRECT_BLOCKS_PER_INODE] = new_block.index;
-                    indirect_block = BLOCK_ADDRESS(i_node->block_indices[DIRECT_BLOCKS_PER_INODE]);
+                    indirect_block_data = (uint32_t *)&blocks[i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
                 }
                 
                 block_info.is_indirect = 1;
@@ -514,7 +484,7 @@ fs_result_t copy_bytes_i_node(i_node_t *i_node, int8_t *client_buffer, size_t le
                 }
                 i_node->blocks_used += 1;
                 if (block_info.is_indirect) {
-                    indirect_block[block_info.i_node_block_index] = new_block.index;
+                    indirect_block_data[block_info.i_node_block_index] = new_block.index;
                 } else {
                     i_node->block_indices[block_info.i_node_block_index] = new_block.index;
                 }
@@ -535,7 +505,7 @@ child_slot_and_block_result_t get_free_child_slot(const uint32_t parent_i_node_i
     microkit_dbg_puts("checking parent ");
     microkit_dbg_put32(parent_i_node_index);
     microkit_dbg_puts("\n");
-    uint32_t *indirect_block = BLOCK_ADDRESS(parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]);
+    uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
     for (int i = 0; i < parent_i_node->blocks_used; i++) {
         microkit_dbg_puts("checking block ");
         microkit_dbg_put32(i);
@@ -544,9 +514,9 @@ child_slot_and_block_result_t get_free_child_slot(const uint32_t parent_i_node_i
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = parent_i_node->block_indices[i];
         } else {
-            block_index = indirect_block[i - DIRECT_BLOCKS_PER_INODE];
+            block_index = indirect_block_data[i - DIRECT_BLOCKS_PER_INODE];
         }
-        child_entry_t *child_entries = (child_entry_t *)BLOCK_ADDRESS(block_index);
+        child_entry_t *child_entries = (child_entry_t *)&blocks[block_index].data;
         for (size_t j = 0; j < MAX_CHILD_ENTRIES_PER_BLOCK; j++) {
             microkit_dbg_puts("checking slot ");
             microkit_dbg_put32(j);
@@ -572,8 +542,8 @@ child_slot_and_block_result_t get_free_child_slot(const uint32_t parent_i_node_i
             }
             parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE] = indirect_block.index;
         }
-        uint32_t *indirect_block = BLOCK_ADDRESS(parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]);
-        indirect_block[parent_i_node->blocks_used - DIRECT_BLOCKS_PER_INODE] = new_block.index;
+        uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
+        indirect_block_data[parent_i_node->blocks_used - DIRECT_BLOCKS_PER_INODE] = new_block.index;
     }
     parent_i_node->blocks_used += 1;
     return (child_slot_and_block_result_t){new_block.index, 0, FS_OK};
@@ -593,7 +563,7 @@ i_node_result_t add_entry(const uint32_t parent_i_node_index, unsigned char *nam
         return new_i_node_info;
     }
     i_node_t *parent_i_node = &i_node_table[parent_i_node_index];
-    child_entry_t *child_entries = (child_entry_t *)BLOCK_ADDRESS(block_index);
+    child_entry_t *child_entries = (child_entry_t *)&blocks[block_index].data;
     copy_string_from_buffer(name, child_entries[entry_index].name, MAX_NAME_LENGTH);
     microkit_dbg_puts("parent ");
     microkit_dbg_put32(parent_i_node_index);
@@ -641,15 +611,15 @@ i_node_result_t create_entry(unsigned char *path, const uint32_t parent_i_node_i
     microkit_dbg_puts(path);
     microkit_dbg_puts("\n");
     i_node_t *parent_i_node = &i_node_table[parent_i_node_index];
-    uint32_t *indirect_block = BLOCK_ADDRESS(parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]);
+    uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
     for (int i = 0; i < parent_i_node->blocks_used; i++) {
         uint32_t block_index;
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = parent_i_node->block_indices[i];
         } else {
-            block_index = indirect_block[i - DIRECT_BLOCKS_PER_INODE];
+            block_index = indirect_block_data[i - DIRECT_BLOCKS_PER_INODE];
         }
-        child_entry_t *child_entries = (child_entry_t *)BLOCK_ADDRESS(block_index);
+        child_entry_t *child_entries = (child_entry_t *)&blocks[block_index].data;
         for (size_t j = 0; j < MAX_CHILD_ENTRIES_PER_BLOCK; j++) {
             if (child_entries[j].name[0] == '\0') {
                 continue;
@@ -692,18 +662,18 @@ i_node_result_t create_entry(unsigned char *path, const uint32_t parent_i_node_i
 
 fs_result_t delete_directory_contents(const uint32_t i_node_index) {
     i_node_t *dir_i_node = &i_node_table[i_node_index];
-    uint32_t *indirect_block = BLOCK_ADDRESS(dir_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]);
+    uint32_t *indirect_block_data = (uint32_t *)&blocks[dir_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
     for (int i = 0; i < dir_i_node->blocks_used; i++) {
         uint32_t block_index;
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = dir_i_node->block_indices[i];
         } else {
-            block_index = indirect_block[i - DIRECT_BLOCKS_PER_INODE];
+            block_index = indirect_block_data[i - DIRECT_BLOCKS_PER_INODE];
         }
         microkit_dbg_puts("deleting block ");
         microkit_dbg_put32(block_index);
         microkit_dbg_puts("\n");
-        child_entry_t *child_entries = (child_entry_t *)BLOCK_ADDRESS(block_index);
+        child_entry_t *child_entries = (child_entry_t *)&blocks[block_index].data;
         for (size_t j = 0; j < MAX_CHILD_ENTRIES_PER_BLOCK; j++) {
             if (child_entries[j].name[0] == '\0') {
                 continue;
@@ -732,7 +702,7 @@ void defragment_directory(i_node_t *parent_i_node) {
     microkit_dbg_puts("defragmenting directory i node ");
     microkit_dbg_put32(parent_i_node - i_node_table);
     microkit_dbg_puts("\n");
-    uint32_t *indirect_block = BLOCK_ADDRESS(parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]);
+    uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
     int filling_block_index = 0;
     int last_free_child_index = -1;
     int current_child_index = 0;
@@ -742,9 +712,9 @@ void defragment_directory(i_node_t *parent_i_node) {
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = parent_i_node->block_indices[i];
         } else {
-            block_index = indirect_block[i - DIRECT_BLOCKS_PER_INODE];
+            block_index = indirect_block_data[i - DIRECT_BLOCKS_PER_INODE];
         }
-        child_entry_t *child_entries = (child_entry_t *)BLOCK_ADDRESS(block_index);
+        child_entry_t *child_entries = (child_entry_t *)&blocks[block_index].data;
         for (size_t j = 0; j < MAX_CHILD_ENTRIES_PER_BLOCK; j++) {
             if (child_entries[j].name[0] == '\0') {
                 if (last_free_child_index == -1) {
@@ -753,15 +723,15 @@ void defragment_directory(i_node_t *parent_i_node) {
                     if (i < DIRECT_BLOCKS_PER_INODE) {
                         filling_block = parent_i_node->block_indices[filling_block_index];
                     } else {
-                        filling_block = indirect_block[filling_block_index - DIRECT_BLOCKS_PER_INODE];
+                        filling_block = indirect_block_data[filling_block_index - DIRECT_BLOCKS_PER_INODE];
                     }
                 }
             } else {
                 if (last_free_child_index != -1) {
-                    copy_string_from_buffer(child_entries[j].name, ((child_entry_t *)BLOCK_ADDRESS(filling_block))[last_free_child_index].name, MAX_NAME_LENGTH);
-                    ((child_entry_t *)BLOCK_ADDRESS(filling_block))[last_free_child_index].i_node_index = child_entries[j].i_node_index;
+                    copy_string_from_buffer(child_entries[j].name, ((child_entry_t *)&blocks[filling_block].data)[last_free_child_index].name, MAX_NAME_LENGTH);
+                    ((child_entry_t *)&blocks[filling_block].data)[last_free_child_index].i_node_index = child_entries[j].i_node_index;
                     child_entries[j].name[0] = '\0';
-                    while (((child_entry_t *)BLOCK_ADDRESS(filling_block))[last_free_child_index].name[0] != '\0') {
+                    while (((child_entry_t *)&blocks[filling_block].data)[last_free_child_index].name[0] != '\0') {
                         last_free_child_index++;
                         if (block_index == filling_block && last_free_child_index >= j) {
                             last_free_child_index = -1;
@@ -773,7 +743,7 @@ void defragment_directory(i_node_t *parent_i_node) {
                             if (filling_block_index < DIRECT_BLOCKS_PER_INODE) {
                                 filling_block = parent_i_node->block_indices[filling_block_index];
                             } else {
-                                filling_block = indirect_block[filling_block_index - DIRECT_BLOCKS_PER_INODE];
+                                filling_block = indirect_block_data[filling_block_index - DIRECT_BLOCKS_PER_INODE];
                             }
                         }
                     }
@@ -802,15 +772,15 @@ void delete_entry_operation(const uint32_t client_id, unsigned char *path) {
     }
 
     i_node_t *parent_i_node_ptr = &i_node_table[parent_i_node.index];
-    uint32_t *indirect_block = BLOCK_ADDRESS(parent_i_node_ptr->block_indices[DIRECT_BLOCKS_PER_INODE]);
+    uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node_ptr->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
     for (int i = 0; i < parent_i_node_ptr->blocks_used; i++) {
         uint32_t block_index;
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = parent_i_node_ptr->block_indices[i];
         } else {
-            block_index = indirect_block[i - DIRECT_BLOCKS_PER_INODE];
+            block_index = indirect_block_data[i - DIRECT_BLOCKS_PER_INODE];
         }
-        child_entry_t *child_entries = (child_entry_t *)BLOCK_ADDRESS(block_index);
+        child_entry_t *child_entries = (child_entry_t *)&blocks[block_index].data;
         for (size_t j = 0; j < MAX_CHILD_ENTRIES_PER_BLOCK; j++) {
             if (child_entries[j].i_node_index == i_node_index.index) {
                 child_entries[j].name[0] = '\0';
@@ -833,8 +803,8 @@ void delete_entry_operation(const uint32_t client_id, unsigned char *path) {
             block_index = parent_i_node_ptr->block_indices[block_to_free_index];
             parent_i_node_ptr->block_indices[block_to_free_index] = 0;
         } else {
-            block_index = indirect_block[block_to_free_index - DIRECT_BLOCKS_PER_INODE];
-            indirect_block[block_to_free_index - DIRECT_BLOCKS_PER_INODE] = 0;
+            block_index = indirect_block_data[block_to_free_index - DIRECT_BLOCKS_PER_INODE];
+            indirect_block_data[block_to_free_index - DIRECT_BLOCKS_PER_INODE] = 0;
         }
         release_block(block_index);
         parent_i_node_ptr->blocks_used -= 1;
@@ -918,33 +888,35 @@ void list_directory_operation(const uint32_t client_id, unsigned char *path) {
         return;
     }
     const int buffer_index = get_free_completion_buffer(client_id);
-    uint32_t *indirect_block = BLOCK_ADDRESS(dir_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]);
+    uint8_t *client_buffer_data = &clients[client_id].completion_buffers[buffer_index].data[0];
+    uint32_t *indirect_block_data = (uint32_t *)&blocks[dir_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
     int chars_written = 0;
     for (int i = 0; i < dir_i_node->blocks_used; i++) {
-        if (chars_written >= CLIENT_TOTAL_BUFFER_SIZE) {
+        if (chars_written >= CLIENT_BUFFER_SIZE) {
             break;
         }
         uint32_t block_index;
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = dir_i_node->block_indices[i];
         } else {
-            block_index = indirect_block[i - DIRECT_BLOCKS_PER_INODE];
+            block_index = indirect_block_data[i - DIRECT_BLOCKS_PER_INODE];
         }
-        child_entry_t *child_entries = (child_entry_t *)BLOCK_ADDRESS(block_index);
+        child_entry_t *child_entries = (child_entry_t *)&blocks[block_index].data;
         for (size_t j = 0; j < MAX_CHILD_ENTRIES_PER_BLOCK; j++) {
             if (child_entries[j].name[0] != '\0') {
-                chars_written += copy_string_from_buffer(child_entries[j].name, &((unsigned char *)CLIENT_COMPLETION_BUFFER(client_id, buffer_index))[chars_written], (MAX_NAME_LENGTH > CLIENT_TOTAL_BUFFER_SIZE - chars_written) ? CLIENT_TOTAL_BUFFER_SIZE - chars_written : MAX_NAME_LENGTH);
-                if (chars_written >= CLIENT_TOTAL_BUFFER_SIZE) {
-                    ((unsigned char *)CLIENT_COMPLETION_BUFFER(client_id, buffer_index))[chars_written - 1] = '\n';
+                // TODO: bro
+                chars_written += copy_string_from_buffer(child_entries[j].name, &client_buffer_data[chars_written], (MAX_NAME_LENGTH > CLIENT_BUFFER_SIZE - chars_written) ? CLIENT_BUFFER_SIZE - chars_written : MAX_NAME_LENGTH);
+                if (chars_written >= CLIENT_BUFFER_SIZE) {
+                    client_buffer_data[chars_written - 1] = '\n';
                     break;
                 }
-                ((unsigned char *)CLIENT_COMPLETION_BUFFER(client_id, buffer_index))[chars_written] = '\n';
+                client_buffer_data[chars_written] = '\n';
                 chars_written += 1;
             }
 
         }
     }
-    ((unsigned char *)CLIENT_COMPLETION_BUFFER(client_id, buffer_index))[chars_written] = '\0';
+    client_buffer_data[chars_written] = '\0';
     add_completion_entry(client_id, FS_OK, 0, 0, buffer_index);
 }
 
@@ -1007,9 +979,9 @@ void read_file_operation(const uint32_t client_id, const uint32_t file_descripto
         return_code = FS_ERR_OUT_OF_BOUNDS;
     }
     const int buffer_index = get_free_completion_buffer(client_id);
-    int8_t *client_buffer = (int8_t *)CLIENT_COMPLETION_BUFFER(client_id, buffer_index);
+    uint8_t *client_buffer_data = &clients[client_id].completion_buffers[buffer_index].data[0];
     int cursor_before = fd.descriptor->cursor_position;
-    fs_result_t rc = copy_bytes_i_node(i_node, client_buffer, bytes_to_read, fd.descriptor, READ);
+    fs_result_t rc = copy_bytes_i_node(i_node, client_buffer_data, bytes_to_read, fd.descriptor, READ);
     if (rc != FS_OK) {
         add_completion_entry(client_id, rc, 0, 0, buffer_index);
         return;
@@ -1037,9 +1009,9 @@ void write_file_operation(const uint32_t client_id, const uint32_t file_descript
     microkit_dbg_puts("writing ");
     microkit_dbg_put32(length);
     microkit_dbg_puts(" bytes\n");
-    int8_t *client_buffer = (int8_t *)CLIENT_SUBMISSION_BUFFER(client_id, buffer_index);
+    uint8_t *client_buffer_data = &clients[client_id].submission_buffers[buffer_index].data[0];
     int cursor_before = fd.descriptor->cursor_position;
-    fs_result_t rc = copy_bytes_i_node(i_node, client_buffer, length, fd.descriptor, WRITE);
+    fs_result_t rc = copy_bytes_i_node(i_node, client_buffer_data, length, fd.descriptor, WRITE);
     microkit_dbg_puts("write complete\n");
     if (rc != FS_OK) {
         add_completion_entry(client_id, rc, 0, 0, -1);
@@ -1067,18 +1039,18 @@ void seek_file_operation(const uint32_t client_id, const uint32_t file_descripto
 
 void init(void) {
     microkit_dbg_puts("FILE SERVER: started\n");
-    block_table = (uint8_t *)block_table_base;
-    i_node_table = (i_node_t *)i_node_table_base;
-    file_descriptor_table = (file_descriptor_t *)file_descriptor_table_base;
-    blocks = (uint8_t *)blocks_base;
-    clients = (uint8_t *)lowest_client_queue_base;
+    block_table = (uint8_t *)fs_memory_base;
+    i_node_table = (i_node_t *)(fs_memory_base + MAX_NUMBER_OF_BLOCKS);
+    file_descriptor_table = (file_descriptor_t *)(fs_memory_base + MAX_NUMBER_OF_BLOCKS + sizeof(i_node_t) * MAX_NUMBER_OF_INODES);
+    blocks = (block_t *)(fs_memory_base + MAX_NUMBER_OF_BLOCKS + sizeof(i_node_t) * MAX_NUMBER_OF_INODES + sizeof(file_descriptor_t) * NUMBER_OF_CLIENTS * MAX_OPEN_FILES_PER_CLIENT);
+    clients = (client_t *)clients_memory_base;
 
     microkit_dbg_puts("FILE SERVER: initialising block table\n");
     for (size_t i = 0; i < MAX_NUMBER_OF_BLOCKS; i++) {
         block_table[i] = 0;
     }
     microkit_dbg_puts("FILE SERVER: initialising inode table\n");
-    for (size_t i = 0; i < MAX_INODES; i++) {
+    for (size_t i = 0; i < MAX_NUMBER_OF_INODES; i++) {
         i_node_table[i].mode = 0;
     }
     microkit_dbg_puts("FILE SERVER: initialising fd table\n");
@@ -1087,24 +1059,17 @@ void init(void) {
     }
     microkit_dbg_puts("FILE SERVER: initialising client queues\n");
     for (size_t i = 0; i < NUMBER_OF_CLIENTS; i++) {
-        uint32_t *submission_queue_head = CLIENT_SUBMISSION_QUEUE_HEAD(i);
-        uint32_t *submission_queue_tail = CLIENT_SUBMISSION_QUEUE_TAIL(i);
-        uint32_t *completion_queue_tail = CLIENT_COMPLETION_QUEUE_TAIL(i);
-        uint32_t *completion_queue_head = CLIENT_COMPLETION_QUEUE_HEAD(i);
-        *submission_queue_head = 1;
-        *submission_queue_tail = 1;
-        *completion_queue_head = 1;
-        *completion_queue_tail = 1;
+        clients[i].submission_queue_head = 0;
+        clients[i].submission_queue_tail = 0;
+        clients[i].completion_queue_head = 0;
+        clients[i].completion_queue_tail = 0;
     }
 
-    // set all buffers to 0
     microkit_dbg_puts("FILE SERVER: initialising buffer table\n");
     for (size_t i = 0; i < NUMBER_OF_CLIENTS; i++) {
-        uint8_t *submission_buffer_table = CLIENT_SUBMISSION_BUFFER_TABLE_BASE(i);
-        uint8_t *completion_buffer_table = CLIENT_COMPLETION_BUFFER_TABLE_BASE(i);
         for (size_t j = 0; j < NUMBER_OF_BUFFERS_PER_CLIENT; j++) {
-            submission_buffer_table[j] = 0;
-            completion_buffer_table[j] = 0;
+            clients[i].submission_buffer_table[j] = 0;
+            clients[i].completion_buffer_table[j] = 0;
         }
     }
 
@@ -1118,10 +1083,6 @@ void init(void) {
     root_i_node->block_indices[0] = initial_i_node_block.index;
     root_i_node->entry_size = 0;
     root_i_node->blocks_used = 1;
-    //print sub tail
-    microkit_dbg_puts("sub tail is: ");
-    microkit_dbg_put32(*CLIENT_SUBMISSION_QUEUE_TAIL(0));
-    microkit_dbg_putc('\n');
 }
 
 
@@ -1129,30 +1090,28 @@ void set_free_submission_buffer(int client_id, int buffer_index) {
     if (buffer_index < 0 || buffer_index >= NUMBER_OF_BUFFERS_PER_CLIENT) {
         return;
     }
-    uint8_t *submission_buffer_table = CLIENT_SUBMISSION_BUFFER_TABLE_BASE(client_id);
-    submission_buffer_table[buffer_index] = 0;
+    clients[client_id].submission_buffer_table[buffer_index] = 0;
 }
 
 
 void service_client(uint32_t client_id) {
+    client_t *client = &clients[client_id];
     // TODO: limit number of operations per service to prevent starvation of other clients
     while (1) {
         microkit_dbg_puts("FILE SERVER: servicing client: ");
         microkit_dbg_put32(client_id);
         microkit_dbg_putc('\n');
-        uint32_t submission_head = *CLIENT_SUBMISSION_QUEUE_HEAD(client_id);
-        uint32_t submission_tail = *CLIENT_SUBMISSION_QUEUE_TAIL(client_id);
+        uint32_t submission_head = clients[client_id].submission_queue_head;
+        uint32_t submission_tail = clients[client_id].submission_queue_tail;
         if (submission_head == submission_tail) {
             microkit_dbg_puts("FILE SERVER: no submission entries\n");
             break;
         }
-        uint32_t completion_head = *CLIENT_COMPLETION_QUEUE_HEAD(client_id);
-        uint32_t completion_tail = *CLIENT_COMPLETION_QUEUE_TAIL(client_id);
-        if (completion_tail + 1 == completion_head || (completion_head == 1 && completion_tail == MAX_QUEUE_ENTRIES)) {
+        if (client->completion_queue_tail + 1 == client->completion_queue_head || (client->completion_queue_head == 1 && client->completion_queue_tail == MAX_QUEUE_ENTRIES - 1)) {
             microkit_dbg_puts("FILE SERVER: no free completion entries\n");
             break;
         }
-        submission_queue_entry_t *submission_entry = CLIENT_SUBMISSION_QUEUE_INDEX(client_id, submission_head);
+        submission_queue_entry_t *submission_entry = &client->submission_queue[submission_head];
         uint32_t operation = submission_entry->operation_code;
 
         if ((operation == OP_READ || operation == OP_LIST) && !is_free_completion_buffer(client_id)) {
@@ -1164,13 +1123,14 @@ void service_client(uint32_t client_id) {
             case OP_CREATE_FILE: {
                 microkit_dbg_puts("FILE SERVER: CREATE FILE OPERATION\n");
                 uint8_t permissions = (uint8_t)submission_entry->parameter1;
+                unsigned char *path = &client->submission_buffers[submission_entry->buffer_index].data[0];
                 microkit_dbg_puts("creating with path: ");
-                microkit_dbg_puts((char *)(CLIENT_SUBMISSION_BUFFER(client_id, submission_entry->buffer_index)));
+                microkit_dbg_puts((char *)path);
                 microkit_dbg_putc('\n');
-                i_node_result_t i_node = create_entry((unsigned char *)(CLIENT_SUBMISSION_BUFFER(client_id, submission_entry->buffer_index)), ROOT_DIRECTORY_I_NODE_INDEX, permissions, client_id, CREATE_FILE);
+                i_node_result_t i_node = create_entry(path, ROOT_DIRECTORY_I_NODE_INDEX, permissions, client_id, CREATE_FILE);
                 if (i_node.return_code == FS_OK) {
                     microkit_dbg_puts("opening created file\n");
-                    open_file_operation(client_id, permissions, (char *)(CLIENT_SUBMISSION_BUFFER(client_id, submission_entry->buffer_index)));
+                    open_file_operation(client_id, permissions, path);
                 }
                 set_free_submission_buffer(client_id, submission_entry->buffer_index);
                 break;
@@ -1179,17 +1139,18 @@ void service_client(uint32_t client_id) {
             case OP_CREATE_DIRECTORY: {
                 microkit_dbg_puts("FILE SERVER: CREATE DIRECTORY OPERATION\n");
                 uint8_t permissions = (uint8_t)submission_entry->parameter1;
+                unsigned char *path = &client->submission_buffers[submission_entry->buffer_index].data[0];
                 microkit_dbg_puts("creating with path: ");
-                microkit_dbg_puts((char *)(CLIENT_SUBMISSION_BUFFER(client_id, submission_entry->buffer_index)));
+                microkit_dbg_puts((char *)path);
                 microkit_dbg_putc('\n');
-                i_node_result_t i_node = create_entry((unsigned char *)(CLIENT_SUBMISSION_BUFFER(client_id, submission_entry->buffer_index)), ROOT_DIRECTORY_I_NODE_INDEX, permissions, client_id, CREATE_DIRECTORY);
+                i_node_result_t i_node = create_entry(path, ROOT_DIRECTORY_I_NODE_INDEX, permissions, client_id, CREATE_DIRECTORY);
                 set_free_submission_buffer(client_id, submission_entry->buffer_index);
                 break;
             }
 
             case OP_OPEN:
                 uint8_t requested_operations = (uint8_t)submission_entry->parameter1;
-                open_file_operation(client_id, requested_operations, (char *)(CLIENT_SUBMISSION_BUFFER(client_id, submission_entry->buffer_index)));
+                open_file_operation(client_id, requested_operations, (char *)&client->submission_buffers[submission_entry->buffer_index]);
                 set_free_submission_buffer(client_id, submission_entry->buffer_index);
                 break;
 
@@ -1228,7 +1189,7 @@ void service_client(uint32_t client_id) {
 
             case OP_DELETE: {
                 microkit_dbg_puts("FILE SERVER: DELETE OPERATION\n");
-                delete_entry_operation(client_id, (unsigned char *)(CLIENT_SUBMISSION_BUFFER(client_id, submission_entry->buffer_index)));
+                delete_entry_operation(client_id, (unsigned char *)&client->submission_buffers[submission_entry->buffer_index]);
                 set_free_submission_buffer(client_id, submission_entry->buffer_index);
                 break;
             }
@@ -1236,35 +1197,35 @@ void service_client(uint32_t client_id) {
             case OP_SET_PERMISSIONS: {
                 microkit_dbg_puts("FILE SERVER: SET PERMISSIONS OPERATION\n");
                 uint8_t new_permissions = (uint8_t)submission_entry->parameter1;
-                set_entry_permissions_operation(client_id, new_permissions, (unsigned char *)(CLIENT_SUBMISSION_BUFFER(client_id, submission_entry->buffer_index)));
+                set_entry_permissions_operation(client_id, new_permissions, (unsigned char *)&client->submission_buffers[submission_entry->buffer_index]);
                 set_free_submission_buffer(client_id, submission_entry->buffer_index);
                 break;
             }
 
             case OP_GET_PERMISSIONS: {
                 microkit_dbg_puts("FILE SERVER: GET PERMISSIONS OPERATION\n");
-                get_entry_permissions_operation(client_id, (unsigned char *)(CLIENT_SUBMISSION_BUFFER(client_id, submission_entry->buffer_index)));
+                get_entry_permissions_operation(client_id, (unsigned char *)&client->submission_buffers[submission_entry->buffer_index]);
                 set_free_submission_buffer(client_id, submission_entry->buffer_index);
                 break;
             }
 
             case OP_GET_SIZE: {
                 microkit_dbg_puts("FILE SERVER: GET SIZE OPERATION\n");
-                get_entry_size_operation(client_id, (unsigned char *)(CLIENT_SUBMISSION_BUFFER(client_id, submission_entry->buffer_index)));
+                get_entry_size_operation(client_id, (unsigned char *)&client->submission_buffers[submission_entry->buffer_index]);
                 set_free_submission_buffer(client_id, submission_entry->buffer_index);
                 break;
             }
 
             case OP_EXISTS: {
                 microkit_dbg_puts("FILE SERVER: EXISTS OPERATION\n");
-                entry_exists_operation(client_id, (unsigned char *)(CLIENT_SUBMISSION_BUFFER(client_id, submission_entry->buffer_index)));
+                entry_exists_operation(client_id, (unsigned char *)&client->submission_buffers[submission_entry->buffer_index]);
                 set_free_submission_buffer(client_id, submission_entry->buffer_index);
                 break;
             }
 
             case OP_LIST: {
                 microkit_dbg_puts("FILE SERVER: LIST OPERATION\n");
-                list_directory_operation(client_id, (unsigned char *)(CLIENT_SUBMISSION_BUFFER(client_id, submission_entry->buffer_index)));
+                list_directory_operation(client_id, (unsigned char *)&client->submission_buffers[submission_entry->buffer_index]);
                 set_free_submission_buffer(client_id, submission_entry->buffer_index);
                 break;
             }
@@ -1277,14 +1238,14 @@ void service_client(uint32_t client_id) {
         increment_submission_queue_head(client_id);
     }
 
-    *CLIENT_READY_FLAG(client_id) = 0;
-    *CLIENT_COMPLETE_FLAG(client_id) = 1;
+    clients[client_id].flags.ready_flag = 0;
+    clients[client_id].flags.complete_flag = 1;
 }
 
 
 void poll_clients() {
     for (size_t i = 0; i < NUMBER_OF_CLIENTS; i++) {
-        if (*CLIENT_READY_FLAG(i)) {
+        if (clients[i].flags.ready_flag && !clients[i].flags.complete_flag) {
             microkit_dbg_puts("FILE SERVER: client ");
             microkit_dbg_put32(i);
             microkit_dbg_puts(" had lost notif, servicing now.\n");
