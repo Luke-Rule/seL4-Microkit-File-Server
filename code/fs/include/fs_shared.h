@@ -1,23 +1,12 @@
 #pragma once
+#include <stdint.h>
+#include <stddef.h>
+
 #define MAX_NAME_LENGTH 63
 #define CLIENT_BUFFER_SIZE 0x1000
 #define MAX_QUEUE_ENTRIES 64
 #define NUMBER_OF_BUFFERS_PER_CLIENT 64
 #define CLIENT_DATA_PAGE_SIZE 0x81000
-
-// ANSI color codes for terminal output (used by tests)
-#define ANSI_COLOR_GREEN "\x1b[32m"
-#define ANSI_COLOR_RED "\x1b[31m"
-#define ANSI_COLOR_YELLOW "\x1b[33m"
-#define ANSI_COLOR_RESET "\x1b[0m"
-
-#define FULL_PATH_EQUAL 0
-#define FULL_PATH_NOT_EQUAL -1
-#define PATH_SEGMENT_EQUAL 1
-
-#define CREATE_DIRECTORY 1
-#define CREATE_FILE 0
-#define ROOT_DIRECTORY_I_NODE_INDEX 0
 
 typedef enum {
     OP_CREATE_FILE = 0,

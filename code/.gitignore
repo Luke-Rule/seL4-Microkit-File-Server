@@ -1,5 +1,6 @@
 # Build artifacts
 build/
+fs/build/
 *.o
 *.elf
 *.bin

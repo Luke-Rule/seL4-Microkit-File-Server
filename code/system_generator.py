@@ -15,8 +15,8 @@ def generate_synchronous_system_file(number_of_clients):
         f.write("\n")
         
         f.write("    <!-- File Server Protection Domain -->\n")
-        f.write(f"    <protection_domain name=\"file_server_async\" priority=\"1\" >\n")
-        f.write(f"        <program_image path=\"file_server_async.elf\"/>\n")
+        f.write(f"    <protection_domain name=\"file_server\" priority=\"1\" >\n")
+        f.write(f"        <program_image path=\"file_server.elf\"/>\n")
         f.write("\n")
 
         f.write(f"        <map mr=\"fs_memory\" vaddr=\"0x{base_vaddr:X}\" perms=\"rw\" cached=\"true\"\n")
@@ -39,7 +39,7 @@ def generate_synchronous_system_file(number_of_clients):
         for i in range(number_of_clients):
             # client pds
             f.write(f"    <protection_domain name=\"client_{i}\" priority=\"0\" >\n")
-            f.write(f"        <program_image path=\"fs_tests_async.elf\"/>\n")
+            f.write(f"        <program_image path=\"fs_tests.elf\"/>\n")
             f.write(f"        <map mr=\"client_{i}\" vaddr=\"0x{(base_vaddr):X}\" perms=\"rw\" cached=\"false\"\n")
             f.write(f"          setvar_vaddr=\"fs_data_base\"/>\n")
             f.write(f"    </protection_domain>\n")
@@ -49,7 +49,7 @@ def generate_synchronous_system_file(number_of_clients):
         for i in range(number_of_clients):
             # channels
             f.write(f"    <channel>\n")
-            f.write(f"        <end pd=\"file_server_async\" id=\"{i}\"/>\n")
+            f.write(f"        <end pd=\"file_server\" id=\"{i}\"/>\n")
             f.write(f"        <end pd=\"client_{i}\" id=\"0\" pp=\"true\"/>\n")
             f.write(f"    </channel>\n")
 

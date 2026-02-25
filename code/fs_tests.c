@@ -8,9 +8,10 @@
 #include <microkit.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "definitions.h"
-#include "utils.c"
-#include "file_operations_async.c"
+
+#include "fs_api.h"
+#include "fs_shared.h"
+
 
 // ------------------------------- Globals --------------------------------- //
 
@@ -20,6 +21,12 @@ int tests_passed = 0;
 int tests_failed = 0;
 
 // ------------------------------ Utility functions ------------------------------- //
+
+#define ANSI_COLOR_GREEN "\x1b[32m"
+#define ANSI_COLOR_RED "\x1b[31m"
+#define ANSI_COLOR_YELLOW "\x1b[33m"
+#define ANSI_COLOR_RESET "\x1b[0m"
+
 
 static void clear_all_client_buffers(void) {
     for (size_t i = 0; i < NUMBER_OF_BUFFERS_PER_CLIENT; i++) {

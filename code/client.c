@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "definitions.h"
-#include "utils.c"
 
 #define FILE_SERVER_CHANNEL_ID 0
 
