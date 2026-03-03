@@ -28,152 +28,189 @@ i_node_t *i_node_table;
 block_t *blocks;
 client_t *clients;
 
+void handle_operation(file_operation_t operation, submission_queue_entry_t *submission_entry, uint32_t client_id) {
+    switch (operation) {
+        case OP_CREATE_FILE: {
+            microkit_dbg_puts("FILE SERVER: CREATE FILE OPERATION\n");
+            uint8_t permissions = (uint8_t)submission_entry->parameter1;
+            unsigned char *path = (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index];
+            microkit_dbg_puts("creating with path: ");
+            microkit_dbg_puts((char *)path);
+            microkit_dbg_putc('\n');
+            i_node_result_t i_node = create_entry(path, ROOT_DIRECTORY_I_NODE_INDEX, permissions, client_id, CREATE_FILE);
+            if (i_node.return_code == FS_OK) {
+                microkit_dbg_puts("opening created file\n");
+                open_file_operation(client_id, permissions, path);
+            }
+            break;
+        }
+
+        case OP_CREATE_DIRECTORY: {
+            microkit_dbg_puts("FILE SERVER: CREATE DIRECTORY OPERATION\n");
+            uint8_t permissions = (uint8_t)submission_entry->parameter1;
+            unsigned char *path = (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index];
+            microkit_dbg_puts("creating with path: ");
+            microkit_dbg_puts((char *)path);
+            microkit_dbg_putc('\n');
+            i_node_result_t i_node = create_entry(path, ROOT_DIRECTORY_I_NODE_INDEX, permissions, client_id, CREATE_DIRECTORY);
+            break;
+        }
+
+        case OP_OPEN:
+            microkit_dbg_puts("FILE SERVER: OPEN OPERATION\n");
+            uint8_t requested_operations = (uint8_t)submission_entry->parameter1;
+            open_file_operation(
+                client_id,
+                requested_operations,
+                (char *)&clients[client_id].submission_buffers[submission_entry->buffer_index]
+            );
+            break;
+
+
+        case OP_CLOSE:
+            microkit_dbg_puts("FILE SERVER: CLOSE OPERATION\n");
+            uint32_t file_id = (uint32_t)submission_entry->parameter1;
+            close_file_operation(client_id, file_id);
+            break;
+
+
+        case OP_READ: {
+            microkit_dbg_puts("FILE SERVER: READ OPERATION\n");
+            uint32_t file_id = (uint32_t)submission_entry->parameter1;
+            size_t length = (size_t)submission_entry->parameter2;
+            read_file_operation(client_id, file_id, length);
+            break;
+        }
+
+        case OP_WRITE: {
+            microkit_dbg_puts("FILE SERVER: WRITE OPERATION\n");
+            uint32_t file_id = (uint32_t)submission_entry->parameter1;
+            size_t write_length = (size_t)submission_entry->parameter2;
+            write_file_operation(client_id, file_id, write_length, submission_entry->buffer_index);
+            break;
+        }
+
+        case OP_SEEK: {
+            microkit_dbg_puts("FILE SERVER: SEEK OPERATION\n");
+            uint32_t file_id = (uint32_t)submission_entry->parameter1;
+            uint32_t position = (uint32_t)submission_entry->parameter2;
+            seek_file_operation(client_id, file_id, position);
+            break;
+        }
+
+        case OP_DELETE: {
+            microkit_dbg_puts("FILE SERVER: DELETE OPERATION\n");
+            delete_entry_operation(
+                client_id,
+                (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index]
+            );
+            break;
+        }
+            
+        case OP_SET_PERMISSIONS: {
+            microkit_dbg_puts("FILE SERVER: SET PERMISSIONS OPERATION\n");
+            uint8_t new_permissions = (uint8_t)submission_entry->parameter1;
+            set_entry_permissions_operation(client_id,
+                new_permissions,
+                (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index]
+            );
+            break;
+        }
+
+        case OP_GET_PERMISSIONS: {
+            microkit_dbg_puts("FILE SERVER: GET PERMISSIONS OPERATION\n");
+            get_entry_permissions_operation(
+                client_id,
+                (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index]
+            );
+            break;
+        }
+
+        case OP_GET_SIZE: {
+            microkit_dbg_puts("FILE SERVER: GET SIZE OPERATION\n");
+            get_entry_size_operation(
+                client_id,
+                (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index]
+            );
+            break;
+        }
+
+        case OP_EXISTS: {
+            microkit_dbg_puts("FILE SERVER: EXISTS OPERATION\n");
+            entry_exists_operation(
+                client_id,
+                (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index]
+            );
+            break;
+        }
+
+        case OP_LIST: {
+            microkit_dbg_puts("FILE SERVER: LIST OPERATION\n");
+            list_directory_operation(
+                client_id,
+                (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index]
+            );
+            break;
+        }
+
+        default:
+            microkit_dbg_puts("FILE SERVER: INVALID OPERATION CODE\n");
+            break;
+    }
+}
+
 void service_client(uint32_t client_id) {
-    client_t *client = &clients[client_id];
     // TODO: limit number of operations per service to prevent starvation of other clients
-    while (1) {
+    uint32_t num_operations = 0;
+    // TODO: should set complete flag if more entries?
+    int unset_ready_flag = 0;
+    // TODO: should prioritise operations, not really as OOO complications
+    while (num_operations < MAX_OPERATIONS_PER_SERVICE) {
         microkit_dbg_puts("FILE SERVER: servicing client: ");
         microkit_dbg_put32(client_id);
         microkit_dbg_putc('\n');
-        uint32_t submission_head = clients[client_id].submission_queue_head;
-        uint32_t submission_tail = clients[client_id].submission_queue_tail;
-        if (submission_head == submission_tail) {
+
+        if (clients[client_id].submission_queue_head == clients[client_id].submission_queue_tail) {
             microkit_dbg_puts("FILE SERVER: no submission entries\n");
+            unset_ready_flag = 1;
             break;
         }
-        if (client->completion_queue_tail + 1 == client->completion_queue_head || (client->completion_queue_head == 1 && client->completion_queue_tail == MAX_QUEUE_ENTRIES - 1)) {
+
+        if (clients[client_id].completion_queue_tail + 1 == clients[client_id].completion_queue_head || 
+                (clients[client_id].completion_queue_head == 1 &&
+                 clients[client_id].completion_queue_tail == MAX_QUEUE_ENTRIES - 1)
+           ) {
             microkit_dbg_puts("FILE SERVER: no free completion entries\n");
             break;
         }
-        submission_queue_entry_t *submission_entry = &client->submission_queue[submission_head];
-        uint32_t operation = submission_entry->operation_code;
 
-        if ((operation == OP_READ || operation == OP_LIST) && !is_free_completion_buffer(client_id)) {
+        submission_queue_entry_t *submission_entry = &clients[client_id].submission_queue[
+            clients[client_id].submission_queue_head
+        ];
+
+        file_operation_t operation = (file_operation_t)submission_entry->operation_code;
+
+        if (operation_requires_completion_buffer(operation) && !is_free_completion_buffer(client_id)) {
             microkit_dbg_puts("FILE SERVER: no free completion buffer for operation\n");
             break;
         }
+        
+        handle_operation(operation, submission_entry, client_id);
 
-        switch (operation) {
-            case OP_CREATE_FILE: {
-                microkit_dbg_puts("FILE SERVER: CREATE FILE OPERATION\n");
-                uint8_t permissions = (uint8_t)submission_entry->parameter1;
-                unsigned char *path = &client->submission_buffers[submission_entry->buffer_index].data[0];
-                microkit_dbg_puts("creating with path: ");
-                microkit_dbg_puts((char *)path);
-                microkit_dbg_putc('\n');
-                i_node_result_t i_node = create_entry(path, ROOT_DIRECTORY_I_NODE_INDEX, permissions, client_id, CREATE_FILE);
-                if (i_node.return_code == FS_OK) {
-                    microkit_dbg_puts("opening created file\n");
-                    open_file_operation(client_id, permissions, path);
-                }
-                set_free_submission_buffer(client_id, submission_entry->buffer_index);
-                break;
-            }
-
-            case OP_CREATE_DIRECTORY: {
-                microkit_dbg_puts("FILE SERVER: CREATE DIRECTORY OPERATION\n");
-                uint8_t permissions = (uint8_t)submission_entry->parameter1;
-                unsigned char *path = &client->submission_buffers[submission_entry->buffer_index].data[0];
-                microkit_dbg_puts("creating with path: ");
-                microkit_dbg_puts((char *)path);
-                microkit_dbg_putc('\n');
-                i_node_result_t i_node = create_entry(path, ROOT_DIRECTORY_I_NODE_INDEX, permissions, client_id, CREATE_DIRECTORY);
-                set_free_submission_buffer(client_id, submission_entry->buffer_index);
-                break;
-            }
-
-            case OP_OPEN:
-                uint8_t requested_operations = (uint8_t)submission_entry->parameter1;
-                open_file_operation(client_id, requested_operations, (char *)&client->submission_buffers[submission_entry->buffer_index]);
-                set_free_submission_buffer(client_id, submission_entry->buffer_index);
-                break;
-
-
-            case OP_CLOSE:
-                microkit_dbg_puts("FILE SERVER: CLOSE OPERATION\n");
-                uint32_t file_id = (uint32_t)submission_entry->parameter1;
-                close_file_operation(client_id, file_id);
-                break;
-
-
-            case OP_READ: {
-                microkit_dbg_puts("FILE SERVER: READ OPERATION\n");
-                uint32_t file_id = (uint32_t)submission_entry->parameter1;
-                size_t length = (size_t)submission_entry->parameter2;
-                read_file_operation(client_id, file_id, length);
-                break;
-            }
-
-            case OP_WRITE: {
-                microkit_dbg_puts("FILE SERVER: WRITE OPERATION\n");
-                uint32_t file_id = (uint32_t)submission_entry->parameter1;
-                size_t write_length = (size_t)submission_entry->parameter2;
-                write_file_operation(client_id, file_id, write_length, submission_entry->buffer_index);
-                set_free_submission_buffer(client_id, submission_entry->buffer_index);
-                break;
-            }
-
-            case OP_SEEK: {
-                microkit_dbg_puts("FILE SERVER: SEEK OPERATION\n");
-                uint32_t file_id = (uint32_t)submission_entry->parameter1;
-                uint32_t position = (uint32_t)submission_entry->parameter2;
-                seek_file_operation(client_id, file_id, position);
-                break;
-            }
-
-            case OP_DELETE: {
-                microkit_dbg_puts("FILE SERVER: DELETE OPERATION\n");
-                delete_entry_operation(client_id, (unsigned char *)&client->submission_buffers[submission_entry->buffer_index]);
-                set_free_submission_buffer(client_id, submission_entry->buffer_index);
-                break;
-            }
-                
-            case OP_SET_PERMISSIONS: {
-                microkit_dbg_puts("FILE SERVER: SET PERMISSIONS OPERATION\n");
-                uint8_t new_permissions = (uint8_t)submission_entry->parameter1;
-                set_entry_permissions_operation(client_id, new_permissions, (unsigned char *)&client->submission_buffers[submission_entry->buffer_index]);
-                set_free_submission_buffer(client_id, submission_entry->buffer_index);
-                break;
-            }
-
-            case OP_GET_PERMISSIONS: {
-                microkit_dbg_puts("FILE SERVER: GET PERMISSIONS OPERATION\n");
-                get_entry_permissions_operation(client_id, (unsigned char *)&client->submission_buffers[submission_entry->buffer_index]);
-                set_free_submission_buffer(client_id, submission_entry->buffer_index);
-                break;
-            }
-
-            case OP_GET_SIZE: {
-                microkit_dbg_puts("FILE SERVER: GET SIZE OPERATION\n");
-                get_entry_size_operation(client_id, (unsigned char *)&client->submission_buffers[submission_entry->buffer_index]);
-                set_free_submission_buffer(client_id, submission_entry->buffer_index);
-                break;
-            }
-
-            case OP_EXISTS: {
-                microkit_dbg_puts("FILE SERVER: EXISTS OPERATION\n");
-                entry_exists_operation(client_id, (unsigned char *)&client->submission_buffers[submission_entry->buffer_index]);
-                set_free_submission_buffer(client_id, submission_entry->buffer_index);
-                break;
-            }
-
-            case OP_LIST: {
-                microkit_dbg_puts("FILE SERVER: LIST OPERATION\n");
-                list_directory_operation(client_id, (unsigned char *)&client->submission_buffers[submission_entry->buffer_index]);
-                set_free_submission_buffer(client_id, submission_entry->buffer_index);
-                break;
-            }
-
-            default:
-                microkit_dbg_puts("FILE SERVER: INVALID OPERATION CODE\n");
-                break;
+        if (operation_requires_submission_buffer(operation)) {
+            set_free_submission_buffer(client_id, submission_entry->buffer_index);
         }
 
         increment_submission_queue_head(client_id);
+        num_operations++;
     }
 
-    clients[client_id].flags.ready_flag = 0;
-    clients[client_id].flags.complete_flag = 1;
+    if (unset_ready_flag) {
+        clients[client_id].flags.ready_flag = 0;
+    }
+    if (num_operations > 0) {
+        clients[client_id].flags.complete_flag = 1;
+    }
 }
 
 

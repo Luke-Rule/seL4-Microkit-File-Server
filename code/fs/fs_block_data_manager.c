@@ -31,7 +31,7 @@ fs_result_t copy_bytes_i_node(i_node_t *i_node, uint8_t *client_buffer, size_t l
         } else {
             block_index = i_node->block_indices[block_info.i_node_block_index];
         }
-        uint8_t *block_data = &blocks[block_index].data[0];
+        uint8_t *block_data = (uint8_t *)&blocks[block_index];
         size_t bytes_available_in_block = BLOCK_SIZE - block_info.block_offset;
         size_t bytes_this_iteration = (length < bytes_available_in_block) ? length : bytes_available_in_block;
         if (rnw) {

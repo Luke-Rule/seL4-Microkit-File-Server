@@ -220,7 +220,7 @@ void list_directory_operation(const uint32_t client_id, unsigned char *path) {
         add_completion_entry(client_id, FS_ERROR_NO_FREE_COMPLETION_BUFFERS, 0, 0, -1);
         return;
     }
-    uint8_t *client_buffer_data = &clients[client_id].completion_buffers[buffer_index].data[0];
+    uint8_t *client_buffer_data = (uint8_t *)&clients[client_id].completion_buffers[buffer_index];
     uint32_t *indirect_block_data = (uint32_t *)&blocks[dir_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
     int chars_written = 0;
     for (int i = 0; i < dir_i_node->blocks_used; i++) {
@@ -315,7 +315,7 @@ void read_file_operation(const uint32_t client_id, const uint32_t file_descripto
         add_completion_entry(client_id, FS_ERROR_NO_FREE_COMPLETION_BUFFERS, 0, 0, -1);
         return;
     }
-    uint8_t *client_buffer_data = &clients[client_id].completion_buffers[buffer_index].data[0];
+    uint8_t *client_buffer_data = (uint8_t *)&clients[client_id].completion_buffers[buffer_index];
     int cursor_before = fd.descriptor->cursor_position;
     fs_result_t rc = copy_bytes_i_node(i_node, client_buffer_data, bytes_to_read, fd.descriptor, READ);
     if (rc != FS_OK) {
@@ -347,7 +347,7 @@ void write_file_operation(const uint32_t client_id, const uint32_t file_descript
     microkit_dbg_put32(length);
     microkit_dbg_puts(" bytes\n");
     int cursor_before = fd.descriptor->cursor_position;
-    uint8_t *client_buffer_data = &clients[client_id].submission_buffers[submission_buffer_index].data[0];
+    uint8_t *client_buffer_data = (uint8_t *)&clients[client_id].submission_buffers[submission_buffer_index];
     fs_result_t rc = copy_bytes_i_node(i_node, client_buffer_data, length, fd.descriptor, WRITE);
     microkit_dbg_puts("write complete\n");
     if (rc != FS_OK) {

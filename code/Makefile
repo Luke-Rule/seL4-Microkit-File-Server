@@ -14,11 +14,11 @@ AS := $(TOOLCHAIN)-as
 MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
 # VPATH to find sources in subdirectories
-VPATH := fs
+VPATH := fs:tests
 
 # Source files and objects
 CLIENT_OBJS := client.o
-TESTS_OBJS := fs_tests.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o
+TESTS_OBJS := fs_tests.o test_utils.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o
 # FILESERVER_OBJS := file_server.o
 FILESERVER_DYNAMIC_OBJS := file_server.o \
 	fs_operations.o \
@@ -33,7 +33,7 @@ FILESERVER_DYNAMIC_OBJS := file_server.o \
 BOARD_DIR := $(MICROKIT_SDK)/board/$(BOARD)/$(MICROKIT_CONFIG)
 
 # Compiler and linker flags
-CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g -Werror -I$(BOARD_DIR)/include -Ivmm/src/util -Iinclude -DBOARD_$(BOARD) -I. -Ifs/include
+CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g -Werror -I$(BOARD_DIR)/include -Ivmm/src/util -Iinclude -Itests/include -DBOARD_$(BOARD) -I. -Ifs/include
 LDFLAGS := -L$(BOARD_DIR)/lib
 LIBS := -lmicrokit -Tmicrokit.ld
 
@@ -46,7 +46,7 @@ FILESERVER_DYNAMIC_ELF := $(BUILD_DIR)/file_server.elf
 TEST_IMAGE_FILE = $(BUILD_DIR)/fs_tests_loader.img
 REPORT_FILE = $(BUILD_DIR)/report.txt
 SYSTEM_FILE := file.system
-TEST_SYSTEM_FILE := fs_tests.system
+TEST_SYSTEM_FILE := tests/fs_tests.system
 
 # Targets
 # all: directories $(IMAGE_FILE) $(TEST_IMAGE_FILE)
