@@ -17,10 +17,13 @@ MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 VPATH := fs:tests
 
 # Source files and objects
-CLIENT_OBJS := client.o
-TESTS_OBJS := fs_tests.o test_utils.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o
+COMMON_OBJS := debug_output.o
+
+CLIENT_OBJS := client.o $(COMMON_OBJS)
+TESTS_OBJS := fs_tests.o test_utils.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o $(COMMON_OBJS)
 # FILESERVER_OBJS := file_server.o
 FILESERVER_DYNAMIC_OBJS := file_server.o \
+	$(COMMON_OBJS) \
 	fs_operations.o \
 	fs_directory_manager.o \
 	fs_i_node_manager.o \
@@ -51,11 +54,14 @@ TEST_SYSTEM_FILE := tests/fs_tests.system
 # Targets
 # all: directories $(IMAGE_FILE) $(TEST_IMAGE_FILE)
 all: directories $(TEST_IMAGE_FILE)
-directories:
-	$(info $(shell mkdir -p $(BUILD_DIR)))
+
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+directories: $(BUILD_DIR)
 	
 # Compile .c -> .o and generate dependency file
-$(BUILD_DIR)/%.o: %.c Makefile
+$(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR)
 	$(CC) -c $(CFLAGS) -MMD -MP $< -o $@
 
 # Include dependency files if they exist

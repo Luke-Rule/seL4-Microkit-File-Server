@@ -1,6 +1,9 @@
 #include <microkit.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+#include "debug_output.h"
+
 #include "definitions.h"
 
 #define FILE_SERVER_CHANNEL_ID 0

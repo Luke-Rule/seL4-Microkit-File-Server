@@ -8,6 +8,9 @@
 #include <microkit.h>
 #include <stdint.h>
 #include <stddef.h>
+
+#include "debug_output.h"
+
 #include "fs_internal.h"
 #include "fs_shared.h"
 #include "fs_utils.h"
@@ -265,6 +268,8 @@ void init(void) {
 
     microkit_dbg_puts("FILE SERVER: allocating root block\n");
     block_id_result_t initial_i_node_block = allocate_block();
+
+    zero_block(blocks[initial_i_node_block.index].data);
 
     microkit_dbg_puts("FILE SERVER: initialising root block\n");
     i_node_t *root_i_node = &i_node_table[allocate_i_node().index];

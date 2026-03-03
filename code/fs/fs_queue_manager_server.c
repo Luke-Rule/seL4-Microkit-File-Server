@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "debug_output.h"
+
 #include "fs_shared.h"
 #include "fs_queue_manager_server.h"
 #include "fs_state.h"

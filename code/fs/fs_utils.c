@@ -1,5 +1,8 @@
 #include <stdint.h>
 #include <stddef.h>
+
+#include "debug_output.h"
+
 #include "fs_internal.h"
 #include "fs_shared.h"
 
@@ -100,4 +103,11 @@ size_t copy_string_from_buffer(const unsigned char *src, unsigned char *dest, si
     // truncate if it exceeds max_length
     dest[max_length - 1] = '\0';
     return max_length - 1;
+}
+
+
+void zero_block(unsigned char *block) {
+    for (size_t i = 0; i < BLOCK_SIZE; i++) {
+        block[i] = 0;
+    }
 }

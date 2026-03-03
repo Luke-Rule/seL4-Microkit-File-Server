@@ -1,5 +1,8 @@
 #include <stdint.h>
 #include <stddef.h>
+
+#include "debug_output.h"
+
 #include "fs_buffer_manager.h"
 #include "fs_shared.h"
 #include "fs_internal.h"
@@ -43,6 +46,8 @@ child_slot_and_block_result_t get_free_child_slot(const uint32_t parent_i_node_i
     if (new_block.return_code != FS_OK) {
         return (child_slot_and_block_result_t){0, 0, new_block.return_code};
     }
+
+    zero_block(blocks[new_block.index].data);
     if (parent_i_node->blocks_used < DIRECT_BLOCKS_PER_INODE) {
         parent_i_node->block_indices[parent_i_node->blocks_used] = new_block.index;
     } else {
@@ -95,6 +100,10 @@ i_node_result_t add_entry(const uint32_t parent_i_node_index, unsigned char *nam
         release_i_node(new_i_node_info.index);
         add_completion_entry(client_id, new_block.return_code, 0, 0, -1);
         return (i_node_result_t){-1, new_block.return_code};
+    }
+
+    if (is_directory) {
+        zero_block(blocks[new_block.index].data);
     }
 
     parent_i_node->entry_size += 1;

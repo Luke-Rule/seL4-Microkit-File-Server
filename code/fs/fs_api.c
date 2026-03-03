@@ -1,6 +1,9 @@
 #include <microkit.h>
 #include <stdint.h>
 #include <stddef.h>
+
+#include "debug_output.h"
+
 #include "fs_api.h"
 #include "fs_buffer_manager.h"
 #include "fs_queue_manager_client.h"
