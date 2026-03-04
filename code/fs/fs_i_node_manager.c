@@ -21,7 +21,7 @@ i_node_result_t allocate_i_node(void) {
         }
     }
 
-    microkit_dbg_puts("cant allocate i node\n");
+    microkit_debug_puts("cant allocate i node\n");
     return (i_node_result_t){0, FS_ERR_INODE_TABLE_FULL};
 }
 
@@ -46,9 +46,9 @@ void release_i_node(const uint32_t i_node_index) {
 
 i_node_result_t get_i_node_index(unsigned char *path, const uint32_t parent_i_node_index,
                                  const uint8_t client_id, const int get_parent) {
-    microkit_dbg_puts("resolving path: ");
-    microkit_dbg_puts((const char *)path);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts("resolving path: ");
+    microkit_debug_puts((const char *)path);
+    microkit_debug_puts("\n");
     if (path[0] != '/') {
         return (i_node_result_t){-1, FS_ERR_INVALID_PATH};
     }
@@ -91,6 +91,6 @@ i_node_result_t get_i_node_index(unsigned char *path, const uint32_t parent_i_no
             }
         }
     }
-    microkit_dbg_puts("i node not found\n");
+    microkit_debug_puts("i node not found\n");
     return (i_node_result_t){-1, FS_ERR_NOT_FOUND};
 }

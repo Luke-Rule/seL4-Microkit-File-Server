@@ -34,33 +34,33 @@ client_t *clients;
 void handle_operation(file_operation_t operation, submission_queue_entry_t *submission_entry, uint32_t client_id) {
     switch (operation) {
         case OP_CREATE_FILE: {
-            microkit_dbg_puts("FILE SERVER: CREATE FILE OPERATION\n");
+            microkit_debug_puts("FILE SERVER: CREATE FILE OPERATION\n");
             uint8_t permissions = (uint8_t)submission_entry->parameter1;
             unsigned char *path = (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index];
-            microkit_dbg_puts("creating with path: ");
-            microkit_dbg_puts((char *)path);
-            microkit_dbg_putc('\n');
+            microkit_debug_puts("creating with path: ");
+            microkit_debug_puts((char *)path);
+            microkit_debug_putc('\n');
             i_node_result_t i_node = create_entry(path, ROOT_DIRECTORY_I_NODE_INDEX, permissions, client_id, CREATE_FILE);
             if (i_node.return_code == FS_OK) {
-                microkit_dbg_puts("opening created file\n");
+                microkit_debug_puts("opening created file\n");
                 open_file_operation(client_id, permissions, path);
             }
             break;
         }
 
         case OP_CREATE_DIRECTORY: {
-            microkit_dbg_puts("FILE SERVER: CREATE DIRECTORY OPERATION\n");
+            microkit_debug_puts("FILE SERVER: CREATE DIRECTORY OPERATION\n");
             uint8_t permissions = (uint8_t)submission_entry->parameter1;
             unsigned char *path = (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index];
-            microkit_dbg_puts("creating with path: ");
-            microkit_dbg_puts((char *)path);
-            microkit_dbg_putc('\n');
+            microkit_debug_puts("creating with path: ");
+            microkit_debug_puts((char *)path);
+            microkit_debug_putc('\n');
             i_node_result_t i_node = create_entry(path, ROOT_DIRECTORY_I_NODE_INDEX, permissions, client_id, CREATE_DIRECTORY);
             break;
         }
 
         case OP_OPEN:
-            microkit_dbg_puts("FILE SERVER: OPEN OPERATION\n");
+            microkit_debug_puts("FILE SERVER: OPEN OPERATION\n");
             uint8_t requested_operations = (uint8_t)submission_entry->parameter1;
             open_file_operation(
                 client_id,
@@ -71,14 +71,14 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
 
 
         case OP_CLOSE:
-            microkit_dbg_puts("FILE SERVER: CLOSE OPERATION\n");
+            microkit_debug_puts("FILE SERVER: CLOSE OPERATION\n");
             uint32_t file_id = (uint32_t)submission_entry->parameter1;
             close_file_operation(client_id, file_id);
             break;
 
 
         case OP_READ: {
-            microkit_dbg_puts("FILE SERVER: READ OPERATION\n");
+            microkit_debug_puts("FILE SERVER: READ OPERATION\n");
             uint32_t file_id = (uint32_t)submission_entry->parameter1;
             size_t length = (size_t)submission_entry->parameter2;
             read_file_operation(client_id, file_id, length);
@@ -86,7 +86,7 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
         }
 
         case OP_WRITE: {
-            microkit_dbg_puts("FILE SERVER: WRITE OPERATION\n");
+            microkit_debug_puts("FILE SERVER: WRITE OPERATION\n");
             uint32_t file_id = (uint32_t)submission_entry->parameter1;
             size_t write_length = (size_t)submission_entry->parameter2;
             write_file_operation(client_id, file_id, write_length, submission_entry->buffer_index);
@@ -94,7 +94,7 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
         }
 
         case OP_SEEK: {
-            microkit_dbg_puts("FILE SERVER: SEEK OPERATION\n");
+            microkit_debug_puts("FILE SERVER: SEEK OPERATION\n");
             uint32_t file_id = (uint32_t)submission_entry->parameter1;
             uint32_t position = (uint32_t)submission_entry->parameter2;
             seek_file_operation(client_id, file_id, position);
@@ -102,7 +102,7 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
         }
 
         case OP_DELETE: {
-            microkit_dbg_puts("FILE SERVER: DELETE OPERATION\n");
+            microkit_debug_puts("FILE SERVER: DELETE OPERATION\n");
             delete_entry_operation(
                 client_id,
                 (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index]
@@ -111,7 +111,7 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
         }
             
         case OP_SET_PERMISSIONS: {
-            microkit_dbg_puts("FILE SERVER: SET PERMISSIONS OPERATION\n");
+            microkit_debug_puts("FILE SERVER: SET PERMISSIONS OPERATION\n");
             uint8_t new_permissions = (uint8_t)submission_entry->parameter1;
             set_entry_permissions_operation(client_id,
                 new_permissions,
@@ -121,7 +121,7 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
         }
 
         case OP_GET_PERMISSIONS: {
-            microkit_dbg_puts("FILE SERVER: GET PERMISSIONS OPERATION\n");
+            microkit_debug_puts("FILE SERVER: GET PERMISSIONS OPERATION\n");
             get_entry_permissions_operation(
                 client_id,
                 (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index]
@@ -130,7 +130,7 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
         }
 
         case OP_GET_SIZE: {
-            microkit_dbg_puts("FILE SERVER: GET SIZE OPERATION\n");
+            microkit_debug_puts("FILE SERVER: GET SIZE OPERATION\n");
             get_entry_size_operation(
                 client_id,
                 (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index]
@@ -139,7 +139,7 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
         }
 
         case OP_EXISTS: {
-            microkit_dbg_puts("FILE SERVER: EXISTS OPERATION\n");
+            microkit_debug_puts("FILE SERVER: EXISTS OPERATION\n");
             entry_exists_operation(
                 client_id,
                 (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index]
@@ -148,7 +148,7 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
         }
 
         case OP_LIST: {
-            microkit_dbg_puts("FILE SERVER: LIST OPERATION\n");
+            microkit_debug_puts("FILE SERVER: LIST OPERATION\n");
             list_directory_operation(
                 client_id,
                 (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index]
@@ -157,7 +157,7 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
         }
 
         default:
-            microkit_dbg_puts("FILE SERVER: INVALID OPERATION CODE\n");
+            microkit_debug_puts("FILE SERVER: INVALID OPERATION CODE\n");
             break;
     }
 }
@@ -169,12 +169,12 @@ void service_client(uint32_t client_id) {
     int unset_ready_flag = 0;
     // TODO: should prioritise operations, not really as OOO complications
     while (num_operations < MAX_OPERATIONS_PER_SERVICE) {
-        microkit_dbg_puts("FILE SERVER: servicing client: ");
-        microkit_dbg_put32(client_id);
-        microkit_dbg_putc('\n');
+        microkit_debug_puts("FILE SERVER: servicing client: ");
+        microkit_debug_put32(client_id);
+        microkit_debug_putc('\n');
 
         if (clients[client_id].submission_queue_head == clients[client_id].submission_queue_tail) {
-            microkit_dbg_puts("FILE SERVER: no submission entries\n");
+            microkit_debug_puts("FILE SERVER: no submission entries\n");
             unset_ready_flag = 1;
             break;
         }
@@ -183,7 +183,7 @@ void service_client(uint32_t client_id) {
                 (clients[client_id].completion_queue_head == 1 &&
                  clients[client_id].completion_queue_tail == MAX_QUEUE_ENTRIES - 1)
            ) {
-            microkit_dbg_puts("FILE SERVER: no free completion entries\n");
+            microkit_debug_puts("FILE SERVER: no free completion entries\n");
             break;
         }
 
@@ -194,7 +194,7 @@ void service_client(uint32_t client_id) {
         file_operation_t operation = (file_operation_t)submission_entry->operation_code;
 
         if (operation_requires_completion_buffer(operation) && !is_free_completion_buffer(client_id)) {
-            microkit_dbg_puts("FILE SERVER: no free completion buffer for operation\n");
+            microkit_debug_puts("FILE SERVER: no free completion buffer for operation\n");
             break;
         }
         
@@ -220,9 +220,9 @@ void service_client(uint32_t client_id) {
 void poll_clients() {
     for (size_t i = 0; i < NUMBER_OF_CLIENTS; i++) {
         if (clients[i].flags.ready_flag && !clients[i].flags.complete_flag) {
-            microkit_dbg_puts("FILE SERVER: client ");
-            microkit_dbg_put32(i);
-            microkit_dbg_puts(" had lost notif, servicing now.\n");
+            microkit_debug_puts("FILE SERVER: client ");
+            microkit_debug_put32(i);
+            microkit_debug_puts(" had lost notif, servicing now.\n");
             service_client(i);
         }
     }
@@ -231,26 +231,26 @@ void poll_clients() {
 // ------------------------- MicroKit Interface -------------------------- //
 
 void init(void) {
-    microkit_dbg_puts("FILE SERVER: started\n");
+    microkit_debug_puts("FILE SERVER: started\n");
     block_table = (uint8_t *)fs_memory_base;
     i_node_table = (i_node_t *)(fs_memory_base + MAX_NUMBER_OF_BLOCKS);
     file_descriptor_table = (file_descriptor_t *)(fs_memory_base + MAX_NUMBER_OF_BLOCKS + sizeof(i_node_t) * MAX_NUMBER_OF_INODES);
     blocks = (block_t *)(fs_memory_base + MAX_NUMBER_OF_BLOCKS + sizeof(i_node_t) * MAX_NUMBER_OF_INODES + sizeof(file_descriptor_t) * NUMBER_OF_CLIENTS * MAX_OPEN_FILES_PER_CLIENT);
     clients = (client_t *)clients_memory_base;
 
-    microkit_dbg_puts("FILE SERVER: initialising block table\n");
+    microkit_debug_puts("FILE SERVER: initialising block table\n");
     for (size_t i = 0; i < MAX_NUMBER_OF_BLOCKS; i++) {
         block_table[i] = 0;
     }
-    microkit_dbg_puts("FILE SERVER: initialising inode table\n");
+    microkit_debug_puts("FILE SERVER: initialising inode table\n");
     for (size_t i = 0; i < MAX_NUMBER_OF_INODES; i++) {
         i_node_table[i].mode = 0;
     }
-    microkit_dbg_puts("FILE SERVER: initialising fd table\n");
+    microkit_debug_puts("FILE SERVER: initialising fd table\n");
     for (size_t i = 0; i < NUMBER_OF_CLIENTS * MAX_OPEN_FILES_PER_CLIENT; i++) {
         file_descriptor_table[i].i_node_index = -1;
     }
-    microkit_dbg_puts("FILE SERVER: initialising client queues\n");
+    microkit_debug_puts("FILE SERVER: initialising client queues\n");
     for (size_t i = 0; i < NUMBER_OF_CLIENTS; i++) {
         clients[i].submission_queue_head = 0;
         clients[i].submission_queue_tail = 0;
@@ -258,7 +258,7 @@ void init(void) {
         clients[i].completion_queue_tail = 0;
     }
 
-    microkit_dbg_puts("FILE SERVER: initialising buffer table\n");
+    microkit_debug_puts("FILE SERVER: initialising buffer table\n");
     for (size_t i = 0; i < NUMBER_OF_CLIENTS; i++) {
         for (size_t j = 0; j < NUMBER_OF_BUFFERS_PER_CLIENT; j++) {
             clients[i].submission_buffer_table[j] = 0;
@@ -266,12 +266,12 @@ void init(void) {
         }
     }
 
-    microkit_dbg_puts("FILE SERVER: allocating root block\n");
+    microkit_debug_puts("FILE SERVER: allocating root block\n");
     block_id_result_t initial_i_node_block = allocate_block();
 
     zero_block(blocks[initial_i_node_block.index].data);
 
-    microkit_dbg_puts("FILE SERVER: initialising root block\n");
+    microkit_debug_puts("FILE SERVER: initialising root block\n");
     i_node_t *root_i_node = &i_node_table[allocate_i_node().index];
     root_i_node->mode = 0b00001 | 0b00010 | (PERM_EXECUTE || PERM_READ) << 2; // in use, dir, permissions
     root_i_node->owner_id = -1; // owned by file server

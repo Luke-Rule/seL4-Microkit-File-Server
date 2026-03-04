@@ -50,9 +50,9 @@ file_index_and_cursor_result_t add_i_node_to_fd_table(const uint32_t client_id, 
 
 
 fs_result_t close_file_by_i_node_index(const uint32_t client_id, const uint32_t i_node_index) {
-    microkit_dbg_puts("closing i node ");
-    microkit_dbg_put32(i_node_index);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts("closing i node ");
+    microkit_debug_put32(i_node_index);
+    microkit_debug_puts("\n");
     for (size_t i = 0; i < MAX_OPEN_FILES_PER_CLIENT; i++) {
         file_descriptor_t *fd = &file_descriptor_table[client_id * MAX_OPEN_FILES_PER_CLIENT + i];
         if (fd->i_node_index == i_node_index) {

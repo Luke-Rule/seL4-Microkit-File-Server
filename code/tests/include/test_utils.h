@@ -18,6 +18,7 @@ void test_begin(char *msg);
 bool get_completion(completion_queue_entry_t *out, const char *step_name, client_t *client_data);
 bool delete_entry_allow_missing(const unsigned char *path, const char *step_name, client_t *client_data);
 bool ensure_clean_test_root(client_t *client_data);
+void output_suite_pass(unsigned char *msg);
 void output_pass(unsigned char *msg);
 void output_fail(unsigned char *msg);
 void run_test_suite(const char *name, test_fn_t test, client_t *client_data);

@@ -8,6 +8,8 @@ BUILD_DIR := build
 
 CPU := cortex-a53
 
+OPT ?= -O2
+
 CC := $(TOOLCHAIN)-gcc
 LD := $(TOOLCHAIN)-ld
 AS := $(TOOLCHAIN)-as
@@ -15,9 +17,6 @@ MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
 # VPATH to find sources in subdirectories
 VPATH := fs:tests
-
-# Source files and objects
-COMMON_OBJS := debug_output.o
 
 CLIENT_OBJS := client.o $(COMMON_OBJS)
 TESTS_OBJS := fs_tests.o test_utils.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o $(COMMON_OBJS)
@@ -36,7 +35,7 @@ FILESERVER_DYNAMIC_OBJS := file_server.o \
 BOARD_DIR := $(MICROKIT_SDK)/board/$(BOARD)/$(MICROKIT_CONFIG)
 
 # Compiler and linker flags
-CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g -Werror -I$(BOARD_DIR)/include -Ivmm/src/util -Iinclude -Itests/include -DBOARD_$(BOARD) -I. -Ifs/include
+CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g -Werror $(OPT) -I$(BOARD_DIR)/include -Ivmm/src/util -Iinclude -Itests/include -DBOARD_$(BOARD) -I. -Ifs/include
 LDFLAGS := -L$(BOARD_DIR)/lib
 LIBS := -lmicrokit -Tmicrokit.ld
 

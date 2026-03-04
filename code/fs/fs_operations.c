@@ -22,17 +22,17 @@
 i_node_result_t create_entry(unsigned char *path, const uint32_t parent_i_node_index,
                              const permissions_t permissions, const uint8_t client_id,
                              const int is_directory) {
-    microkit_dbg_puts("entering dir ");
-    microkit_dbg_puts(path);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts("entering dir ");
+    microkit_debug_puts(path);
+    microkit_debug_puts("\n");
     if (path[0] != '/') {
         add_completion_entry(client_id, FS_ERR_INVALID_PATH, 0, 0, -1);
         return (i_node_result_t){-1, FS_ERR_INVALID_PATH};
     }
     path = &path[1];
-    microkit_dbg_puts("entering dir ");
-    microkit_dbg_puts(path);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts("entering dir ");
+    microkit_debug_puts(path);
+    microkit_debug_puts("\n");
     i_node_t *parent_i_node = &i_node_table[parent_i_node_index];
     uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
     for (int i = 0; i < parent_i_node->blocks_used; i++) {
@@ -47,9 +47,9 @@ i_node_result_t create_entry(unsigned char *path, const uint32_t parent_i_node_i
             if (child_entries[j].name[0] == '\0') {
                 continue;
             }
-            microkit_dbg_puts("comparing to ");
-            microkit_dbg_puts(child_entries[j].name);
-            microkit_dbg_puts("\n");
+            microkit_debug_puts("comparing to ");
+            microkit_debug_puts(child_entries[j].name);
+            microkit_debug_puts("\n");
             int32_t cmp_result = compare_names(path, child_entries[j].name);
             if (cmp_result == FULL_PATH_EQUAL) {
                 add_completion_entry(client_id, FS_ERR_ALREADY_EXISTS, 0, 0, -1);
@@ -73,9 +73,9 @@ i_node_result_t create_entry(unsigned char *path, const uint32_t parent_i_node_i
         }
     }
     child_slot_and_block_result_t slot_info = get_free_child_slot(parent_i_node_index);
-    microkit_dbg_puts("child to root: ");
-    microkit_dbg_put32(slot_info.entry_index);
-    microkit_dbg_putc('\n');
+    microkit_debug_puts("child to root: ");
+    microkit_debug_put32(slot_info.entry_index);
+    microkit_debug_putc('\n');
     if (slot_info.return_code != FS_OK) {
         add_completion_entry(client_id, slot_info.return_code, 0, 0, -1);
         return (i_node_result_t){-1, slot_info.return_code};
@@ -119,12 +119,12 @@ void delete_entry_operation(const uint32_t client_id, unsigned char *path) {
             }
         }
     }
-    microkit_dbg_puts("checking if can free block\n");
-    microkit_dbg_puts("entry size: ");
-    microkit_dbg_put32((int)(parent_i_node_ptr->entry_size / MAX_CHILD_ENTRIES_PER_BLOCK) + 1);
-    microkit_dbg_puts("\nblocks used: ");
-    microkit_dbg_put32(parent_i_node_ptr->blocks_used);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts("checking if can free block\n");
+    microkit_debug_puts("entry size: ");
+    microkit_debug_put32((int)(parent_i_node_ptr->entry_size / MAX_CHILD_ENTRIES_PER_BLOCK) + 1);
+    microkit_debug_puts("\nblocks used: ");
+    microkit_debug_put32(parent_i_node_ptr->blocks_used);
+    microkit_debug_puts("\n");
     if ((int)(parent_i_node_ptr->entry_size / MAX_CHILD_ENTRIES_PER_BLOCK) + 1 < parent_i_node_ptr->blocks_used) {
         defragment_directory(parent_i_node_ptr);
         int block_to_free_index = parent_i_node_ptr->blocks_used - 1;
@@ -144,9 +144,9 @@ void delete_entry_operation(const uint32_t client_id, unsigned char *path) {
         release_i_node(i_node_index.index);
         add_completion_entry(client_id, res, 0, 0, -1);
     } else {
-        microkit_dbg_puts("releasing i node\n");
+        microkit_debug_puts("releasing i node\n");
         release_i_node(i_node_index.index);
-        microkit_dbg_puts("closing file\n");
+        microkit_debug_puts("closing file\n");
         fs_result_t res = close_file_by_i_node_index(client_id, i_node_index.index);
         add_completion_entry(client_id, res, 0, 0, -1);
     }
@@ -201,9 +201,9 @@ void entry_exists_operation(const uint32_t client_id, unsigned char *path) {
 
 
 void list_directory_operation(const uint32_t client_id, unsigned char *path) {
-    microkit_dbg_puts("listing dir ");
-    microkit_dbg_puts(path);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts("listing dir ");
+    microkit_debug_puts(path);
+    microkit_debug_puts("\n");
     i_node_result_t i_node_index = get_i_node_index(path, ROOT_DIRECTORY_I_NODE_INDEX, client_id, GET_TARGET_I_NODE);
     if (i_node_index.return_code != FS_OK) {
         add_completion_entry(client_id, i_node_index.return_code, 0, 0, -1);
@@ -260,18 +260,18 @@ void list_directory_operation(const uint32_t client_id, unsigned char *path) {
 void open_file_operation(const uint32_t client_id, const uint8_t requested_operations, char *path) {
     i_node_result_t i_node_index = get_i_node_index(path, ROOT_DIRECTORY_I_NODE_INDEX, client_id, GET_TARGET_I_NODE);
     if (i_node_index.return_code < FS_OK) {
-        microkit_dbg_puts("could not find i node\n");
+        microkit_debug_puts("could not find i node\n");
         add_completion_entry(client_id, i_node_index.return_code, 0, 0, -1);
         return;
     }
     if (i_node_table[i_node_index.index].mode & IS_DIRECTORY_BIT_SET) {
-        microkit_dbg_puts("tried to open directory as file\n");
+        microkit_debug_puts("tried to open directory as file\n");
         add_completion_entry(client_id, FS_ERR_INVALID_PATH, 0, 0, -1);
         return;
     }
     file_index_and_cursor_result_t fd = add_i_node_to_fd_table(client_id, i_node_index.index, requested_operations);
     if (fd.return_code != FS_OK) {
-        microkit_dbg_puts("could not add to fd table\n");
+        microkit_debug_puts("could not add to fd table\n");
         add_completion_entry(client_id, fd.return_code, 0, 0, -1);
         return;
     }
@@ -280,9 +280,9 @@ void open_file_operation(const uint32_t client_id, const uint8_t requested_opera
 
 
 void close_file_operation(const uint32_t client_id, const uint32_t file_descriptor_index) {
-    microkit_dbg_puts("closing fd ");
-    microkit_dbg_put32(file_descriptor_index);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts("closing fd ");
+    microkit_debug_put32(file_descriptor_index);
+    microkit_debug_puts("\n");
     file_descriptor_result_t fd = get_file_descriptor(client_id, file_descriptor_index);
     if (fd.return_code != FS_OK) {
         add_completion_entry(client_id, fd.return_code, 0, 0, -1);
@@ -302,7 +302,7 @@ void read_file_operation(const uint32_t client_id, const uint32_t file_descripto
         return;
     }
     if (!(fd.descriptor->valid_operations & PERM_READ)) {
-        microkit_dbg_puts("no read perm\n");
+        microkit_debug_puts("no read perm\n");
         add_completion_entry(client_id, FS_ERR_PERMISSION, 0, 0, -1);
         return;
     }
@@ -346,13 +346,13 @@ void write_file_operation(const uint32_t client_id, const uint32_t file_descript
         return_code = FS_ERR_MAX_FILE_SIZE_REACHED;
         length = MAX_BLOCKS_PER_FILE * BLOCK_SIZE - (fd.descriptor->cursor_position) - 1;
     }
-    microkit_dbg_puts("writing ");
-    microkit_dbg_put32(length);
-    microkit_dbg_puts(" bytes\n");
+    microkit_debug_puts("writing ");
+    microkit_debug_put32(length);
+    microkit_debug_puts(" bytes\n");
     int cursor_before = fd.descriptor->cursor_position;
     uint8_t *client_buffer_data = (uint8_t *)&clients[client_id].submission_buffers[submission_buffer_index];
     fs_result_t rc = copy_bytes_i_node(i_node, client_buffer_data, length, fd.descriptor, WRITE);
-    microkit_dbg_puts("write complete\n");
+    microkit_debug_puts("write complete\n");
     if (rc != FS_OK) {
         add_completion_entry(client_id, rc, 0, 0, -1);
         return;

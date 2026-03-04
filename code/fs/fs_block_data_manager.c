@@ -38,9 +38,9 @@ fs_result_t copy_bytes_i_node(i_node_t *i_node, uint8_t *client_buffer, size_t l
         size_t bytes_available_in_block = BLOCK_SIZE - block_info.block_offset;
         size_t bytes_this_iteration = (length < bytes_available_in_block) ? length : bytes_available_in_block;
         if (rnw) {
-            microkit_dbg_puts("reading block: ");
-            microkit_dbg_put32(block_index);
-            microkit_dbg_puts("\n");
+            microkit_debug_puts("reading block: ");
+            microkit_debug_put32(block_index);
+            microkit_debug_puts("\n");
             copy_data_from_buffer(&block_data[block_info.block_offset], &client_buffer[buffer_index], bytes_this_iteration);
         } else {
             copy_data_from_buffer(&client_buffer[buffer_index], &block_data[block_info.block_offset], bytes_this_iteration);
@@ -55,7 +55,7 @@ fs_result_t copy_bytes_i_node(i_node_t *i_node, uint8_t *client_buffer, size_t l
         } else {
             if (block_info.i_node_block_index >= DIRECT_BLOCKS_PER_INODE - 1) {
                 if (i_node->blocks_used <= DIRECT_BLOCKS_PER_INODE) {
-                    microkit_dbg_puts("allocating indirect block\n");
+                    microkit_debug_puts("allocating indirect block\n");
                     block_id_result_t new_block = allocate_block();
                     if (new_block.return_code != FS_OK) {
                         return FS_ERR_NO_BLOCKS_REMAINING;

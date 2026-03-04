@@ -1,10 +1,27 @@
 #pragma once
 
 #include <stdint.h>
-#include <stddef.h>
+#include <microkit.h>
 
-#define VERBOSE 1
+#define VERBOSE 0
 
-void microkit_debug_puts(const unsigned char *s);
-void microkit_debug_put32(uint32_t n);
-void microkit_debug_putc(char c);
+static inline void microkit_debug_puts(const char *s)
+{
+    if (VERBOSE) {
+        microkit_dbg_puts(s);
+    }
+}
+
+static inline void microkit_debug_put32(uint32_t n)
+{
+    if (VERBOSE) {
+        microkit_dbg_put32(n);
+    }
+}
+
+static inline void microkit_debug_putc(int c)
+{
+    if (VERBOSE) {
+        microkit_dbg_putc(c);
+    }
+}

@@ -17,14 +17,14 @@
 
 child_slot_and_block_result_t get_free_child_slot(const uint32_t parent_i_node_index) {
     i_node_t *parent_i_node = &i_node_table[parent_i_node_index];
-    microkit_dbg_puts("checking parent ");
-    microkit_dbg_put32(parent_i_node_index);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts("checking parent ");
+    microkit_debug_put32(parent_i_node_index);
+    microkit_debug_puts("\n");
     uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
     for (int i = 0; i < parent_i_node->blocks_used; i++) {
-        microkit_dbg_puts("checking block ");
-        microkit_dbg_put32(i);
-        microkit_dbg_puts("\n");
+        microkit_debug_puts("checking block ");
+        microkit_debug_put32(i);
+        microkit_debug_puts("\n");
         uint32_t block_index;
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = parent_i_node->block_indices[i];
@@ -33,15 +33,15 @@ child_slot_and_block_result_t get_free_child_slot(const uint32_t parent_i_node_i
         }
         child_entry_t *child_entries = (child_entry_t *)&blocks[block_index].data;
         for (size_t j = 0; j < MAX_CHILD_ENTRIES_PER_BLOCK; j++) {
-            microkit_dbg_puts("checking slot ");
-            microkit_dbg_put32(j);
-            microkit_dbg_puts("\n");
+            microkit_debug_puts("checking slot ");
+            microkit_debug_put32(j);
+            microkit_debug_puts("\n");
             if (child_entries[j].name[0] == '\0') {
                 return (child_slot_and_block_result_t){block_index, j, FS_OK};
             }
         }
     }
-    microkit_dbg_puts("need new block\n");
+    microkit_debug_puts("need new block\n");
     block_id_result_t new_block = allocate_block();
     if (new_block.return_code != FS_OK) {
         return (child_slot_and_block_result_t){0, 0, new_block.return_code};
@@ -70,8 +70,8 @@ child_slot_and_block_result_t get_free_child_slot(const uint32_t parent_i_node_i
 i_node_result_t add_entry(const uint32_t parent_i_node_index, unsigned char *name, const permissions_t permissions,
                           const uint8_t client_id, const uint32_t block_index, const uint32_t entry_index,
                           const int is_directory) {
-    microkit_dbg_puts(name);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts(name);
+    microkit_debug_puts("\n");
     if (!valid_name(name)) {
         add_completion_entry(client_id, FS_ERR_INVALID_PATH, 0, 0, -1);
         return (i_node_result_t){-1, FS_ERR_INVALID_PATH};
@@ -84,15 +84,15 @@ i_node_result_t add_entry(const uint32_t parent_i_node_index, unsigned char *nam
     i_node_t *parent_i_node = &i_node_table[parent_i_node_index];
     child_entry_t *child_entries = (child_entry_t *)&blocks[block_index].data;
     copy_string_from_buffer(name, child_entries[entry_index].name, MAX_NAME_LENGTH);
-    microkit_dbg_puts("parent ");
-    microkit_dbg_put32(parent_i_node_index);
-    microkit_dbg_puts("\n");
-    microkit_dbg_puts("block ");
-    microkit_dbg_put32(block_index);
-    microkit_dbg_puts("\n");
-    microkit_dbg_puts("entry ");
-    microkit_dbg_put32(entry_index);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts("parent ");
+    microkit_debug_put32(parent_i_node_index);
+    microkit_debug_puts("\n");
+    microkit_debug_puts("block ");
+    microkit_debug_put32(block_index);
+    microkit_debug_puts("\n");
+    microkit_debug_puts("entry ");
+    microkit_debug_put32(entry_index);
+    microkit_debug_puts("\n");
     child_entries[entry_index].i_node_index = new_i_node_info.index;
 
     block_id_result_t new_block = allocate_block();
@@ -131,9 +131,9 @@ fs_result_t delete_directory_contents(const uint32_t i_node_index) {
         } else {
             block_index = indirect_block_data[i - DIRECT_BLOCKS_PER_INODE];
         }
-        microkit_dbg_puts("deleting block ");
-        microkit_dbg_put32(block_index);
-        microkit_dbg_puts("\n");
+        microkit_debug_puts("deleting block ");
+        microkit_debug_put32(block_index);
+        microkit_debug_puts("\n");
         child_entry_t *child_entries = (child_entry_t *)&blocks[block_index].data;
         for (size_t j = 0; j < MAX_CHILD_ENTRIES_PER_BLOCK; j++) {
             if (child_entries[j].name[0] == '\0') {
@@ -160,9 +160,9 @@ fs_result_t delete_directory_contents(const uint32_t i_node_index) {
 }
 
 void defragment_directory(i_node_t *parent_i_node) {
-    microkit_dbg_puts("defragmenting directory i node ");
-    microkit_dbg_put32(parent_i_node - i_node_table);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts("defragmenting directory i node ");
+    microkit_debug_put32(parent_i_node - i_node_table);
+    microkit_debug_puts("\n");
     uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
     int filling_block_index = 0;
     int last_free_child_index = -1;

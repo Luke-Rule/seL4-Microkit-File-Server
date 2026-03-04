@@ -96,6 +96,14 @@ bool ensure_clean_test_root(client_t *client_data) {
     return true;
 }
 
+void output_suite_pass(unsigned char *msg) {
+    microkit_dbg_puts(ANSI_COLOR_GREEN);
+    microkit_dbg_puts("[PASS] ");
+    microkit_dbg_puts((const char *)msg);
+    microkit_dbg_puts("\n");
+    microkit_dbg_puts(ANSI_COLOR_RESET);
+}
+
 void output_pass(unsigned char *msg) {
     microkit_dbg_puts(ANSI_COLOR_GREEN);
     microkit_dbg_puts("[PASS] ");
@@ -120,7 +128,8 @@ void run_test_suite(const char *name, test_fn_t test, client_t *client_data) {
     bool pass = test();
     if (pass) {
         tests_passed++;
-        output_pass((unsigned char *)name);
+        microkit_dbg_putc('\n');
+        output_suite_pass((unsigned char *)name);
         return;
     }
 
@@ -135,15 +144,15 @@ int expect_eq_int(int actual, int expected, const char *name) {
         return 1;
     }
 
-    microkit_dbg_puts(ANSI_COLOR_RED);
-    microkit_dbg_puts("[ERROR] ");
-    microkit_dbg_puts(ANSI_COLOR_RESET);
-    microkit_dbg_puts(name);
-    microkit_dbg_puts(": expected ");
-    microkit_dbg_put32((uint32_t)expected);
-    microkit_dbg_puts(" but got ");
-    microkit_dbg_put32((uint32_t)actual);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts(ANSI_COLOR_RED);
+    microkit_debug_puts("[ERROR] ");
+    microkit_debug_puts(ANSI_COLOR_RESET);
+    microkit_debug_puts(name);
+    microkit_debug_puts(": expected ");
+    microkit_debug_put32((uint32_t)expected);
+    microkit_debug_puts(" but got ");
+    microkit_debug_put32((uint32_t)actual);
+    microkit_debug_puts("\n");
 
     return 0;
 }
@@ -153,13 +162,13 @@ int expect_not_eq_int(int actual, int not_expected, const char *name) {
         return 1;
     }
 
-    microkit_dbg_puts(ANSI_COLOR_RED);
-    microkit_dbg_puts("[ERROR] ");
-    microkit_dbg_puts(ANSI_COLOR_RESET);
-    microkit_dbg_puts(name);
-    microkit_dbg_puts(": did not expect ");
-    microkit_dbg_put32((uint32_t)not_expected);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts(ANSI_COLOR_RED);
+    microkit_debug_puts("[ERROR] ");
+    microkit_debug_puts(ANSI_COLOR_RESET);
+    microkit_debug_puts(name);
+    microkit_debug_puts(": did not expect ");
+    microkit_debug_put32((uint32_t)not_expected);
+    microkit_debug_puts("\n");
 
     return 0;
 }
@@ -169,15 +178,15 @@ int expect_eq_uint32(uint32_t actual, uint32_t expected, const char *name) {
         return 1;
     }
 
-    microkit_dbg_puts(ANSI_COLOR_RED);
-    microkit_dbg_puts("[ERROR] ");
-    microkit_dbg_puts(ANSI_COLOR_RESET);
-    microkit_dbg_puts(name);
-    microkit_dbg_puts(": expected ");
-    microkit_dbg_put32(expected);
-    microkit_dbg_puts(" but got ");
-    microkit_dbg_put32(actual);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts(ANSI_COLOR_RED);
+    microkit_debug_puts("[ERROR] ");
+    microkit_debug_puts(ANSI_COLOR_RESET);
+    microkit_debug_puts(name);
+    microkit_debug_puts(": expected ");
+    microkit_debug_put32(expected);
+    microkit_debug_puts(" but got ");
+    microkit_debug_put32(actual);
+    microkit_debug_puts("\n");
 
     return 0;
 }
@@ -187,15 +196,15 @@ int expect_eq_uint8(uint8_t actual, uint8_t expected, const char *name) {
         return 1;
     }
 
-    microkit_dbg_puts(ANSI_COLOR_RED);
-    microkit_dbg_puts("[ERROR] ");
-    microkit_dbg_puts(ANSI_COLOR_RESET);
-    microkit_dbg_puts(name);
-    microkit_dbg_puts(": expected ");
-    microkit_dbg_put32((uint32_t)expected);
-    microkit_dbg_puts(" but got ");
-    microkit_dbg_put32((uint32_t)actual);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts(ANSI_COLOR_RED);
+    microkit_debug_puts("[ERROR] ");
+    microkit_debug_puts(ANSI_COLOR_RESET);
+    microkit_debug_puts(name);
+    microkit_debug_puts(": expected ");
+    microkit_debug_put32((uint32_t)expected);
+    microkit_debug_puts(" but got ");
+    microkit_debug_put32((uint32_t)actual);
+    microkit_debug_puts("\n");
 
     return 0;
 }
@@ -205,11 +214,11 @@ int expect_true(bool cond, const char *name) {
         return 1;
     } 
     
-    microkit_dbg_puts(ANSI_COLOR_RED);
-    microkit_dbg_puts("[ERROR] ");
-    microkit_dbg_puts(ANSI_COLOR_RESET);
-    microkit_dbg_puts(name);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts(ANSI_COLOR_RED);
+    microkit_debug_puts("[ERROR] ");
+    microkit_debug_puts(ANSI_COLOR_RESET);
+    microkit_debug_puts(name);
+    microkit_debug_puts("\n");
 
     return 0;
 }
@@ -224,25 +233,25 @@ int expect_equal_to_client_buffer(
     uint8_t *fs_buffer_base = (uint8_t *)&client_data->completion_buffers[buffer_index];
     for (size_t i = 0; i < length; i++) {
         if (fs_buffer_base[i] != expected[i]) {
-            microkit_dbg_puts(ANSI_COLOR_RED);
-            microkit_dbg_puts("[ERROR] ");
-            microkit_dbg_puts(ANSI_COLOR_RESET);
-            microkit_dbg_puts(test_message);
-            microkit_dbg_puts(": Expected: ");
+            microkit_debug_puts(ANSI_COLOR_RED);
+            microkit_debug_puts("[ERROR] ");
+            microkit_debug_puts(ANSI_COLOR_RESET);
+            microkit_debug_puts(test_message);
+            microkit_debug_puts(": Expected: ");
             for (size_t j = 0; j < length; j++) {
-                microkit_dbg_putc(((const char *)expected)[j]);
+                microkit_debug_putc(((const char *)expected)[j]);
                 if (((const char *)expected)[j] == '\0') {
-                    microkit_dbg_putc(',');
+                    microkit_debug_putc(',');
                 }
             }
-            microkit_dbg_puts(", Got: ");
+            microkit_debug_puts(", Got: ");
             for (size_t j = 0; j < length; j++) {
-                microkit_dbg_putc(((const char *)fs_buffer_base)[j]);
+                microkit_debug_putc(((const char *)fs_buffer_base)[j]);
                 if (((const char *)fs_buffer_base)[j] == '\0') {
-                    microkit_dbg_putc(',');
+                    microkit_debug_putc(',');
                 }
             }
-            microkit_dbg_puts("\n");
+            microkit_debug_puts("\n");
             return 0;
         }
     }
@@ -258,19 +267,19 @@ int expect_equal_to_buffer(
 ) {
     for (size_t i = 0; i < length; i++) {
         if (actual[i] != expected[i]) {
-            microkit_dbg_puts(ANSI_COLOR_RED);
-            microkit_dbg_puts("[ERROR] ");
-            microkit_dbg_puts(ANSI_COLOR_RESET);
-            microkit_dbg_puts(test_message);
-            microkit_dbg_puts(": Expected: ");
+            microkit_debug_puts(ANSI_COLOR_RED);
+            microkit_debug_puts("[ERROR] ");
+            microkit_debug_puts(ANSI_COLOR_RESET);
+            microkit_debug_puts(test_message);
+            microkit_debug_puts(": Expected: ");
             for (size_t j = 0; j < length; j++) {
-                microkit_dbg_putc(((const char *)expected)[j]);
+                microkit_debug_putc(((const char *)expected)[j]);
             }
-            microkit_dbg_puts(", Got: ");
+            microkit_debug_puts(", Got: ");
             for (size_t j = 0; j < length; j++) {
-                microkit_dbg_putc(((const char *)actual)[j]);
+                microkit_debug_putc(((const char *)actual)[j]);
             }
-            microkit_dbg_puts("\n");
+            microkit_debug_puts("\n");
             return 0;
         }
     }
@@ -282,30 +291,30 @@ int expect_eq_strings(const char *actual, const char *expected, const char *test
     size_t i = 0;
     while (actual[i] != '\0' && expected[i] != '\0') {
         if (actual[i] != expected[i]) {
-            microkit_dbg_puts(ANSI_COLOR_RED);
-            microkit_dbg_puts("[ERROR] ");
-            microkit_dbg_puts(ANSI_COLOR_RESET);
-            microkit_dbg_puts(test_message);
-            microkit_dbg_puts(": Expected: ");
-            microkit_dbg_puts(expected);
-            microkit_dbg_puts(", Got: ");
-            microkit_dbg_puts(actual);
-            microkit_dbg_puts("\n");
+            microkit_debug_puts(ANSI_COLOR_RED);
+            microkit_debug_puts("[ERROR] ");
+            microkit_debug_puts(ANSI_COLOR_RESET);
+            microkit_debug_puts(test_message);
+            microkit_debug_puts(": Expected: ");
+            microkit_debug_puts(expected);
+            microkit_debug_puts(", Got: ");
+            microkit_debug_puts(actual);
+            microkit_debug_puts("\n");
             return 0;
         }
         i++;
     }
 
     if (actual[i] != expected[i]) {
-        microkit_dbg_puts(ANSI_COLOR_RED);
-        microkit_dbg_puts("[ERROR] ");
-        microkit_dbg_puts(ANSI_COLOR_RESET);
-        microkit_dbg_puts(test_message);
-        microkit_dbg_puts(": Expected: ");
-        microkit_dbg_puts(expected);
-        microkit_dbg_puts(", Got: ");
-        microkit_dbg_puts(actual);
-        microkit_dbg_puts("\n");
+        microkit_debug_puts(ANSI_COLOR_RED);
+        microkit_debug_puts("[ERROR] ");
+        microkit_debug_puts(ANSI_COLOR_RESET);
+        microkit_debug_puts(test_message);
+        microkit_debug_puts(": Expected: ");
+        microkit_debug_puts(expected);
+        microkit_debug_puts(", Got: ");
+        microkit_debug_puts(actual);
+        microkit_debug_puts("\n");
         return 0;
     }
 
