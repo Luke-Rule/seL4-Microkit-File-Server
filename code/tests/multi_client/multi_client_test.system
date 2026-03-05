@@ -25,19 +25,19 @@
 
     <!-- Client Protection Domains -->
     <protection_domain name="client_0" priority="0" >
-        <program_image path="client0.elf"/>
+        <program_image path="client_0.elf"/>
         <map mr="client_0" vaddr="0x30000000" perms="rw" cached="false"
           setvar_vaddr="fs_data_base"/>
     </protection_domain>
 
     <protection_domain name="client_1" priority="0" >
-        <program_image path="client1.elf"/>
+        <program_image path="client_1.elf"/>
         <map mr="client_1" vaddr="0x30000000" perms="rw" cached="false"
           setvar_vaddr="fs_data_base"/>
     </protection_domain>
 
     <protection_domain name="client_2" priority="0" >
-        <program_image path="client2.elf"/>
+        <program_image path="client_2.elf"/>
         <map mr="client_2" vaddr="0x30000000" perms="rw" cached="false"
           setvar_vaddr="fs_data_base"/>
     </protection_domain>

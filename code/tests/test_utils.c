@@ -18,6 +18,8 @@ extern int tests_failed;
 #define ANSI_COLOR_YELLOW "\x1b[33m"
 #define ANSI_COLOR_RESET "\x1b[0m"
 
+#define MAX_TEST_WAIT 2000
+
 static void clear_all_client_buffers(client_t *client_data) {
     for (size_t i = 0; i < NUMBER_OF_BUFFERS_PER_CLIENT; i++) {
         client_data->submission_buffer_table[i] = 0;
@@ -31,20 +33,22 @@ static void clear_all_client_buffers(client_t *client_data) {
 }
 
 void test_suite_begin(char *msg, client_t *client_data) {
-    microkit_dbg_puts(ANSI_COLOR_YELLOW);
-    microkit_dbg_puts("\n===== ");
-    microkit_dbg_puts(msg);
-    microkit_dbg_puts(" =====\n");
-    microkit_dbg_puts(ANSI_COLOR_RESET);
+	seL4_Yield();
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_YELLOW);
+    microkit_debug_puts(TEST_VERBOSITY, "\n===== ");
+    microkit_debug_puts(TEST_VERBOSITY, msg);
+    microkit_debug_puts(TEST_VERBOSITY, " =====\n");
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
     clear_all_client_buffers(client_data);
 }
 
 void test_begin(char *msg) {
-    microkit_dbg_puts(ANSI_COLOR_YELLOW);
-    microkit_dbg_puts("\nTest: ");
-    microkit_dbg_puts(msg);
-    microkit_dbg_puts("\n");
-    microkit_dbg_puts(ANSI_COLOR_RESET);
+	seL4_Yield();
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_YELLOW);
+    microkit_debug_puts(TEST_VERBOSITY, "\nTest: ");
+    microkit_debug_puts(TEST_VERBOSITY, msg);
+    microkit_debug_puts(TEST_VERBOSITY, "\n");
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
 }
 
 bool get_completion(completion_queue_entry_t *out, const char *step_name, client_t *client_data) {
@@ -117,10 +121,9 @@ static bool fs_test_seek0(uint32_t fd, client_t *client_data) {
 bool fs_test_await_exists(
     const unsigned char *path,
     const char *step_name,
-    const uint32_t max_iters,
     client_t *client_data
 ) {
-    for (uint32_t i = 0; i < max_iters; i++) {
+    for (uint32_t i = 0; i < MAX_TEST_WAIT; i++) {
         fs_result_t rc = send_entry_exists_request(path, client_data);
         if (!expect_eq_int(rc, FS_OK, step_name)) {
             return false;
@@ -399,6 +402,48 @@ bool fs_test_create_and_write_file(
     return expect_eq_uint32(c_close.return_code, FS_OK, "Close returned OK");
 }
 
+bool fs_test_create_file_expect_rc(
+    const unsigned char *path,
+    permissions_t perms,
+    file_open_operations_t create_ops,
+    uint32_t expected_rc,
+    const char *step_name,
+    client_t *client_data
+) {
+    fs_result_t rc = send_create_file_request(path, perms, create_ops, client_data);
+    if (!expect_eq_int(rc, FS_OK, step_name)) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c_create;
+    if (!get_completion(&c_create, step_name, client_data)) {
+        return false;
+    }
+    if (!expect_eq_uint32(c_create.return_code, expected_rc, step_name)) {
+        return false;
+    }
+
+    if (expected_rc == FS_OK) {
+        uint32_t fd = c_create.parameter1;
+        rc = send_close_file_request(fd, client_data);
+        if (!expect_eq_int(rc, FS_OK, "Queue close")) {
+            return false;
+        }
+
+        notify_file_server(client_data, 1);
+
+        completion_queue_entry_t c_close;
+        if (!get_completion(&c_close, "Close", client_data)) {
+            return false;
+        }
+        return expect_eq_uint32(c_close.return_code, FS_OK, "Close returned OK");
+    }
+
+    return true;
+}
+
 bool fs_test_delete_expect_rc(
     const unsigned char *path,
     uint32_t expected_rc,
@@ -443,27 +488,30 @@ bool fs_test_set_perm_expect_rc(
 }
 
 void output_suite_pass(unsigned char *msg) {
-    microkit_dbg_puts(ANSI_COLOR_GREEN);
-    microkit_dbg_puts("[PASS] ");
-    microkit_dbg_puts((const char *)msg);
-    microkit_dbg_puts("\n");
-    microkit_dbg_puts(ANSI_COLOR_RESET);
+	seL4_Yield();
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_GREEN);
+    microkit_debug_puts(TEST_VERBOSITY, "\n===== [SUITE PASS] ");
+    microkit_debug_puts(TEST_VERBOSITY, (const char *)msg);
+    microkit_debug_puts(TEST_VERBOSITY, " =====\n");
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
 }
 
 void output_pass(unsigned char *msg) {
-    microkit_dbg_puts(ANSI_COLOR_GREEN);
-    microkit_dbg_puts("[PASS] ");
-    microkit_dbg_puts(ANSI_COLOR_RESET);
-    microkit_dbg_puts((const char *)msg);
-    microkit_dbg_puts("\n");
+	seL4_Yield();
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_GREEN);
+    microkit_debug_puts(TEST_VERBOSITY, "[PASS] ");
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
+    microkit_debug_puts(TEST_VERBOSITY, (const char *)msg);
+    microkit_debug_puts(TEST_VERBOSITY, "\n");
 }
 
 void output_fail(unsigned char *msg) {
-    microkit_dbg_puts(ANSI_COLOR_RED);
-    microkit_dbg_puts("[FAIL] ");
-    microkit_dbg_puts(ANSI_COLOR_RESET);
-    microkit_dbg_puts((const char *)msg);
-    microkit_dbg_puts("\n");
+	seL4_Yield();
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RED);
+    microkit_debug_puts(TEST_VERBOSITY, "\n===== [SUITE FAIL] ");
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
+    microkit_debug_puts(TEST_VERBOSITY, (const char *)msg);
+    microkit_debug_puts(TEST_VERBOSITY, " =====\n");
 }
 
 typedef bool (*test_fn_t)(void);
@@ -474,7 +522,7 @@ void run_test_suite(const char *name, test_fn_t test, client_t *client_data) {
     bool pass = test();
     if (pass) {
         tests_passed++;
-        microkit_dbg_putc('\n');
+        microkit_debug_putc(TEST_VERBOSITY, '\n');
         output_suite_pass((unsigned char *)name);
         return;
     }
@@ -490,15 +538,16 @@ int expect_eq_int(int actual, int expected, const char *name) {
         return 1;
     }
 
-    microkit_debug_puts(ANSI_COLOR_RED);
-    microkit_debug_puts("[ERROR] ");
-    microkit_debug_puts(ANSI_COLOR_RESET);
-    microkit_debug_puts(name);
-    microkit_debug_puts(": expected ");
-    microkit_debug_put32((uint32_t)expected);
-    microkit_debug_puts(" but got ");
-    microkit_debug_put32((uint32_t)actual);
-    microkit_debug_puts("\n");
+	seL4_Yield();
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RED);
+    microkit_debug_puts(TEST_VERBOSITY, "[ERROR] ");
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
+    microkit_debug_puts(TEST_VERBOSITY, name);
+    microkit_debug_puts(TEST_VERBOSITY, ": expected ");
+    microkit_debug_put32(TEST_VERBOSITY, (uint32_t)expected);
+    microkit_debug_puts(TEST_VERBOSITY, " but got ");
+    microkit_debug_put32(TEST_VERBOSITY, (uint32_t)actual);
+    microkit_debug_puts(TEST_VERBOSITY, "\n");
 
     return 0;
 }
@@ -508,13 +557,14 @@ int expect_not_eq_int(int actual, int not_expected, const char *name) {
         return 1;
     }
 
-    microkit_debug_puts(ANSI_COLOR_RED);
-    microkit_debug_puts("[ERROR] ");
-    microkit_debug_puts(ANSI_COLOR_RESET);
-    microkit_debug_puts(name);
-    microkit_debug_puts(": did not expect ");
-    microkit_debug_put32((uint32_t)not_expected);
-    microkit_debug_puts("\n");
+	seL4_Yield();
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RED);
+    microkit_debug_puts(TEST_VERBOSITY, "[ERROR] ");
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
+    microkit_debug_puts(TEST_VERBOSITY, name);
+    microkit_debug_puts(TEST_VERBOSITY, ": did not expect ");
+    microkit_debug_put32(TEST_VERBOSITY, (uint32_t)not_expected);
+    microkit_debug_puts(TEST_VERBOSITY, "\n");
 
     return 0;
 }
@@ -524,15 +574,16 @@ int expect_eq_uint32(uint32_t actual, uint32_t expected, const char *name) {
         return 1;
     }
 
-    microkit_debug_puts(ANSI_COLOR_RED);
-    microkit_debug_puts("[ERROR] ");
-    microkit_debug_puts(ANSI_COLOR_RESET);
-    microkit_debug_puts(name);
-    microkit_debug_puts(": expected ");
-    microkit_debug_put32(expected);
-    microkit_debug_puts(" but got ");
-    microkit_debug_put32(actual);
-    microkit_debug_puts("\n");
+	seL4_Yield();
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RED);
+    microkit_debug_puts(TEST_VERBOSITY, "[ERROR] ");
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
+    microkit_debug_puts(TEST_VERBOSITY, name);
+    microkit_debug_puts(TEST_VERBOSITY, ": expected ");
+    microkit_debug_put32(TEST_VERBOSITY, expected);
+    microkit_debug_puts(TEST_VERBOSITY, " but got ");
+    microkit_debug_put32(TEST_VERBOSITY, actual);
+    microkit_debug_puts(TEST_VERBOSITY, "\n");
 
     return 0;
 }
@@ -542,15 +593,16 @@ int expect_eq_uint8(uint8_t actual, uint8_t expected, const char *name) {
         return 1;
     }
 
-    microkit_debug_puts(ANSI_COLOR_RED);
-    microkit_debug_puts("[ERROR] ");
-    microkit_debug_puts(ANSI_COLOR_RESET);
-    microkit_debug_puts(name);
-    microkit_debug_puts(": expected ");
-    microkit_debug_put32((uint32_t)expected);
-    microkit_debug_puts(" but got ");
-    microkit_debug_put32((uint32_t)actual);
-    microkit_debug_puts("\n");
+	seL4_Yield();
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RED);
+    microkit_debug_puts(TEST_VERBOSITY, "[ERROR] ");
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
+    microkit_debug_puts(TEST_VERBOSITY, name);
+    microkit_debug_puts(TEST_VERBOSITY, ": expected ");
+    microkit_debug_put32(TEST_VERBOSITY, (uint32_t)expected);
+    microkit_debug_puts(TEST_VERBOSITY, " but got ");
+    microkit_debug_put32(TEST_VERBOSITY, (uint32_t)actual);
+    microkit_debug_puts(TEST_VERBOSITY, "\n");
 
     return 0;
 }
@@ -560,11 +612,12 @@ int expect_true(bool cond, const char *name) {
         return 1;
     } 
     
-    microkit_debug_puts(ANSI_COLOR_RED);
-    microkit_debug_puts("[ERROR] ");
-    microkit_debug_puts(ANSI_COLOR_RESET);
-    microkit_debug_puts(name);
-    microkit_debug_puts("\n");
+	seL4_Yield();
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RED);
+    microkit_debug_puts(TEST_VERBOSITY, "[ERROR] ");
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
+    microkit_debug_puts(TEST_VERBOSITY, name);
+    microkit_debug_puts(TEST_VERBOSITY, "\n");
 
     return 0;
 }
@@ -579,25 +632,26 @@ int expect_equal_to_client_buffer(
     uint8_t *fs_buffer_base = (uint8_t *)&client_data->completion_buffers[buffer_index];
     for (size_t i = 0; i < length; i++) {
         if (fs_buffer_base[i] != expected[i]) {
-            microkit_debug_puts(ANSI_COLOR_RED);
-            microkit_debug_puts("[ERROR] ");
-            microkit_debug_puts(ANSI_COLOR_RESET);
-            microkit_debug_puts(test_message);
-            microkit_debug_puts(": Expected: ");
+	        seL4_Yield();
+            microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RED);
+            microkit_debug_puts(TEST_VERBOSITY, "[ERROR] ");
+            microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
+            microkit_debug_puts(TEST_VERBOSITY, test_message);
+            microkit_debug_puts(TEST_VERBOSITY, ": Expected: ");
             for (size_t j = 0; j < length; j++) {
-                microkit_debug_putc(((const char *)expected)[j]);
+                microkit_debug_putc(TEST_VERBOSITY, ((const char *)expected)[j]);
                 if (((const char *)expected)[j] == '\0') {
-                    microkit_debug_putc(',');
+                    microkit_debug_putc(TEST_VERBOSITY, ',');
                 }
             }
-            microkit_debug_puts(", Got: ");
+            microkit_debug_puts(TEST_VERBOSITY, ", Got: ");
             for (size_t j = 0; j < length; j++) {
-                microkit_debug_putc(((const char *)fs_buffer_base)[j]);
+                microkit_debug_putc(TEST_VERBOSITY, ((const char *)fs_buffer_base)[j]);
                 if (((const char *)fs_buffer_base)[j] == '\0') {
-                    microkit_debug_putc(',');
+                    microkit_debug_putc(TEST_VERBOSITY, ',');
                 }
             }
-            microkit_debug_puts("\n");
+            microkit_debug_puts(TEST_VERBOSITY, "\n");
             return 0;
         }
     }
@@ -613,19 +667,20 @@ int expect_equal_to_buffer(
 ) {
     for (size_t i = 0; i < length; i++) {
         if (actual[i] != expected[i]) {
-            microkit_debug_puts(ANSI_COLOR_RED);
-            microkit_debug_puts("[ERROR] ");
-            microkit_debug_puts(ANSI_COLOR_RESET);
-            microkit_debug_puts(test_message);
-            microkit_debug_puts(": Expected: ");
+	        seL4_Yield();
+            microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RED);
+            microkit_debug_puts(TEST_VERBOSITY, "[ERROR] ");
+            microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
+            microkit_debug_puts(TEST_VERBOSITY, test_message);
+            microkit_debug_puts(TEST_VERBOSITY, ": Expected: ");
             for (size_t j = 0; j < length; j++) {
-                microkit_debug_putc(((const char *)expected)[j]);
+                microkit_debug_putc(TEST_VERBOSITY, ((const char *)expected)[j]);
             }
-            microkit_debug_puts(", Got: ");
+            microkit_debug_puts(TEST_VERBOSITY, ", Got: ");
             for (size_t j = 0; j < length; j++) {
-                microkit_debug_putc(((const char *)actual)[j]);
+                microkit_debug_putc(TEST_VERBOSITY, ((const char *)actual)[j]);
             }
-            microkit_debug_puts("\n");
+            microkit_debug_puts(TEST_VERBOSITY, "\n");
             return 0;
         }
     }
@@ -637,30 +692,32 @@ int expect_eq_strings(const char *actual, const char *expected, const char *test
     size_t i = 0;
     while (actual[i] != '\0' && expected[i] != '\0') {
         if (actual[i] != expected[i]) {
-            microkit_debug_puts(ANSI_COLOR_RED);
-            microkit_debug_puts("[ERROR] ");
-            microkit_debug_puts(ANSI_COLOR_RESET);
-            microkit_debug_puts(test_message);
-            microkit_debug_puts(": Expected: ");
-            microkit_debug_puts(expected);
-            microkit_debug_puts(", Got: ");
-            microkit_debug_puts(actual);
-            microkit_debug_puts("\n");
+	        seL4_Yield();
+            microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RED);
+            microkit_debug_puts(TEST_VERBOSITY, "[ERROR] ");
+            microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
+            microkit_debug_puts(TEST_VERBOSITY, test_message);
+            microkit_debug_puts(TEST_VERBOSITY, ": Expected: ");
+            microkit_debug_puts(TEST_VERBOSITY, expected);
+            microkit_debug_puts(TEST_VERBOSITY, ", Got: ");
+            microkit_debug_puts(TEST_VERBOSITY, actual);
+            microkit_debug_puts(TEST_VERBOSITY, "\n");
             return 0;
         }
         i++;
     }
 
     if (actual[i] != expected[i]) {
-        microkit_debug_puts(ANSI_COLOR_RED);
-        microkit_debug_puts("[ERROR] ");
-        microkit_debug_puts(ANSI_COLOR_RESET);
-        microkit_debug_puts(test_message);
-        microkit_debug_puts(": Expected: ");
-        microkit_debug_puts(expected);
-        microkit_debug_puts(", Got: ");
-        microkit_debug_puts(actual);
-        microkit_debug_puts("\n");
+        seL4_Yield();
+        microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RED);
+        microkit_debug_puts(TEST_VERBOSITY, "[ERROR] ");
+        microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
+        microkit_debug_puts(TEST_VERBOSITY, test_message);
+        microkit_debug_puts(TEST_VERBOSITY, ": Expected: ");
+        microkit_debug_puts(TEST_VERBOSITY, expected);
+        microkit_debug_puts(TEST_VERBOSITY, ", Got: ");
+        microkit_debug_puts(TEST_VERBOSITY, actual);
+        microkit_debug_puts(TEST_VERBOSITY, "\n");
         return 0;
     }
 

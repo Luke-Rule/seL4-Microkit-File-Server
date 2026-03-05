@@ -36,9 +36,9 @@ buffer_copy_result_t copy_string_to_submission_buffer(const unsigned char *src, 
         result.buffer_index = -1;
         return result;
     }
-    microkit_debug_puts("CLIENT: copying string to submission buffer at index ");
-    microkit_debug_put32(buffer_index);
-    microkit_debug_puts("\n");
+    microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: copying string to submission buffer at index ");
+    microkit_debug_put32(OUTPUT_VERBOSITY, buffer_index);
+    microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
     unsigned char *dest = (unsigned char *)&client_data->submission_buffers[buffer_index];
     size_t i;
     for (i = 0; i < CLIENT_BUFFER_SIZE - 1; i++) {
@@ -52,9 +52,9 @@ buffer_copy_result_t copy_string_to_submission_buffer(const unsigned char *src, 
         dest[CLIENT_BUFFER_SIZE - 1] = '\0';
         result.rc = FS_ERR_BUFFER_TOO_SMALL;
     }
-    microkit_debug_puts("CLIENT: copied string: ");
-    microkit_debug_puts((const char *)&client_data->submission_buffers[buffer_index]);
-    microkit_debug_puts("\n");
+    microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: copied string: ");
+    microkit_debug_puts(OUTPUT_VERBOSITY, (const char *)&client_data->submission_buffers[buffer_index]);
+    microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
     result.buffer_index = buffer_index;
     return result;
 }

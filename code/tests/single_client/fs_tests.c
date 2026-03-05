@@ -1343,9 +1343,9 @@ static bool test_batched_operations_roundtrip(void) {
 // ------------------------------- Test cases --------------------------------- //
 
 void run_tests() {
-    microkit_debug_puts(ANSI_COLOR_YELLOW);
-    microkit_debug_puts("\n\nStarting filesystem tests...\n");
-    microkit_debug_puts(ANSI_COLOR_RESET);
+    microkit_debug_puts(OUTPUT_VERBOSITY, ANSI_COLOR_YELLOW);
+    microkit_debug_puts(OUTPUT_VERBOSITY, "\n\nStarting filesystem tests...\n");
+    microkit_debug_puts(OUTPUT_VERBOSITY, ANSI_COLOR_RESET);
 
     run_test_suite("Completion queue starts empty", test_completion_queue_starts_empty, client_data);
     run_test_suite("List empty directory", test_list_empty_directory, client_data);
@@ -1360,16 +1360,16 @@ void run_tests() {
     run_test_suite("Invalid inputs + edge cases", test_invalid_inputs_and_edge_cases, client_data);
     run_test_suite("Batched ops roundtrip", test_batched_operations_roundtrip, client_data);
 
-    microkit_dbg_puts(ANSI_COLOR_YELLOW);
-    microkit_dbg_puts("\n\nFilesystem tests completed.\n");
-    microkit_dbg_puts(ANSI_COLOR_RESET);
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_YELLOW);
+    microkit_debug_puts(TEST_VERBOSITY, "\n\nFilesystem tests completed.\n");
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
 
-    microkit_dbg_puts("Test Suites passed: ");
-    microkit_dbg_put32((uint32_t)tests_passed);
-    microkit_dbg_puts("\n");
-    microkit_dbg_puts("Test Suites failed: ");
-    microkit_dbg_put32((uint32_t)tests_failed);
-    microkit_dbg_puts("\n");
+    microkit_debug_puts(TEST_VERBOSITY, "Test Suites passed: ");
+    microkit_debug_put32(TEST_VERBOSITY, (uint32_t)tests_passed);
+    microkit_debug_puts(TEST_VERBOSITY, "\n");
+    microkit_debug_puts(TEST_VERBOSITY, "Test Suites failed: ");
+    microkit_debug_put32(TEST_VERBOSITY, (uint32_t)tests_failed);
+    microkit_debug_puts(TEST_VERBOSITY, "\n");
 }
 
 // --------------------- Microkit entry points ------------------------//
@@ -1378,8 +1378,12 @@ void notified(microkit_channel client_id) {}
 
 void init(void) {
     client_data = (client_t *)fs_data_base;
-    microkit_dbg_puts(ANSI_COLOR_YELLOW);
-    microkit_dbg_puts("TESTING: started\n");
-    microkit_dbg_puts(ANSI_COLOR_RESET);
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_YELLOW);
+    microkit_debug_puts(TEST_VERBOSITY, "TESTING: started\n");
+    microkit_debug_puts(TEST_VERBOSITY, ANSI_COLOR_RESET);
     run_tests();
+
+    mark_client_as_finished_running(client_data);
+    notify_file_server(client_data, 0);
+    seL4_Yield();
 }

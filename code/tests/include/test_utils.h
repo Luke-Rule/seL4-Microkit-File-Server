@@ -51,7 +51,6 @@ int expect_eq_strings(const char *actual, const char *expected, const char *test
 bool fs_test_await_exists(
     const unsigned char *path,
     const char *step_name,
-    uint32_t max_iters,
     client_t *client_data
 );
 
@@ -87,6 +86,15 @@ bool fs_test_create_and_write_file(
     file_open_operations_t create_ops,
     const unsigned char *payload,
     size_t payload_len,
+    const char *step_name,
+    client_t *client_data
+);
+
+bool fs_test_create_file_expect_rc(
+    const unsigned char *path,
+    permissions_t perms,
+    file_open_operations_t create_ops,
+    uint32_t expected_rc,
     const char *step_name,
     client_t *client_data
 );

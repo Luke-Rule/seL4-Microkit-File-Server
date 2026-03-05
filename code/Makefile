@@ -23,9 +23,9 @@ CLIENT_OBJS := client.o $(COMMON_OBJS)
 SINGLE_TEST_OBJS := fs_tests.o test_utils.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o $(COMMON_OBJS)
 
 MULTI_CLIENT_COMMON_OBJS := test_utils.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o $(COMMON_OBJS)
-MULTI_CLIENT0_OBJ := client0.o
-MULTI_CLIENT1_OBJ := client1.o
-MULTI_CLIENT2_OBJ := client2.o
+MULTI_CLIENT0_OBJ := client_0.o
+MULTI_CLIENT1_OBJ := client_1.o
+MULTI_CLIENT2_OBJ := client_2.o
 # FILESERVER_OBJS := file_server.o
 FILESERVER_DYNAMIC_OBJS := file_server.o \
 	$(COMMON_OBJS) \
@@ -60,9 +60,9 @@ LIBS := -lmicrokit -Tmicrokit.ld
 CLIENT_ELF := $(BUILD_DIR)/client.elf
 SINGLE_TEST_ELF := $(BUILD_DIR)/fs_tests.elf
 
-MULTI_CLIENT0_ELF := $(BUILD_DIR)/client0.elf
-MULTI_CLIENT1_ELF := $(BUILD_DIR)/client1.elf
-MULTI_CLIENT2_ELF := $(BUILD_DIR)/client2.elf
+MULTI_CLIENT0_ELF := $(BUILD_DIR)/client_0.elf
+MULTI_CLIENT1_ELF := $(BUILD_DIR)/client_1.elf
+MULTI_CLIENT2_ELF := $(BUILD_DIR)/client_2.elf
 # FILESERVER_ELF := $(BUILD_DIR)/file_server.elf
 FILESERVER_DYNAMIC_ELF := $(BUILD_DIR)/file_server.elf
 FILESERVER_MULTI_DYNAMIC_ELF := $(BUILD_DIR)/file_server_multi.elf
@@ -171,13 +171,13 @@ multi_test: $(MULTI_TEST_IMAGE_FILE)
 # Back-compat alias
 test: single_test
 
-$(BUILD_DIR)/client0.o: tests/multi_client/client1.c Makefile | $(BUILD_DIR)
+$(BUILD_DIR)/client_0.o: tests/multi_client/client_0.c Makefile | $(BUILD_DIR)
 	$(CC) -c $(CFLAGS) -MMD -MP $< -o $@
 
-$(BUILD_DIR)/client1.o: tests/multi_client/client2.c Makefile | $(BUILD_DIR)
+$(BUILD_DIR)/client_1.o: tests/multi_client/client_1.c Makefile | $(BUILD_DIR)
 	$(CC) -c $(CFLAGS) -MMD -MP $< -o $@
 
-$(BUILD_DIR)/client2.o: tests/multi_client/client3.c Makefile | $(BUILD_DIR)
+$(BUILD_DIR)/client_2.o: tests/multi_client/client_2.c Makefile | $(BUILD_DIR)
 	$(CC) -c $(CFLAGS) -MMD -MP $< -o $@
 
 # Clean build artifacts

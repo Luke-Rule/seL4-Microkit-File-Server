@@ -10,8 +10,6 @@
 #include "fs_shared.h"
 #include "test_utils.h"
 
-// This file is built as client2.elf for the multi-client test system.
-
 uintptr_t fs_data_base;
 client_t *client_data;
 
@@ -24,8 +22,11 @@ static bool run_client(void) {
 	const unsigned char private_path[] = "/__mc/private.txt";
 	const unsigned char shared_path[] = "/__mc/shared.txt";
 	const unsigned char bbbb[] = "bbbb";
+	const unsigned char xdir_file[] = "/__mc/x_only/inside.txt";
+	const unsigned char xdir_data[] = "inside";
+	const unsigned char rwdir_file[] = "/__mc/rw_no_x/public.txt";
 
-	if (!fs_test_await_exists((const unsigned char *)"/__mc/phase1", "Wait phase1", 2000, client_data)) {
+	if (!fs_test_await_exists((const unsigned char *)"/__mc/phase1", "Wait phase1", client_data)) {
 		return false;
 	}
 
@@ -45,7 +46,7 @@ static bool run_client(void) {
 		return false;
 	}
 
-	if (!fs_test_await_exists((const unsigned char *)"/__mc/phase2", "Wait phase2", 2000, client_data)) {
+	if (!fs_test_await_exists((const unsigned char *)"/__mc/phase2", "Wait phase2", client_data)) {
 		return false;
 	}
 
@@ -68,6 +69,46 @@ static bool run_client(void) {
 		return false;
 	}
 
+	if (!fs_test_await_exists((const unsigned char *)"/__mc/phase3", "Wait phase3", client_data)) {
+		return false;
+	}
+
+	test_begin("Other client cannot create in execute-only directory");
+	if (!fs_test_create_file_expect_rc(
+			(const unsigned char *)"/__mc/x_only/client2_new.txt",
+			PERM_PUBLIC,
+			READ_WRITE_OP,
+			FS_ERR_PERMISSION,
+			"Create in x_only expects denied",
+			client_data)) {
+		return false;
+	}
+	output_pass((unsigned char *)"Other client cannot create in execute-only directory");
+
+	test_begin("Other client can read file inside execute-only directory");
+	if (!fs_test_open_read_expect(xdir_file, xdir_data, sizeof(xdir_data), "Read file in x_only", client_data)) {
+		return false;
+	}
+	output_pass((unsigned char *)"Other client can read file inside execute-only directory");
+
+	if (!fs_test_create_marker((const unsigned char *)"/__mc/client3_done3", "Create client3_done3", client_data)) {
+		return false;
+	}
+
+	if (!fs_test_await_exists((const unsigned char *)"/__mc/phase4", "Wait phase4", client_data)) {
+		return false;
+	}
+
+	test_begin("Other client cannot traverse directory without execute");
+	if (!fs_test_open_expect_rc(READ_OP, rwdir_file, FS_ERR_PERMISSION, "Open file in rw_no_x expects denied", client_data)) {
+		return false;
+	}
+	output_pass((unsigned char *)"Other client cannot traverse directory without execute");
+
+	if (!fs_test_create_marker((const unsigned char *)"/__mc/client3_done4", "Create client3_done4", client_data)) {
+		return false;
+	}
+
 	output_suite_pass((unsigned char *)"Multi-client: client2 writes shared");
 	return true;
 }
@@ -78,17 +119,16 @@ void notified(microkit_channel ch) {
 
 void init(void) {
 	client_data = (client_t *)fs_data_base;
-	microkit_debug_puts(ANSI_COLOR_YELLOW);
-	microkit_debug_puts("MULTI TEST client2: started\n");
-	microkit_debug_puts(ANSI_COLOR_RESET);
+	seL4_Yield();
+	microkit_debug_puts(TEST_VERBOSITY, "\nMULTI TEST client 2: started\n");
 
 	bool pass = run_client();
 	if (!pass) {
 		output_fail((unsigned char *)"Multi-client: client2 writes shared");
 	}
-	// TODO change file names
-	//signal completion debug log
-	microkit_dbg_puts(ANSI_COLOR_GREEN);
-	microkit_dbg_puts("2 DONE\n");
-	microkit_dbg_puts(ANSI_COLOR_RESET);
+
+	microkit_debug_puts(TEST_VERBOSITY, "\nMULTI TEST client 2: finished\n");
+	mark_client_as_finished_running(client_data);
+	notify_file_server(client_data, 0);
+	seL4_Yield();
 }

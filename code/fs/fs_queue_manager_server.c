@@ -58,7 +58,7 @@ void add_completion_entry(uint32_t client_id, uint8_t return_code, uint32_t para
     client_t *client = &clients[client_id];
     if (client->completion_queue_tail + 1 == client->completion_queue_head ||
         (client->completion_queue_head == 1 && client->completion_queue_tail == MAX_QUEUE_ENTRIES - 1)) {
-        microkit_debug_puts("FILE SERVER: no free completion entries available\n");
+        microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: no free completion entries available\n");
         return;
     }
 

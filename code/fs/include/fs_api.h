@@ -7,6 +7,7 @@
 
 #define FILE_SERVER_CHANNEL_ID 0
 
+void mark_client_as_finished_running(client_t *client_data);
 void debug_print_return_code(const char *operation, int return_code);
 
 void notify_file_server(client_t *client_data, int wait_for_completion);

@@ -19,20 +19,18 @@ typedef enum {
     OP_LIST = 7,
     OP_SET_PERMISSIONS = 8,
     OP_GET_PERMISSIONS = 9,
-    OP_RENAME = 10,
-    OP_GET_SIZE = 11,
-    OP_EXISTS = 12,
-    OP_COPY = 13,
-    OP_BLOCK_READ = 14,
-    OP_BLOCK_WRITE = 15,
-    OP_SEEK = 16,
-    OP_MOVE = 17
+    OP_GET_SIZE = 10,
+    OP_EXISTS = 11,
+    OP_BLOCK_READ = 12,
+    OP_BLOCK_WRITE = 13,
+    OP_SEEK = 14,
 } file_operation_t;
 
 struct client_flags {
     uint8_t ready_flag;
     uint8_t complete_flag;
-    uint8_t padding[2];
+    uint8_t finished_running_flag;
+    uint8_t padding;
 } typedef client_flags_t;
 
 struct buffer {
