@@ -36,6 +36,7 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
         case OP_CREATE_FILE: {
             microkit_debug_puts("FILE SERVER: CREATE FILE OPERATION\n");
             uint8_t permissions = (uint8_t)submission_entry->parameter1;
+            uint8_t operations = (uint8_t)submission_entry->parameter2;
             unsigned char *path = (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index];
             microkit_debug_puts("creating with path: ");
             microkit_debug_puts((char *)path);
@@ -43,7 +44,7 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
             i_node_result_t i_node = create_entry(path, ROOT_DIRECTORY_I_NODE_INDEX, permissions, client_id, CREATE_FILE);
             if (i_node.return_code == FS_OK) {
                 microkit_debug_puts("opening created file\n");
-                open_file_operation(client_id, permissions, path);
+                open_file_operation(client_id, operations, path);
             }
             break;
         }
@@ -273,7 +274,7 @@ void init(void) {
 
     microkit_debug_puts("FILE SERVER: initialising root block\n");
     i_node_t *root_i_node = &i_node_table[allocate_i_node().index];
-    root_i_node->mode = 0b00001 | 0b00010 | (PERM_EXECUTE || PERM_READ) << 2; // in use, dir, permissions
+    root_i_node->mode = IN_USE_BIT_SET | IS_DIRECTORY_BIT_SET | (PERM_EXECUTE | PERM_READ) << PERMISSION_BITS_START; // not deleted, in use, dir, permissions
     root_i_node->owner_id = -1; // owned by file server
     root_i_node->block_indices[0] = initial_i_node_block.index;
     root_i_node->entry_size = 0;

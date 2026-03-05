@@ -16,12 +16,29 @@ AS := $(TOOLCHAIN)-as
 MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
 # VPATH to find sources in subdirectories
-VPATH := fs:tests
+VPATH := fs:tests:tests/single_client:tests/multi_client
 
 CLIENT_OBJS := client.o $(COMMON_OBJS)
-TESTS_OBJS := fs_tests.o test_utils.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o $(COMMON_OBJS)
+
+SINGLE_TEST_OBJS := fs_tests.o test_utils.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o $(COMMON_OBJS)
+
+MULTI_CLIENT_COMMON_OBJS := test_utils.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o $(COMMON_OBJS)
+MULTI_CLIENT0_OBJ := client0.o
+MULTI_CLIENT1_OBJ := client1.o
+MULTI_CLIENT2_OBJ := client2.o
 # FILESERVER_OBJS := file_server.o
 FILESERVER_DYNAMIC_OBJS := file_server.o \
+	$(COMMON_OBJS) \
+	fs_operations.o \
+	fs_directory_manager.o \
+	fs_i_node_manager.o \
+	fs_file_table_manager.o \
+	fs_block_manager.o \
+	fs_block_data_manager.o \
+	fs_queue_manager_server.o \
+	fs_utils.o
+
+FILESERVER_MULTI_DYNAMIC_OBJS := file_server_multi.o \
 	$(COMMON_OBJS) \
 	fs_operations.o \
 	fs_directory_manager.o \
@@ -41,18 +58,25 @@ LIBS := -lmicrokit -Tmicrokit.ld
 
 # Output files
 CLIENT_ELF := $(BUILD_DIR)/client.elf
-TESTS_ELF := $(BUILD_DIR)/fs_tests.elf
+SINGLE_TEST_ELF := $(BUILD_DIR)/fs_tests.elf
+
+MULTI_CLIENT0_ELF := $(BUILD_DIR)/client0.elf
+MULTI_CLIENT1_ELF := $(BUILD_DIR)/client1.elf
+MULTI_CLIENT2_ELF := $(BUILD_DIR)/client2.elf
 # FILESERVER_ELF := $(BUILD_DIR)/file_server.elf
 FILESERVER_DYNAMIC_ELF := $(BUILD_DIR)/file_server.elf
+FILESERVER_MULTI_DYNAMIC_ELF := $(BUILD_DIR)/file_server_multi.elf
 # IMAGE_FILE = $(BUILD_DIR)/loader.img
-TEST_IMAGE_FILE = $(BUILD_DIR)/fs_tests_loader.img
+SINGLE_TEST_IMAGE_FILE = $(BUILD_DIR)/single_test_loader.img
+MULTI_TEST_IMAGE_FILE = $(BUILD_DIR)/multi_test_loader.img
 REPORT_FILE = $(BUILD_DIR)/report.txt
 SYSTEM_FILE := file.system
-TEST_SYSTEM_FILE := tests/fs_tests.system
+SINGLE_TEST_SYSTEM_FILE := tests/single_client/single_client_test.system
+MULTI_TEST_SYSTEM_FILE := tests/multi_client/multi_client_test.system
 
 # Targets
 # all: directories $(IMAGE_FILE) $(TEST_IMAGE_FILE)
-all: directories $(TEST_IMAGE_FILE)
+all: directories $(SINGLE_TEST_IMAGE_FILE)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -70,7 +94,16 @@ $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR)
 $(CLIENT_ELF): $(addprefix $(BUILD_DIR)/, $(CLIENT_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
-$(TESTS_ELF): $(addprefix $(BUILD_DIR)/, $(TESTS_OBJS))
+$(SINGLE_TEST_ELF): $(addprefix $(BUILD_DIR)/, $(SINGLE_TEST_OBJS))
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
+
+$(MULTI_CLIENT0_ELF): $(addprefix $(BUILD_DIR)/, $(MULTI_CLIENT0_OBJ) $(MULTI_CLIENT_COMMON_OBJS))
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
+
+$(MULTI_CLIENT1_ELF): $(addprefix $(BUILD_DIR)/, $(MULTI_CLIENT1_OBJ) $(MULTI_CLIENT_COMMON_OBJS))
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
+
+$(MULTI_CLIENT2_ELF): $(addprefix $(BUILD_DIR)/, $(MULTI_CLIENT2_OBJ) $(MULTI_CLIENT_COMMON_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
 # $(FILESERVER_ELF): $(addprefix $(BUILD_DIR)/, $(FILESERVER_OBJS))
@@ -79,16 +112,28 @@ $(TESTS_ELF): $(addprefix $(BUILD_DIR)/, $(TESTS_OBJS))
 $(FILESERVER_DYNAMIC_ELF): $(addprefix $(BUILD_DIR)/, $(FILESERVER_DYNAMIC_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
+$(FILESERVER_MULTI_DYNAMIC_ELF): $(addprefix $(BUILD_DIR)/, $(FILESERVER_MULTI_DYNAMIC_OBJS))
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
+
 # Build Microkit image
 # $(IMAGE_FILE): $(CLIENT_ELF) $(FILESERVER_ELF) $(SYSTEM_FILE)
 # 	$(MICROKIT_TOOL) $(SYSTEM_FILE) --search-path $(BUILD_DIR) \
 # 		--board $(BOARD) --config $(MICROKIT_CONFIG) \
 # 		-o $(IMAGE_FILE) -r $(REPORT_FILE)
 
-$(TEST_IMAGE_FILE): $(TESTS_ELF) $(FILESERVER_DYNAMIC_ELF) $(TEST_SYSTEM_FILE)
-	$(MICROKIT_TOOL) $(TEST_SYSTEM_FILE) --search-path $(BUILD_DIR) \
+
+$(SINGLE_TEST_IMAGE_FILE): $(SINGLE_TEST_ELF) $(FILESERVER_DYNAMIC_ELF) $(SINGLE_TEST_SYSTEM_FILE)
+	$(MICROKIT_TOOL) $(SINGLE_TEST_SYSTEM_FILE) --search-path $(BUILD_DIR) \
 		--board $(BOARD) --config $(MICROKIT_CONFIG) \
-		-o $(TEST_IMAGE_FILE) -r $(REPORT_FILE)
+		-o $(SINGLE_TEST_IMAGE_FILE) -r $(REPORT_FILE)
+
+$(MULTI_TEST_IMAGE_FILE): $(MULTI_CLIENT0_ELF) $(MULTI_CLIENT1_ELF) $(MULTI_CLIENT2_ELF) $(FILESERVER_MULTI_DYNAMIC_ELF) $(MULTI_TEST_SYSTEM_FILE)
+	$(MICROKIT_TOOL) $(MULTI_TEST_SYSTEM_FILE) --search-path $(BUILD_DIR) \
+		--board $(BOARD) --config $(MICROKIT_CONFIG) \
+		-o $(MULTI_TEST_IMAGE_FILE) -r $(REPORT_FILE)
+
+$(BUILD_DIR)/file_server_multi.o: fs/file_server.c Makefile | $(BUILD_DIR)
+	$(CC) -c $(CFLAGS) -DNUMBER_OF_CLIENTS=3 -MMD -MP $< -o $@
 
 # Run in QEMU
 # run: $(IMAGE_FILE)
@@ -101,15 +146,39 @@ $(TEST_IMAGE_FILE): $(TESTS_ELF) $(FILESERVER_DYNAMIC_ELF) $(TEST_SYSTEM_FILE)
 # 		-netdev user,id=mynet0 \
 # 		-device virtio-net-device,netdev=mynet0,mac=52:55:00:d1:55:01
 
-test: $(TEST_IMAGE_FILE)
+
+# Note: the previous `test` target has been split into explicit single- and multi-client tests.
+single_test: $(SINGLE_TEST_IMAGE_FILE)
 	qemu-system-aarch64 -machine virt,virtualization=on \
 		-cpu $(CPU) \
 		-serial mon:stdio \
-		-device loader,file=$(TEST_IMAGE_FILE),addr=0x70000000,cpu-num=0 \
+		-device loader,file=$(SINGLE_TEST_IMAGE_FILE),addr=0x70000000,cpu-num=0 \
 		-m size=2G \
 		-nographic \
 		-netdev user,id=mynet0 \
 		-device virtio-net-device,netdev=mynet0,mac=52:55:00:d1:55:01
+
+multi_test: $(MULTI_TEST_IMAGE_FILE)
+	qemu-system-aarch64 -machine virt,virtualization=on \
+		-cpu $(CPU) \
+		-serial mon:stdio \
+		-device loader,file=$(MULTI_TEST_IMAGE_FILE),addr=0x70000000,cpu-num=0 \
+		-m size=2G \
+		-nographic \
+		-netdev user,id=mynet0 \
+		-device virtio-net-device,netdev=mynet0,mac=52:55:00:d1:55:01
+
+# Back-compat alias
+test: single_test
+
+$(BUILD_DIR)/client0.o: tests/multi_client/client1.c Makefile | $(BUILD_DIR)
+	$(CC) -c $(CFLAGS) -MMD -MP $< -o $@
+
+$(BUILD_DIR)/client1.o: tests/multi_client/client2.c Makefile | $(BUILD_DIR)
+	$(CC) -c $(CFLAGS) -MMD -MP $< -o $@
+
+$(BUILD_DIR)/client2.o: tests/multi_client/client3.c Makefile | $(BUILD_DIR)
+	$(CC) -c $(CFLAGS) -MMD -MP $< -o $@
 
 # Clean build artifacts
 clean:

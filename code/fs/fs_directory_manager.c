@@ -108,7 +108,7 @@ i_node_result_t add_entry(const uint32_t parent_i_node_index, unsigned char *nam
 
     parent_i_node->entry_size += 1;
 
-    i_node_table[new_i_node_info.index].mode = 0b00001 | (is_directory << 1) | (permissions << 2); // in use, dir, permissions
+    i_node_table[new_i_node_info.index].mode = IN_USE_BIT_SET | (is_directory << IS_DIRECTORY_BIT_START) | (permissions << PERMISSION_BITS_START); // not deleted, in use, dir, permissions
     i_node_table[new_i_node_info.index].owner_id = client_id;
     i_node_table[new_i_node_info.index].block_indices[0] = new_block.index;
     i_node_table[new_i_node_info.index].entry_size = 0;
@@ -150,7 +150,11 @@ fs_result_t delete_directory_contents(const uint32_t i_node_index) {
                     return res;
                 }
             }
-            release_i_node(child_entries[j].i_node_index);
+            if (is_i_node_open(child_entries[j].i_node_index)) {
+                i_node_table[child_entries[j].i_node_index].mode |= IS_DELETED_BIT_SET;
+            } else {
+                release_i_node(child_entries[j].i_node_index);
+            }
             child_entries[j].name[0] = '\0';
         }
     }

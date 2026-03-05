@@ -96,6 +96,352 @@ bool ensure_clean_test_root(client_t *client_data) {
     return true;
 }
 
+// ------------------------------ FS test helper functions ------------------------------- //
+
+static bool fs_test_seek0(uint32_t fd, client_t *client_data) {
+    fs_result_t rc = send_seek_file_request(fd, 0, client_data);
+    if (!expect_eq_int(rc, FS_OK, "Queue seek 0")) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c_seek;
+    if (!get_completion(&c_seek, "Seek", client_data)) {
+        return false;
+    }
+
+    return expect_eq_uint32(c_seek.return_code, FS_OK, "Seek returned OK");
+}
+
+bool fs_test_await_exists(
+    const unsigned char *path,
+    const char *step_name,
+    const uint32_t max_iters,
+    client_t *client_data
+) {
+    for (uint32_t i = 0; i < max_iters; i++) {
+        fs_result_t rc = send_entry_exists_request(path, client_data);
+        if (!expect_eq_int(rc, FS_OK, step_name)) {
+            return false;
+        }
+
+        notify_file_server(client_data, 1);
+
+        completion_queue_entry_t c;
+        if (!get_completion(&c, step_name, client_data)) {
+            return false;
+        }
+        if (!expect_eq_uint32(c.return_code, FS_OK, step_name)) {
+            return false;
+        }
+
+        if (c.parameter1 == 1) {
+            return true;
+        }
+
+        seL4_Yield();
+    }
+
+    return expect_true(false, "Timed out waiting for marker to exist");
+}
+
+bool fs_test_create_marker(const unsigned char *path, const char *step_name, client_t *client_data) {
+    fs_result_t rc = send_create_file_request(path, PERM_PUBLIC, READ_OP, client_data);
+    if (!expect_eq_int(rc, FS_OK, step_name)) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c_create;
+    if (!get_completion(&c_create, step_name, client_data)) {
+        return false;
+    }
+    if (!expect_eq_uint32(c_create.return_code, FS_OK, step_name)) {
+        return false;
+    }
+
+    uint32_t fd = c_create.parameter1;
+    rc = send_close_file_request(fd, client_data);
+    if (!expect_eq_int(rc, FS_OK, "Queue close marker")) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c_close;
+    if (!get_completion(&c_close, "Close marker", client_data)) {
+        return false;
+    }
+    return expect_eq_uint32(c_close.return_code, FS_OK, "Close marker returned OK");
+}
+
+bool fs_test_open_expect_rc(
+    file_open_operations_t ops,
+    const unsigned char *path,
+    uint32_t expected_rc,
+    const char *step_name,
+    client_t *client_data
+) {
+    fs_result_t rc = send_open_file_request(ops, path, client_data);
+    if (!expect_eq_int(rc, FS_OK, step_name)) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c_open;
+    if (!get_completion(&c_open, step_name, client_data)) {
+        return false;
+    }
+
+    if (!expect_eq_uint32(c_open.return_code, expected_rc, step_name)) {
+        return false;
+    }
+
+    if (expected_rc == FS_OK) {
+        uint32_t fd = c_open.parameter1;
+        rc = send_close_file_request(fd, client_data);
+        if (!expect_eq_int(rc, FS_OK, "Queue close")) {
+            return false;
+        }
+
+        notify_file_server(client_data, 1);
+
+        completion_queue_entry_t c_close;
+        if (!get_completion(&c_close, "Close", client_data)) {
+            return false;
+        }
+
+        return expect_eq_uint32(c_close.return_code, FS_OK, "Close returned OK");
+    }
+
+    return true;
+}
+
+bool fs_test_open_read_expect(
+    const unsigned char *path,
+    const unsigned char *expected,
+    size_t expected_len,
+    const char *step_name,
+    client_t *client_data
+) {
+    fs_result_t rc = send_open_file_request(READ_OP, path, client_data);
+    if (!expect_eq_int(rc, FS_OK, step_name)) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c_open;
+    if (!get_completion(&c_open, step_name, client_data)) {
+        return false;
+    }
+    if (!expect_eq_uint32(c_open.return_code, FS_OK, "Open returned OK")) {
+        return false;
+    }
+
+    uint32_t fd = c_open.parameter1;
+
+    if (!fs_test_seek0(fd, client_data)) {
+        return false;
+    }
+
+    rc = send_read_file_request(fd, expected_len, client_data);
+    if (!expect_eq_int(rc, FS_OK, "Queue read")) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c_read;
+    if (!get_completion(&c_read, "Read", client_data)) {
+        return false;
+    }
+    if (!expect_eq_uint32(c_read.return_code, FS_OK, "Read returned OK")) {
+        return false;
+    }
+
+    if (!expect_equal_to_client_buffer(
+            expected, expected_len, "Read matches expected", (int)c_read.buffer_index, client_data)) {
+        return false;
+    }
+    set_free_completion_buffer(client_data, (int)c_read.buffer_index);
+
+    rc = send_close_file_request(fd, client_data);
+    if (!expect_eq_int(rc, FS_OK, "Queue close")) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c_close;
+    if (!get_completion(&c_close, "Close", client_data)) {
+        return false;
+    }
+    return expect_eq_uint32(c_close.return_code, FS_OK, "Close returned OK");
+}
+
+bool fs_test_open_write_close(
+    const unsigned char *path,
+    const unsigned char *payload,
+    size_t payload_len,
+    const char *step_name,
+    client_t *client_data
+) {
+    fs_result_t rc = send_open_file_request(READ_WRITE_OP, path, client_data);
+    if (!expect_eq_int(rc, FS_OK, step_name)) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c_open;
+    if (!get_completion(&c_open, step_name, client_data)) {
+        return false;
+    }
+    if (!expect_eq_uint32(c_open.return_code, FS_OK, "Open returned OK")) {
+        return false;
+    }
+
+    uint32_t fd = c_open.parameter1;
+
+    if (!fs_test_seek0(fd, client_data)) {
+        return false;
+    }
+
+    rc = send_write_file_request(fd, payload_len, payload, client_data);
+    if (!expect_eq_int(rc, FS_OK, "Queue write")) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c_write;
+    if (!get_completion(&c_write, "Write", client_data)) {
+        return false;
+    }
+    if (!expect_eq_uint32(c_write.return_code, FS_OK, "Write returned OK")) {
+        return false;
+    }
+
+    rc = send_close_file_request(fd, client_data);
+    if (!expect_eq_int(rc, FS_OK, "Queue close")) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c_close;
+    if (!get_completion(&c_close, "Close", client_data)) {
+        return false;
+    }
+    return expect_eq_uint32(c_close.return_code, FS_OK, "Close returned OK");
+}
+
+bool fs_test_create_and_write_file(
+    const unsigned char *path,
+    permissions_t perms,
+    file_open_operations_t create_ops,
+    const unsigned char *payload,
+    size_t payload_len,
+    const char *step_name,
+    client_t *client_data
+) {
+    fs_result_t rc = send_create_file_request(path, perms, create_ops, client_data);
+    if (!expect_eq_int(rc, FS_OK, step_name)) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c_create;
+    if (!get_completion(&c_create, step_name, client_data)) {
+        return false;
+    }
+    if (!expect_eq_uint32(c_create.return_code, FS_OK, step_name)) {
+        return false;
+    }
+
+    uint32_t fd = c_create.parameter1;
+
+    if (!fs_test_seek0(fd, client_data)) {
+        return false;
+    }
+
+    rc = send_write_file_request(fd, payload_len, payload, client_data);
+    if (!expect_eq_int(rc, FS_OK, "Queue write")) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c_write;
+    if (!get_completion(&c_write, "Write", client_data)) {
+        return false;
+    }
+    if (!expect_eq_uint32(c_write.return_code, FS_OK, "Write returned OK")) {
+        return false;
+    }
+
+    rc = send_close_file_request(fd, client_data);
+    if (!expect_eq_int(rc, FS_OK, "Queue close")) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c_close;
+    if (!get_completion(&c_close, "Close", client_data)) {
+        return false;
+    }
+    return expect_eq_uint32(c_close.return_code, FS_OK, "Close returned OK");
+}
+
+bool fs_test_delete_expect_rc(
+    const unsigned char *path,
+    uint32_t expected_rc,
+    const char *step_name,
+    client_t *client_data
+) {
+    fs_result_t rc = send_delete_entry_request(path, client_data);
+    if (!expect_eq_int(rc, FS_OK, step_name)) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c_del;
+    if (!get_completion(&c_del, step_name, client_data)) {
+        return false;
+    }
+
+    return expect_eq_uint32(c_del.return_code, expected_rc, step_name);
+}
+
+bool fs_test_set_perm_expect_rc(
+    const unsigned char *path,
+    permissions_t perms,
+    uint32_t expected_rc,
+    const char *step_name,
+    client_t *client_data
+) {
+    fs_result_t rc = send_set_entry_permissions_request(path, perms, client_data);
+    if (!expect_eq_int(rc, FS_OK, step_name)) {
+        return false;
+    }
+
+    notify_file_server(client_data, 1);
+
+    completion_queue_entry_t c;
+    if (!get_completion(&c, step_name, client_data)) {
+        return false;
+    }
+
+    return expect_eq_uint32(c.return_code, expected_rc, step_name);
+}
+
 void output_suite_pass(unsigned char *msg) {
     microkit_dbg_puts(ANSI_COLOR_GREEN);
     microkit_dbg_puts("[PASS] ");

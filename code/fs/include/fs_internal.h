@@ -6,7 +6,9 @@
 
 // System parameters
 #define MAX_NAME_LENGTH 63
+#ifndef NUMBER_OF_CLIENTS
 #define NUMBER_OF_CLIENTS 1
+#endif
 #define BLOCK_SIZE 0x1000
 #define MAX_NUMBER_OF_BLOCKS 0x10000
 #define MAX_NUMBER_OF_INODES 0x10000
@@ -33,7 +35,11 @@
 #define READ 1
 #define WRITE 0
 #define IS_FILE_BIT_SET 0b00
-#define IS_DIRECTORY_BIT_SET 0b10
+#define IS_DIRECTORY_BIT_SET 0b000010
+#define IS_DELETED_BIT_SET 0b100000
+#define IN_USE_BIT_SET 0b000001
+#define PERMISSION_BITS_START 2
+#define IS_DIRECTORY_BIT_START 1
 
 // ------------------------------ Structs ------------------------------- //
 
@@ -54,7 +60,7 @@ struct i_node
     uint32_t entry_size;
     uint32_t blocks_used;
     uint32_t block_indices[DIRECT_BLOCKS_PER_INODE + 1]; // last is indirect block
-    uint8_t mode; // 3 for perm, 1 for dir, 1 for in use 
+    uint8_t mode; // 1 for deleted, 3 for perm, 1 for dir, 1 for in use 
     uint8_t owner_id;
     uint8_t padding[2];
 } typedef i_node_t;

@@ -5,6 +5,8 @@
 
 #include "fs_shared.h"
 
+#define FILE_SERVER_CHANNEL_ID 0
+
 void debug_print_return_code(const char *operation, int return_code);
 
 void notify_file_server(client_t *client_data, int wait_for_completion);
@@ -12,7 +14,7 @@ void set_free_completion_buffer(client_t *client_data, int buffer_index);
 int get_next_completion_entry(client_t *client_data, completion_queue_entry_t *out);
 
 fs_result_t send_create_file_request(const unsigned char *file_name, permissions_t permissions,
-									client_t *client_data);
+									file_open_operations_t operations, client_t *client_data);
 fs_result_t send_create_directory_request(const unsigned char *dir_name, permissions_t permissions,
 										 client_t *client_data);
 fs_result_t send_open_file_request(file_open_operations_t ops, const unsigned char *file_name,

@@ -21,6 +21,19 @@ file_descriptor_result_t get_file_descriptor(const uint32_t client_id, const uin
     return (file_descriptor_result_t){fd, FS_OK};
 }
 
+
+uint8_t is_i_node_open(const uint32_t i_node_index) {
+    for (size_t client_id = 0; client_id < NUMBER_OF_CLIENTS; client_id++) {
+        for (size_t file_index = 0; file_index < MAX_OPEN_FILES_PER_CLIENT; file_index++) {
+            if (file_descriptor_table[client_id * MAX_OPEN_FILES_PER_CLIENT + file_index].i_node_index == i_node_index) {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+
 file_index_and_cursor_result_t add_i_node_to_fd_table(const uint32_t client_id, const uint32_t i_node_index,
                                                      const uint8_t requested_operations) {
     for (size_t i = 0; i < MAX_OPEN_FILES_PER_CLIENT; i++) {

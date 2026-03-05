@@ -66,7 +66,7 @@ static bool test_create_write_read_roundtrip(void) {
     const unsigned char path[] = "/__tests/a.txt";
     const unsigned char data[] = "Hello, seL4 File Server!";
 
-    fs_result_t rc = send_create_file_request(path, READ_WRITE_OP, client_data);
+    fs_result_t rc = send_create_file_request(path, PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create a.txt")) {
         return false;
     }
@@ -194,7 +194,7 @@ static bool test_duplicate_create_fails(void) {
     }
     const unsigned char path[] = "/__tests/dup.txt";
 
-    fs_result_t rc = send_create_file_request(path, READ_WRITE_OP, client_data);
+    fs_result_t rc = send_create_file_request(path, PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create dup.txt")) {
         return false;
     }
@@ -207,7 +207,7 @@ static bool test_duplicate_create_fails(void) {
         return false;
     }
 
-    rc = send_create_file_request(path, READ_WRITE_OP, client_data);
+    rc = send_create_file_request(path, PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create duplicate")) {
         return false;
     }
@@ -242,23 +242,14 @@ static bool test_directory_file_conflicts(void) {
         return false;
     }
 
-    rc = send_open_file_request(READ_OP, "/__tests/subdir", client_data);
-    if (!expect_eq_int(rc, FS_OK, "Queue open dir as file")) {
-        return false;
-    }
-    notify_file_server(client_data, 1);
-    completion_queue_entry_t c_open;
-    if (!get_completion(&c_open, "Open dir as file", client_data)) {
-        return false;
-    }
-    if (!expect_eq_uint32(c_open.return_code, FS_ERR_INVALID_PATH, "Open directory as file fails")) {
+    if (!fs_test_open_expect_rc(READ_OP, (const unsigned char *)"/__tests/subdir", FS_ERR_INVALID_PATH, "Open dir as file", client_data)) {
         return false;
     }
 
     output_pass((unsigned char *)"Create a directory and ensure you cannot open it as a file");
 
     test_begin((char *)"Cannot create a file with same name as existing directory");
-    rc = send_create_file_request("/__tests/subdir", READ_WRITE_OP, client_data);
+    rc = send_create_file_request("/__tests/subdir", PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create file named subdir")) {
         return false;
     }
@@ -274,7 +265,7 @@ static bool test_directory_file_conflicts(void) {
     output_pass((unsigned char *)"Cannot create a file with same name as existing directory");
 
     test_begin((char *)"Create a file and ensure you cannot create directory with same name");
-    rc = send_create_file_request("/__tests/a.txt", READ_WRITE_OP, client_data);
+    rc = send_create_file_request("/__tests/a.txt", PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create a.txt")) {
         return false;
     }
@@ -343,7 +334,7 @@ static bool test_nested_directory_listing_and_size(void) {
         return false;
     }
 
-    rc = send_create_file_request(file_path, READ_WRITE_OP, client_data);
+    rc = send_create_file_request(file_path, PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create nested file")) {
         return false;
     }
@@ -464,7 +455,7 @@ static bool test_nested_directory_listing_and_size(void) {
         return false;
     }
 
-    rc = send_create_file_request(file_path, READ_WRITE_OP, client_data);
+    rc = send_create_file_request(file_path, PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue re-create nested")) {
         return false;
     }
@@ -524,7 +515,7 @@ static bool test_seek_overwrite_and_oob(void) {
     const unsigned char more_write_data[] = "wonderful world!";
     const unsigned char expected_full[] = "Hello, wonderful world!";
 
-    fs_result_t rc = send_create_file_request(path, READ_WRITE_OP, client_data);
+    fs_result_t rc = send_create_file_request(path, PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create seek.txt")) {
         return false;
     }
@@ -726,7 +717,7 @@ static bool test_large_write_read(void) {
         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     const uint32_t lots_len = 2791;
 
-    fs_result_t rc = send_create_file_request(path, READ_WRITE_OP, client_data);
+    fs_result_t rc = send_create_file_request(path, PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create large.txt")) {
         return false;
     }
@@ -812,7 +803,7 @@ static bool test_close_fd_errors_and_permissions(void) {
     const unsigned char path[] = "/__tests/perm.txt";
     const unsigned char payload[] = "Permission test";
 
-    fs_result_t rc = send_create_file_request(path, READ_WRITE_OP, client_data);
+    fs_result_t rc = send_create_file_request(path, PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create perm.txt")) {
         return false;
     }
@@ -885,16 +876,7 @@ static bool test_close_fd_errors_and_permissions(void) {
     output_pass((unsigned char *)"Reading with closed descriptor should fail");
 
     test_begin((char *)"Set/get permissions on path");
-    rc = send_set_entry_permissions_request(path, PERM_READ, client_data);
-    if (!expect_eq_int(rc, FS_OK, "Queue set perm read")) {
-        return false;
-    }
-    notify_file_server(client_data, 1);
-    completion_queue_entry_t c_setp;
-    if (!get_completion(&c_setp, "Set perm", client_data)) {
-        return false;
-    }
-    if (!expect_eq_uint32(c_setp.return_code, FS_OK, "Set perm returned OK")) {
+    if (!fs_test_set_perm_expect_rc(path, PERM_READ, FS_OK, "Set perm", client_data)) {
         return false;
     }
 
@@ -1010,7 +992,7 @@ static bool test_deleted_directory_operations_fail(void) {
         return false;
     }
 
-    rc = send_create_file_request("/__tests/deldir/nestedfile.txt", READ_WRITE_OP, client_data);
+    rc = send_create_file_request("/__tests/deldir/nestedfile.txt", PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create nested in deldir")) {
         return false;
     }
@@ -1043,16 +1025,7 @@ static bool test_deleted_directory_operations_fail(void) {
     output_pass((unsigned char *)"Delete directory (implementation is expected to remove contained entry too)");
 
     test_begin((char *)"Setting permissions on deleted directory should fail");
-    rc = send_set_entry_permissions_request("/__tests/deldir", PERM_PUBLIC, client_data);
-    if (!expect_eq_int(rc, FS_OK, "Queue set perms on deleted deldir")) {
-        return false;
-    }
-    notify_file_server(client_data, 1);
-    completion_queue_entry_t c_setp;
-    if (!get_completion(&c_setp, "Set perms on deleted deldir", client_data)) {
-        return false;
-    }
-    if (!expect_eq_uint32(c_setp.return_code, FS_ERR_NOT_FOUND, "Set perms on deleted directory returns NOT_FOUND")) {
+    if (!fs_test_set_perm_expect_rc((const unsigned char *)"/__tests/deldir", PERM_PUBLIC, FS_ERR_NOT_FOUND, "Set perms on deleted deldir", client_data)) {
         return false;
     }
 
@@ -1118,23 +1091,15 @@ static bool test_invalid_inputs_and_edge_cases(void) {
     }
 
     test_begin((char *)"Delete non-existent entry");
-    fs_result_t rc = send_delete_entry_request("/__tests/nope.txt", client_data);
-    if (!expect_eq_int(rc, FS_OK, "Queue delete non-existent")) {
-        return false;
-    }
-    notify_file_server(client_data, 1);
-    completion_queue_entry_t c_del;
-    if (!get_completion(&c_del, "Delete non-existent", client_data)) {
-        return false;
-    }
-    if (!expect_eq_uint32(c_del.return_code, FS_ERR_NOT_FOUND, "Delete non-existent returns NOT_FOUND")) {
+    fs_result_t rc;
+    if (!fs_test_delete_expect_rc((const unsigned char *)"/__tests/nope.txt", FS_ERR_NOT_FOUND, "Delete non-existent", client_data)) {
         return false;
     }
 
     output_pass((unsigned char *)"Delete non-existent entry");
 
     test_begin((char *)"Invalid names: trailing slash gives an empty final component");
-    rc = send_create_file_request("/__tests/", READ_WRITE_OP, client_data);
+    rc = send_create_file_request("/__tests/", PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create invalid /__tests/")) {
         return false;
     }
@@ -1147,7 +1112,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
         return false;
     }
 
-    rc = send_create_file_request("d/f", READ_WRITE_OP, client_data);
+    rc = send_create_file_request("d/f", PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create invalid d/f")) {
         return false;
     }
@@ -1160,7 +1125,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
         return false;
     }
 
-    rc = send_create_file_request("\0", READ_WRITE_OP, client_data);
+    rc = send_create_file_request("\0", PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create invalid NUL")) {
         return false;
     }
@@ -1173,7 +1138,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
         return false;
     }
 
-    rc = send_create_file_request("", READ_WRITE_OP, client_data);
+    rc = send_create_file_request("", PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create invalid empty")) {
         return false;
     }
@@ -1241,16 +1206,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
     output_pass((unsigned char *)"Invalid names: trailing slash gives an empty final component");
 
     test_begin((char *)"Root deletion forbidden");
-    rc = send_delete_entry_request("/", client_data);
-    if (!expect_eq_int(rc, FS_OK, "Queue delete root")) {
-        return false;
-    }
-    notify_file_server(client_data, 1);
-    completion_queue_entry_t c_root;
-    if (!get_completion(&c_root, "Delete root", client_data)) {
-        return false;
-    }
-    if (!expect_eq_uint32(c_root.return_code, FS_ERR_PERMISSION, "Delete root forbidden")) {
+    if (!fs_test_delete_expect_rc((const unsigned char *)"/", FS_ERR_PERMISSION, "Delete root", client_data)) {
         return false;
     }
 
@@ -1273,7 +1229,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
     output_pass((unsigned char *)"Invalid FD");
 
     test_begin((char *)"Max-length name should be invalid");
-    rc = send_create_file_request("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", READ_WRITE_OP, client_data);
+    rc = send_create_file_request("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create maxlen file")) {
         return false;
     }
@@ -1312,7 +1268,7 @@ static bool test_batched_operations_roundtrip(void) {
     const unsigned char path[] = "/__tests/batch.txt";
     const unsigned char payload[] = "Hello, seL4 File Server!";
 
-    fs_result_t rc = send_create_file_request(path, READ_WRITE_OP, client_data);
+    fs_result_t rc = send_create_file_request(path, PERM_PRIVATE, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue create batch.txt")) {
         return false;
     }
@@ -1404,16 +1360,16 @@ void run_tests() {
     run_test_suite("Invalid inputs + edge cases", test_invalid_inputs_and_edge_cases, client_data);
     run_test_suite("Batched ops roundtrip", test_batched_operations_roundtrip, client_data);
 
-    microkit_debug_puts(ANSI_COLOR_YELLOW);
-    microkit_debug_puts("\n\nFilesystem tests completed.\n");
-    microkit_debug_puts(ANSI_COLOR_RESET);
+    microkit_dbg_puts(ANSI_COLOR_YELLOW);
+    microkit_dbg_puts("\n\nFilesystem tests completed.\n");
+    microkit_dbg_puts(ANSI_COLOR_RESET);
 
-    microkit_debug_puts("Test Suites passed: ");
-    microkit_debug_put32((uint32_t)tests_passed);
-    microkit_debug_puts("\n");
-    microkit_debug_puts("Test Suites failed: ");
-    microkit_debug_put32((uint32_t)tests_failed);
-    microkit_debug_puts("\n");
+    microkit_dbg_puts("Test Suites passed: ");
+    microkit_dbg_put32((uint32_t)tests_passed);
+    microkit_dbg_puts("\n");
+    microkit_dbg_puts("Test Suites failed: ");
+    microkit_dbg_put32((uint32_t)tests_failed);
+    microkit_dbg_puts("\n");
 }
 
 // --------------------- Microkit entry points ------------------------//
@@ -1422,8 +1378,8 @@ void notified(microkit_channel client_id) {}
 
 void init(void) {
     client_data = (client_t *)fs_data_base;
-    microkit_debug_puts(ANSI_COLOR_YELLOW);
-    microkit_debug_puts("TESTING: started\n");
-    microkit_debug_puts(ANSI_COLOR_RESET);
+    microkit_dbg_puts(ANSI_COLOR_YELLOW);
+    microkit_dbg_puts("TESTING: started\n");
+    microkit_dbg_puts(ANSI_COLOR_RESET);
     run_tests();
 }

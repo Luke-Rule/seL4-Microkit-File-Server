@@ -72,7 +72,7 @@ int valid_permissions(const i_node_t *i_node, const uint8_t client_id, const per
     if (i_node->owner_id == client_id) {
         return 1;
     }
-    permissions_t dir_perm = (i_node->mode >> 2) & 0b111;
+    permissions_t dir_perm = (i_node->mode >> PERMISSION_BITS_START) & 0b111;
     microkit_debug_puts("checking permissions: ");
     microkit_debug_put32(dir_perm);
     microkit_debug_puts(" against required: ");

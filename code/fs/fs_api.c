@@ -8,8 +8,6 @@
 #include "fs_buffer_manager.h"
 #include "fs_queue_manager_client.h"
 
-#define FILE_SERVER_CHANNEL_ID 0
-
 // ------------------------ Debug functions -------------------------- //
 
 void debug_print_return_code(const char *operation, int return_code) {
@@ -107,7 +105,7 @@ int get_next_completion_entry(client_t *client_data, completion_queue_entry_t *o
 
 // ------------------------------ File system operation functions ------------------------------- //
 
-fs_result_t send_create_file_request(const unsigned char *file_name, const permissions_t permissions, client_t *client_data) {
+fs_result_t send_create_file_request(const unsigned char *file_name, const permissions_t permissions, const file_open_operations_t operations, client_t *client_data) {
     buffer_copy_result_t copy_result = copy_string_to_submission_buffer(file_name, client_data);
     if (copy_result.rc != FS_OK) {
         return copy_result.rc;
@@ -118,7 +116,7 @@ fs_result_t send_create_file_request(const unsigned char *file_name, const permi
     microkit_debug_puts("CLIENT: with permissions: ");
     microkit_debug_put32((uint32_t)permissions);
     microkit_debug_puts("\n");
-    add_submission_entry(OP_CREATE_FILE, permissions, 0, client_data, copy_result.buffer_index);
+    add_submission_entry(OP_CREATE_FILE, permissions, operations, client_data, copy_result.buffer_index);
     return FS_OK;
 }
 
@@ -157,7 +155,7 @@ fs_result_t send_close_file_request(const uint32_t file_id, client_t *client_dat
     microkit_debug_puts("CLIENT: requested to close file: ");
     microkit_debug_put32(file_id);
     microkit_debug_puts("\n");
-    add_submission_entry(OP_CLOSE, 0, file_id, client_data, -1);
+    add_submission_entry(OP_CLOSE, file_id, 0, client_data, -1);
     return FS_OK;
 }
 

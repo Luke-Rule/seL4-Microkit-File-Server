@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-// TODO use bools
+// TODO use bools, unsigned, const
 #include "fs_shared.h"
 
 #define ANSI_COLOR_GREEN "\x1b[32m"
@@ -45,3 +45,63 @@ int expect_equal_to_buffer(
 );
 
 int expect_eq_strings(const char *actual, const char *expected, const char *test_message);
+
+// ------------------------------ FS test helper functions ------------------------------- //
+
+bool fs_test_await_exists(
+    const unsigned char *path,
+    const char *step_name,
+    uint32_t max_iters,
+    client_t *client_data
+);
+
+bool fs_test_create_marker(const unsigned char *path, const char *step_name, client_t *client_data);
+
+bool fs_test_open_expect_rc(
+    file_open_operations_t ops,
+    const unsigned char *path,
+    uint32_t expected_rc,
+    const char *step_name,
+    client_t *client_data
+);
+
+bool fs_test_open_read_expect(
+    const unsigned char *path,
+    const unsigned char *expected,
+    size_t expected_len,
+    const char *step_name,
+    client_t *client_data
+);
+
+bool fs_test_open_write_close(
+    const unsigned char *path,
+    const unsigned char *payload,
+    size_t payload_len,
+    const char *step_name,
+    client_t *client_data
+);
+
+bool fs_test_create_and_write_file(
+    const unsigned char *path,
+    permissions_t perms,
+    file_open_operations_t create_ops,
+    const unsigned char *payload,
+    size_t payload_len,
+    const char *step_name,
+    client_t *client_data
+);
+
+bool fs_test_delete_expect_rc(
+    const unsigned char *path,
+    uint32_t expected_rc,
+    const char *step_name,
+    client_t *client_data
+);
+
+bool fs_test_set_perm_expect_rc(
+    const unsigned char *path,
+    permissions_t perms,
+    uint32_t expected_rc,
+    const char *step_name,
+    client_t *client_data
+);

@@ -15,8 +15,8 @@
 
 i_node_result_t allocate_i_node(void) {
     for (size_t i = 0; i < MAX_NUMBER_OF_INODES; i++) {
-        if ((i_node_table[i].mode & 0x1) == 0) {
-            i_node_table[i].mode |= 0x1;
+        if ((i_node_table[i].mode & IN_USE_BIT_SET) == 0) {
+            i_node_table[i].mode |= IN_USE_BIT_SET;
             return (i_node_result_t){i, FS_OK};
         }
     }

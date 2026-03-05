@@ -100,7 +100,10 @@ void delete_entry_operation(const uint32_t client_id, unsigned char *path) {
         add_completion_entry(client_id, FS_ERR_PERMISSION, 0, 0, -1);
         return;
     }
-
+    if (i_node_table[i_node_index.index].mode & IS_DELETED_BIT_SET) {
+        add_completion_entry(client_id, FS_OK, 0, 0, -1);
+        return;
+    }
     i_node_t *parent_i_node_ptr = &i_node_table[parent_i_node.index];
     uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node_ptr->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
     for (int i = 0; i < parent_i_node_ptr->blocks_used; i++) {
@@ -139,6 +142,11 @@ void delete_entry_operation(const uint32_t client_id, unsigned char *path) {
         release_block(block_index);
         parent_i_node_ptr->blocks_used -= 1;
     }
+    if (is_i_node_open(i_node_index.index)) {
+        i_node_table[i_node_index.index].mode |= IS_DELETED_BIT_SET;
+        add_completion_entry(client_id, FS_OK, 0, 0, -1);
+        return;
+    }
     if (i_node_table[i_node_index.index].mode & IS_DIRECTORY_BIT_SET) {
         fs_result_t res = delete_directory_contents(i_node_index.index);
         release_i_node(i_node_index.index);
@@ -147,8 +155,12 @@ void delete_entry_operation(const uint32_t client_id, unsigned char *path) {
         microkit_debug_puts("releasing i node\n");
         release_i_node(i_node_index.index);
         microkit_debug_puts("closing file\n");
-        fs_result_t res = close_file_by_i_node_index(client_id, i_node_index.index);
-        add_completion_entry(client_id, res, 0, 0, -1);
+        if (is_i_node_open(i_node_index.index)) {
+            fs_result_t res = close_file_by_i_node_index(client_id, i_node_index.index);
+            add_completion_entry(client_id, res, 0, 0, -1);
+        } else {
+            add_completion_entry(client_id, FS_OK, 0, 0, -1);
+        }
     }
 }
 
@@ -164,7 +176,9 @@ void set_entry_permissions_operation(const uint32_t client_id, const permissions
         add_completion_entry(client_id, FS_ERR_PERMISSION, 0, 0, -1);
         return;
     }
-    i_node_table[i_node_index.index].mode = (i_node_table[i_node_index.index].mode & 0b00011) | (permissions << 2);
+    const uint8_t perm_mask = (uint8_t)(0b111u << PERMISSION_BITS_START);
+    i_node_table[i_node_index.index].mode = (uint8_t)((i_node_table[i_node_index.index].mode & ~perm_mask) |
+                                                      ((uint8_t)permissions << PERMISSION_BITS_START));
     add_completion_entry(client_id, FS_OK, 0, 0, -1);
 }
 
@@ -175,7 +189,7 @@ void get_entry_permissions_operation(const uint32_t client_id, unsigned char *pa
         add_completion_entry(client_id, i_node_index.return_code, 0, 0, -1);
         return;
     }
-    uint8_t permissions = (i_node_table[i_node_index.index].mode >> 2) & 0b111;
+    uint8_t permissions = (i_node_table[i_node_index.index].mode >> PERMISSION_BITS_START) & 0b111;
     add_completion_entry(client_id, FS_OK, permissions, 0, -1);
 }
 
@@ -288,9 +302,16 @@ void close_file_operation(const uint32_t client_id, const uint32_t file_descript
         add_completion_entry(client_id, fd.return_code, 0, 0, -1);
         return;
     }
+    uint32_t i_node_index = fd.descriptor->i_node_index;
     fd.descriptor->i_node_index = -1;
     fd.descriptor->cursor_position = 0;
     fd.descriptor->valid_operations = 0;
+    if (!is_i_node_open(i_node_index) && i_node_table[i_node_index].mode & IS_DELETED_BIT_SET) {
+        microkit_debug_puts("releasing i node\n");
+        release_i_node(i_node_index);
+        add_completion_entry(client_id, FS_OK, 0, 0, -1);
+        return;
+    }
     add_completion_entry(client_id, FS_OK, 0, 0, -1);
 }
 

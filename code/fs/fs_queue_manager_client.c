@@ -43,6 +43,7 @@ void add_submission_entry(uint8_t operation_code, uint32_t parameter1, uint32_t 
     new_entry.parameter1 = parameter1;
     new_entry.parameter2 = parameter2;
     new_entry.buffer_index = buffer_index;
+    // crucial it happens in this order
     client_data->submission_queue[client_data->submission_queue_tail] = new_entry;
     increment_submission_queue_tail(&client_data->submission_queue_tail);
 }
