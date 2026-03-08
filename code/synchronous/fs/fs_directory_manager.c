@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -16,12 +17,12 @@ child_slot_and_block_result_t get_free_child_slot(const uint32_t parent_i_node_i
     microkit_debug_puts(OUTPUT_VERBOSITY, "checking parent ");
     microkit_debug_put32(OUTPUT_VERBOSITY, parent_i_node_index);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
-    uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
-    for (int i = 0; i < parent_i_node->blocks_used; i++) {
+    size_t *indirect_block_data = (size_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
+    for (size_t i = 0; i < parent_i_node->blocks_used; i++) {
         microkit_debug_puts(OUTPUT_VERBOSITY, "checking block ");
         microkit_debug_put32(OUTPUT_VERBOSITY, i);
         microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
-        uint32_t block_index;
+        size_t block_index;
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = parent_i_node->block_indices[i];
         } else {
@@ -55,7 +56,7 @@ child_slot_and_block_result_t get_free_child_slot(const uint32_t parent_i_node_i
             }
             parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE] = indirect_block.index;
         }
-        uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
+        size_t *indirect_block_data = (size_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
         indirect_block_data[parent_i_node->blocks_used - DIRECT_BLOCKS_PER_INODE] = new_block.index;
     }
     parent_i_node->blocks_used += 1;
@@ -63,9 +64,9 @@ child_slot_and_block_result_t get_free_child_slot(const uint32_t parent_i_node_i
 }
 
 
-i_node_result_t add_entry(const uint32_t parent_i_node_index, unsigned char *name, const permissions_t permissions,
-                          const uint8_t client_id, const uint32_t block_index, const uint32_t entry_index,
-                          const int is_directory) {
+i_node_result_t add_entry(const uint32_t parent_i_node_index, const unsigned char *name, const permissions_t permissions,
+                          const uint8_t client_id, const size_t block_index, const size_t entry_index,
+                          const bool is_directory) {
     microkit_debug_puts(OUTPUT_VERBOSITY, name);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
     if (!valid_name(name)) {
@@ -114,9 +115,9 @@ i_node_result_t add_entry(const uint32_t parent_i_node_index, unsigned char *nam
 
 fs_result_t delete_directory_contents(const uint32_t i_node_index) {
     i_node_t *dir_i_node = &i_node_table[i_node_index];
-    uint32_t *indirect_block_data = (uint32_t *)&blocks[dir_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
-    for (int i = 0; i < dir_i_node->blocks_used; i++) {
-        uint32_t block_index;
+    size_t *indirect_block_data = (size_t *)&blocks[dir_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
+    for (size_t i = 0; i < dir_i_node->blocks_used; i++) {
+        size_t block_index;
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = dir_i_node->block_indices[i];
         } else {
@@ -158,13 +159,13 @@ void defragment_directory(i_node_t *parent_i_node) {
     microkit_debug_puts(OUTPUT_VERBOSITY, "defragmenting directory i node ");
     microkit_debug_put32(OUTPUT_VERBOSITY, parent_i_node - i_node_table);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
-    uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
-    int filling_block_index = 0;
-    int last_free_child_index = -1;
-    int current_child_index = 0;
-    uint32_t filling_block;
-    for (int i = 0; i < parent_i_node->blocks_used; i++) {
-        uint32_t block_index;
+    size_t *indirect_block_data = (size_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
+    size_t filling_block_index = 0;
+    size_t last_free_child_index = -1;
+    size_t current_child_index = 0;
+    size_t filling_block;
+    for (size_t i = 0; i < parent_i_node->blocks_used; i++) {
+        size_t block_index;
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = parent_i_node->block_indices[i];
         } else {

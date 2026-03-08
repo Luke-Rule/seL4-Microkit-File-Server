@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -27,7 +28,7 @@ void release_i_node(const uint32_t i_node_index) {
     if (i_node_index < MAX_NUMBER_OF_INODES) {
         i_node_table[i_node_index].mode = 0;
         for (size_t i = 0; i < i_node_table[i_node_index].blocks_used; i++) {
-            uint32_t block_index;
+            size_t block_index;
             if (i >= DIRECT_BLOCKS_PER_INODE) {
                 release_indirect_block(i_node_table[i_node_index].block_indices[DIRECT_BLOCKS_PER_INODE],
                                       i_node_table[i_node_index].blocks_used - DIRECT_BLOCKS_PER_INODE);
@@ -42,7 +43,7 @@ void release_i_node(const uint32_t i_node_index) {
 
 
 i_node_result_t get_i_node_index(unsigned char *path, const uint32_t parent_i_node_index,
-                                 const uint8_t client_id, const int get_parent) {
+                                 const uint8_t client_id, const bool get_parent) {
     microkit_debug_puts(OUTPUT_VERBOSITY, "resolving path: ");
     microkit_debug_puts(OUTPUT_VERBOSITY, (const char *)path);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
@@ -54,9 +55,9 @@ i_node_result_t get_i_node_index(unsigned char *path, const uint32_t parent_i_no
         return (i_node_result_t){parent_i_node_index, FS_OK};
     }
     i_node_t *parent_i_node = &i_node_table[parent_i_node_index];
-    uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
-    for (int i = 0; i < parent_i_node->blocks_used; i++) {
-        uint32_t block_index;
+    size_t *indirect_block_data = (size_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
+    for (size_t i = 0; i < parent_i_node->blocks_used; i++) {
+        size_t block_index;
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = parent_i_node->block_indices[i];
         } else {

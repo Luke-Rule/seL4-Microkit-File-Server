@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -17,7 +18,7 @@
 
 i_node_result_t create_entry(unsigned char *path, const uint32_t parent_i_node_index,
                              const permissions_t permissions, const uint8_t client_id,
-                             const int is_directory) {
+                             const bool is_directory) {
     microkit_debug_puts(OUTPUT_VERBOSITY, "entering dir ");
     microkit_debug_puts(OUTPUT_VERBOSITY, path);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
@@ -29,9 +30,9 @@ i_node_result_t create_entry(unsigned char *path, const uint32_t parent_i_node_i
     microkit_debug_puts(OUTPUT_VERBOSITY, path);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
     i_node_t *parent_i_node = &i_node_table[parent_i_node_index];
-    uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
-    for (int i = 0; i < parent_i_node->blocks_used; i++) {
-        uint32_t block_index;
+    size_t *indirect_block_data = (size_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
+    for (size_t i = 0; i < parent_i_node->blocks_used; i++) {
+        size_t block_index;
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = parent_i_node->block_indices[i];
         } else {
@@ -99,9 +100,9 @@ fs_result_t delete_entry_operation(const uint32_t client_id, unsigned char *path
         return FS_OK;
     }
     i_node_t *parent_i_node_ptr = &i_node_table[parent_i_node.index];
-    uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node_ptr->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
-    for (int i = 0; i < parent_i_node_ptr->blocks_used; i++) {
-        uint32_t block_index;
+    size_t *indirect_block_data = (size_t *)&blocks[parent_i_node_ptr->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
+    for (size_t i = 0; i < parent_i_node_ptr->blocks_used; i++) {
+        size_t block_index;
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = parent_i_node_ptr->block_indices[i];
         } else {
@@ -124,8 +125,8 @@ fs_result_t delete_entry_operation(const uint32_t client_id, unsigned char *path
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
     if ((int)(parent_i_node_ptr->entry_size / MAX_CHILD_ENTRIES_PER_BLOCK) + 1 < parent_i_node_ptr->blocks_used) {
         defragment_directory(parent_i_node_ptr);
-        int block_to_free_index = parent_i_node_ptr->blocks_used - 1;
-        uint32_t block_index;
+        size_t block_to_free_index = parent_i_node_ptr->blocks_used - 1;
+        size_t block_index;
         if (block_to_free_index < DIRECT_BLOCKS_PER_INODE) {
             block_index = parent_i_node_ptr->block_indices[block_to_free_index];
             parent_i_node_ptr->block_indices[block_to_free_index] = 0;
@@ -218,13 +219,13 @@ fs_result_t list_directory_operation(const uint32_t client_id, unsigned char *pa
         return FS_ERR_PERMISSION;
     }
     uint8_t *client_buffer_data = (uint8_t *)CLIENT_BUFFER_BASE(client_id);
-    uint32_t *indirect_block_data = (uint32_t *)&blocks[dir_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
-    int chars_written = 0;
-    for (int i = 0; i < dir_i_node->blocks_used; i++) {
+    size_t *indirect_block_data = (size_t *)&blocks[dir_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
+    size_t chars_written = 0;
+    for (size_t i = 0; i < dir_i_node->blocks_used; i++) {
         if (chars_written >= CLIENT_BUFFER_SIZE) {
             break;
         }
-        uint32_t block_index;
+        size_t block_index;
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = dir_i_node->block_indices[i];
         } else {
@@ -254,7 +255,7 @@ fs_result_t list_directory_operation(const uint32_t client_id, unsigned char *pa
 
 // ------------------------------ File operation functions ------------------------------- //
 
-fs_result_t open_file_operation(const uint32_t client_id, const uint8_t requested_operations, char *path) {
+fs_result_t open_file_operation(const uint32_t client_id, const file_open_operations_t requested_operations, char *path) {
     i_node_result_t i_node_index = get_i_node_index(path, ROOT_DIRECTORY_I_NODE_INDEX, client_id, GET_TARGET_I_NODE);
     if (i_node_index.return_code != FS_OK) {
         microkit_debug_puts(OUTPUT_VERBOSITY, "could not find i node\n");
@@ -264,12 +265,12 @@ fs_result_t open_file_operation(const uint32_t client_id, const uint8_t requeste
         microkit_debug_puts(OUTPUT_VERBOSITY, "tried to open directory as file\n");
         return FS_ERR_INVALID_PATH;
     }
-    file_index_and_cursor_result_t fd = add_i_node_to_fd_table(client_id, i_node_index.index, requested_operations);
+    file_id_and_cursor_result_t fd = add_i_node_to_fd_table(client_id, i_node_index.index, requested_operations);
     if (fd.return_code != FS_OK) {
         microkit_debug_puts(OUTPUT_VERBOSITY, "could not add to fd table\n");
         return fd.return_code;
     }
-    *((uint32_t *)CLIENT_BUFFER_BASE(client_id)) = fd.file_index;
+    *((uint32_t *)CLIENT_BUFFER_BASE(client_id)) = fd.file_id;
     return FS_OK;
 }
 
@@ -311,7 +312,7 @@ fs_result_t read_file_operation(const uint32_t client_id, const uint32_t file_de
         return_code = FS_ERR_OUT_OF_BOUNDS;
     }
     uint8_t *client_buffer = (uint8_t *)CLIENT_BUFFER_BASE(client_id);
-    uint32_t cursor_before = fd.descriptor->cursor_position;
+    size_t cursor_before = fd.descriptor->cursor_position;
     fs_result_t rc = copy_bytes_i_node(i_node, &client_buffer[8], bytes_to_read, fd.descriptor, READ);
     if (rc != FS_OK) {
         return rc;
@@ -340,7 +341,7 @@ fs_result_t write_file_operation(const uint32_t client_id, const uint32_t file_d
     microkit_debug_put32(OUTPUT_VERBOSITY, length);
     microkit_debug_puts(OUTPUT_VERBOSITY, " bytes\n");
     uint8_t *client_buffer = (uint8_t *)CLIENT_BUFFER_BASE(client_id);
-    uint32_t cursor_before = fd.descriptor->cursor_position;
+    size_t cursor_before = fd.descriptor->cursor_position;
     fs_result_t rc = copy_bytes_i_node(i_node, client_buffer, length, fd.descriptor, WRITE);
     microkit_debug_puts(OUTPUT_VERBOSITY, "write complete\n");
     if (rc != FS_OK) {
@@ -353,7 +354,7 @@ fs_result_t write_file_operation(const uint32_t client_id, const uint32_t file_d
 
 
 fs_result_t seek_file_operation(const uint32_t client_id, const uint32_t file_descriptor_index,
-                         const uint32_t position) {
+                         const size_t position) {
     file_descriptor_result_t fd = get_file_descriptor(client_id, file_descriptor_index);
     if (fd.return_code != FS_OK) {
         return fd.return_code;
