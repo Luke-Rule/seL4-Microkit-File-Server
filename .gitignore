@@ -4,3 +4,13 @@
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
+build/
+fs/build/
+*.o
+*.elf
+*.bin
+*~
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

@@ -1,5 +1,5 @@
 # Environment
-MICROKIT_SDK := ../microkit-sdk-2.0.1
+MICROKIT_SDK ?= ../../microkit-sdk-2.0.1
 TOOLCHAIN := aarch64-linux-gnu
 
 BOARD := qemu_virt_aarch64
