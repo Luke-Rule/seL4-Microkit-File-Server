@@ -2,15 +2,15 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
-#include "fs_api.h"
-#include "fs_buffer_manager.h"
-#include "fs_shared.h"
+#include "include/fs_api.h"
+#include "include/fs_buffer_manager.h"
+#include "include/fs_shared.h"
 
 // ------------------------------ Client ------------------------------- //
 
-void increment_submission_queue_tail(uint32_t *submission_queue_tail) {
+void increment_submission_queue_tail(size_t *submission_queue_tail) {
     microkit_debug_puts(OUTPUT_VERBOSITY, "incrementing submission queue tail\n");
     if (*submission_queue_tail >= MAX_QUEUE_ENTRIES - 1) {
         // already checked theres space
@@ -21,7 +21,7 @@ void increment_submission_queue_tail(uint32_t *submission_queue_tail) {
 }
 
 
-void increment_completion_queue_head(uint32_t *completion_queue_head) {
+void increment_completion_queue_head(size_t *completion_queue_head) {
     if (*completion_queue_head >= MAX_QUEUE_ENTRIES - 1) {
         *completion_queue_head = 1;
         return;
@@ -30,7 +30,8 @@ void increment_completion_queue_head(uint32_t *completion_queue_head) {
 }
 
 
-void add_submission_entry(uint8_t operation_code, uint32_t parameter1, uint32_t parameter2, client_t *client_data, const int buffer_index) {
+void add_submission_entry(const file_operation_t operation_code, const uint32_t parameter1, const uint32_t parameter2,
+                      client_t *client_data, const size_t buffer_index) {
     if (client_data->submission_queue_tail + 1 == client_data->submission_queue_head || (client_data->submission_queue_head == 1 && client_data->submission_queue_tail == MAX_QUEUE_ENTRIES - 1)) {
         microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: no free submission entries available\n");
         return;

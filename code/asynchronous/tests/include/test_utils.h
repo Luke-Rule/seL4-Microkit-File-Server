@@ -3,8 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-// TODO use bools, unsigned, const
-#include "fs_shared.h"
+#include "../../fs/include/fs_shared.h"
 
 #define ANSI_COLOR_GREEN "\x1b[32m"
 #define ANSI_COLOR_RED "\x1b[31m"

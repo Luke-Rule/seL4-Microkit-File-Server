@@ -38,7 +38,7 @@
 #define IS_DELETED_BIT_SET 0b100000
 #define IN_USE_BIT_SET 0b000001
 #define PERMISSION_BITS_START 2
-#define IS_DIRECTORY_BIT_START 1
+#define DIRECTORY_BIT_START 1
 
 // ------------------------------ Structs ------------------------------- //
 

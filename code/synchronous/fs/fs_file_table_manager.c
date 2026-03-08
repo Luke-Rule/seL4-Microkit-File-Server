@@ -1,13 +1,12 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
-#include "fs_shared.h"
-#include "fs_internal.h"
-
-#include "fs_state.h"
-#include "fs_utils.h"
+#include "include/fs_shared.h"
+#include "include/fs_internal.h"
+#include "include/fs_state.h"
+#include "include/fs_utils.h"
 
 file_descriptor_result_t get_file_descriptor(const uint32_t client_id, const uint32_t file_index) {
     if (file_index >= MAX_OPEN_FILES_PER_CLIENT) {

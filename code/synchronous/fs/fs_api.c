@@ -2,9 +2,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
-#include "fs_api.h"
+#include "include/fs_api.h"
 
 
 void copy_data_from_buffer(const uint8_t *src, uint8_t *dest, size_t length) {

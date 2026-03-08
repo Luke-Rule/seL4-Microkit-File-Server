@@ -7,18 +7,19 @@
 
 #include <microkit.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
-#include "fs_internal.h"
-#include "fs_shared.h"
-#include "fs_utils.h"
-#include "fs_buffer_manager.h"
-#include "fs_queue_manager_server.h"
-#include "fs_block_manager.h"
-#include "fs_i_node_manager.h"
-#include "fs_operations.h"
+#include "include/fs_internal.h"
+#include "include/fs_shared.h"
+#include "include/fs_utils.h"
+#include "include/fs_buffer_manager.h"
+#include "include/fs_queue_manager_server.h"
+#include "include/fs_block_manager.h"
+#include "include/fs_i_node_manager.h"
+#include "include/fs_operations.h"
 
 #ifndef BENCHMARKING
 #define BENCHMARKING 0
@@ -37,7 +38,7 @@ client_t *clients;
 
 uint64_t freq;
 uint64_t start;
-int benchmark_reported;
+bool benchmark_reported;
 
 // ------------------------------ Benchmarking functions ------------------------------- //
 
@@ -91,15 +92,15 @@ static void microkit_dbg_putu32_6(uint32_t x)
 
 // ------------------------------ File server operation ------------------------------- //
 
-void handle_operation(file_operation_t operation, submission_queue_entry_t *submission_entry, uint32_t client_id) {
+void handle_operation(const file_operation_t operation, const submission_queue_entry_t *submission_entry, const uint8_t client_id) {
     switch (operation) {
         case OP_CREATE_FILE: {
             microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: CREATE FILE OPERATION\n");
-            uint8_t permissions = (uint8_t)submission_entry->parameter1;
-            uint8_t operations = (uint8_t)submission_entry->parameter2;
+            const permissions_t permissions = (permissions_t)submission_entry->parameter1;
+            const file_open_operations_t operations = (file_open_operations_t)submission_entry->parameter2;
             unsigned char *path = (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index];
             microkit_debug_puts(OUTPUT_VERBOSITY, "creating with path: ");
-            microkit_debug_puts(OUTPUT_VERBOSITY, (char *)path);
+            microkit_debug_puts(OUTPUT_VERBOSITY, path);
             microkit_debug_putc(OUTPUT_VERBOSITY, '\n');
             i_node_result_t i_node = create_entry(path, ROOT_DIRECTORY_I_NODE_INDEX, permissions, client_id, CREATE_FILE);
             if (i_node.return_code == FS_OK) {
@@ -111,10 +112,10 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
 
         case OP_CREATE_DIRECTORY: {
             microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: CREATE DIRECTORY OPERATION\n");
-            uint8_t permissions = (uint8_t)submission_entry->parameter1;
+            const permissions_t permissions = (permissions_t)submission_entry->parameter1;
             unsigned char *path = (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index];
             microkit_debug_puts(OUTPUT_VERBOSITY, "creating with path: ");
-            microkit_debug_puts(OUTPUT_VERBOSITY, (char *)path);
+            microkit_debug_puts(OUTPUT_VERBOSITY, path);
             microkit_debug_putc(OUTPUT_VERBOSITY, '\n');
             i_node_result_t i_node = create_entry(path, ROOT_DIRECTORY_I_NODE_INDEX, permissions, client_id, CREATE_DIRECTORY);
             break;
@@ -122,25 +123,25 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
 
         case OP_OPEN:
             microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: OPEN OPERATION\n");
-            uint8_t requested_operations = (uint8_t)submission_entry->parameter1;
+            const file_open_operations_t requested_operations = (file_open_operations_t)submission_entry->parameter1;
             open_file_operation(
                 client_id,
                 requested_operations,
-                (char *)&clients[client_id].submission_buffers[submission_entry->buffer_index]
+                (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index]
             );
             break;
 
 
         case OP_CLOSE:
             microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: CLOSE OPERATION\n");
-            uint32_t file_id = (uint32_t)submission_entry->parameter1;
+            uint32_t file_id = submission_entry->parameter1;
             close_file_operation(client_id, file_id);
             break;
 
 
         case OP_READ: {
             microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: READ OPERATION\n");
-            uint32_t file_id = (uint32_t)submission_entry->parameter1;
+            uint32_t file_id = submission_entry->parameter1;
             size_t length = (size_t)submission_entry->parameter2;
             read_file_operation(client_id, file_id, length);
             break;
@@ -148,7 +149,7 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
 
         case OP_WRITE: {
             microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: WRITE OPERATION\n");
-            uint32_t file_id = (uint32_t)submission_entry->parameter1;
+            uint32_t file_id = submission_entry->parameter1;
             size_t write_length = (size_t)submission_entry->parameter2;
             write_file_operation(client_id, file_id, write_length, submission_entry->buffer_index);
             break;
@@ -156,8 +157,8 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
 
         case OP_SEEK: {
             microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: SEEK OPERATION\n");
-            uint32_t file_id = (uint32_t)submission_entry->parameter1;
-            uint32_t position = (uint32_t)submission_entry->parameter2;
+            uint32_t file_id = submission_entry->parameter1;
+            size_t position = (size_t)submission_entry->parameter2;
             seek_file_operation(client_id, file_id, position);
             break;
         }
@@ -173,7 +174,7 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
             
         case OP_SET_PERMISSIONS: {
             microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: SET PERMISSIONS OPERATION\n");
-            uint8_t new_permissions = (uint8_t)submission_entry->parameter1;
+            const permissions_t new_permissions = (permissions_t)submission_entry->parameter1;
             set_entry_permissions_operation(client_id,
                 new_permissions,
                 (unsigned char *)&clients[client_id].submission_buffers[submission_entry->buffer_index]
@@ -223,10 +224,9 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
     }
 }
 
-void service_client(uint32_t client_id) {
-    uint32_t num_operations = 0;
-    int unset_ready_flag = 0;
-    // TODO: should prioritise operations, not really as OOO complications
+void service_client(const uint8_t client_id) {
+    size_t num_operations = 0;
+    bool unset_ready_flag = 0;
     while (num_operations < MAX_OPERATIONS_PER_CLIENT_SERVICE) {
         microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: servicing client: ");
         microkit_debug_put32(OUTPUT_VERBOSITY, client_id);
@@ -234,7 +234,7 @@ void service_client(uint32_t client_id) {
 
         if (clients[client_id].submission_queue_head == clients[client_id].submission_queue_tail) {
             microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: no submission entries\n");
-            unset_ready_flag = 1;
+            unset_ready_flag = true;
             break;
         }
 
@@ -268,16 +268,16 @@ void service_client(uint32_t client_id) {
     }
 
     if (unset_ready_flag) {
-        clients[client_id].flags.ready_flag = 0;
+        clients[client_id].flags.ready_flag = false;
     }
     if (num_operations > 0) {
-        clients[client_id].flags.complete_flag = 1;
+        clients[client_id].flags.complete_flag = true;
     }
 }
 
 // this is only required if the fs is pre-empted and a different client submits a request
 // this is reasonably unlikely so doesnt require fairness counting
-void poll_clients() {
+void poll_clients(void) {
     for (size_t i = 0; i < NUMBER_OF_CLIENTS; i++) {
         // to not service client that already reached max / hasnt read queue
         if (clients[i].flags.ready_flag && !clients[i].flags.complete_flag) {
@@ -289,11 +289,11 @@ void poll_clients() {
     }
 }
 
-void check_end_of_benchmark() {
+void check_end_of_benchmark(void) {
     if (benchmark_reported) {
         return;
     }
-    for (int i = 0; i < NUMBER_OF_CLIENTS; i++) {
+    for (size_t i = 0; i < NUMBER_OF_CLIENTS; i++) {
         if (!clients[i].flags.finished_running_flag) {
             return;
         }
@@ -319,11 +319,11 @@ void check_end_of_benchmark() {
     microkit_dbg_putu64(freq);
     microkit_dbg_puts(" Hz)\n");
 
-    benchmark_reported = 1;
+    benchmark_reported = true;
     seL4_Yield();
 }
 
-void service_and_poll(uint8_t client_id) {
+void service_and_poll(const uint8_t client_id) {
     if (BENCHMARKING) {
         check_end_of_benchmark();
     }
@@ -364,8 +364,8 @@ void init(void) {
     microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: initialising buffer table\n");
     for (size_t i = 0; i < NUMBER_OF_CLIENTS; i++) {
         for (size_t j = 0; j < NUMBER_OF_BUFFERS_PER_CLIENT; j++) {
-            clients[i].submission_buffer_table[j] = 0;
-            clients[i].completion_buffer_table[j] = 0;
+            clients[i].submission_buffer_table[j] = false;
+            clients[i].completion_buffer_table[j] = false;
         }
     }
 

@@ -9,12 +9,12 @@
 
         <map mr="fs_memory" vaddr="0x30000000" perms="rw" cached="true"
           setvar_vaddr="fs_memory_base"/>
-        <map mr="client_0" vaddr="0x40133000" perms="rw" cached="false"
+        <map mr="client_0" vaddr="0x40133000" perms="rw" cached="true"
           setvar_vaddr="clients_memory_base"/>
 
-        <map mr="client_1" vaddr="0x401B4000" perms="rw" cached="false"/>
+        <map mr="client_1" vaddr="0x401B4000" perms="rw" cached="true"/>
 
-        <map mr="client_2" vaddr="0x40235000" perms="rw" cached="false"/>
+        <map mr="client_2" vaddr="0x40235000" perms="rw" cached="true"/>
 
     </protection_domain>
 
@@ -26,19 +26,19 @@
     <!-- Client Protection Domains -->
     <protection_domain name="client_0" priority="0" >
         <program_image path="multi_client_0.elf"/>
-        <map mr="client_0" vaddr="0x30000000" perms="rw" cached="false"
+        <map mr="client_0" vaddr="0x30000000" perms="rw" cached="true"
           setvar_vaddr="fs_data_base"/>
     </protection_domain>
 
     <protection_domain name="client_1" priority="0" >
         <program_image path="multi_client_1.elf"/>
-        <map mr="client_1" vaddr="0x30000000" perms="rw" cached="false"
+        <map mr="client_1" vaddr="0x30000000" perms="rw" cached="true"
           setvar_vaddr="fs_data_base"/>
     </protection_domain>
 
     <protection_domain name="client_2" priority="0" >
         <program_image path="multi_client_2.elf"/>
-        <map mr="client_2" vaddr="0x30000000" perms="rw" cached="false"
+        <map mr="client_2" vaddr="0x30000000" perms="rw" cached="true"
           setvar_vaddr="fs_data_base"/>
     </protection_domain>
 

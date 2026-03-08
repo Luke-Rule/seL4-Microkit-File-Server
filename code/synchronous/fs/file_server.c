@@ -7,17 +7,18 @@
 
 #include <microkit.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
-#include "fs_internal.h"
-#include "fs_shared.h"
-#include "fs_utils.h"
-#include "fs_block_manager.h"
-#include "fs_i_node_manager.h"
-#include "fs_operations.h"
-#include "fs_state.h"
+#include "include/fs_internal.h"
+#include "include/fs_shared.h"
+#include "include/fs_utils.h"
+#include "include/fs_block_manager.h"
+#include "include/fs_i_node_manager.h"
+#include "include/fs_operations.h"
+#include "include/fs_state.h"
 
 #ifndef BENCHMARKING
 #define BENCHMARKING 0
@@ -36,7 +37,7 @@ uint8_t *clients;
 
 uint64_t freq;
 uint64_t start;
-int benchmark_reported;
+bool benchmark_reported;
 
 // ------------------------------ Benchmarking functions ------------------------------- //
 
@@ -267,7 +268,7 @@ void init(void) {
 
     freq = read_cntfrq();
     start = read_cntvct();
-    benchmark_reported = 0;
+    benchmark_reported = false;
 }
 
 void check_end_of_benchmark() {
@@ -300,7 +301,7 @@ void check_end_of_benchmark() {
     microkit_dbg_putu64(freq);
     microkit_dbg_puts(" Hz)\n");
 
-    benchmark_reported = 1;
+    benchmark_reported = true;
     seL4_Yield();
 }
 void notified(microkit_channel ch) {

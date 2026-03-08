@@ -1,19 +1,19 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
-#include "fs_buffer_manager.h"
-#include "fs_shared.h"
-#include "fs_internal.h"
-#include "fs_block_manager.h"
-#include "fs_utils.h"
+#include "include/fs_buffer_manager.h"
+#include "include/fs_shared.h"
+#include "include/fs_internal.h"
+#include "include/fs_block_manager.h"
+#include "include/fs_utils.h"
+#include "include/fs_state.h"
 
-#include "fs_state.h"
-
-block_search_result_t get_inode_block_index_from_file_index(const uint32_t file_index) {
-    uint32_t block_index = file_index / BLOCK_SIZE;
-    uint32_t block_offset = file_index % BLOCK_SIZE;
+block_search_result_t get_inode_block_index_from_file_cursor_position(const size_t file_cursor_position) {
+    size_t block_index = file_cursor_position / BLOCK_SIZE;
+    size_t block_offset = file_cursor_position % BLOCK_SIZE;
     if (block_index < DIRECT_BLOCKS_PER_INODE) {
         return (block_search_result_t){block_index, block_offset, 0};
     } else {
@@ -23,12 +23,12 @@ block_search_result_t get_inode_block_index_from_file_index(const uint32_t file_
 
 
 fs_result_t copy_bytes_i_node(i_node_t *i_node, uint8_t *client_buffer, size_t length,
-                              file_descriptor_t *fd, const int rnw) {
+                              file_descriptor_t *fd, const bool rnw) {
     size_t buffer_index = 0;
-    block_search_result_t block_info = get_inode_block_index_from_file_index(fd->cursor_position);
-    uint32_t *indirect_block_data = (uint32_t *)&blocks[i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
+    block_search_result_t block_info = get_inode_block_index_from_file_cursor_position(fd->cursor_position);
+    size_t *indirect_block_data = (size_t *)&blocks[i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
     while (length > 0) {
-        uint32_t block_index;
+        size_t block_index;
         if (block_info.is_indirect) {
             block_index = indirect_block_data[block_info.i_node_block_index];
         } else {
@@ -61,17 +61,17 @@ fs_result_t copy_bytes_i_node(i_node_t *i_node, uint8_t *client_buffer, size_t l
                         return FS_ERR_NO_BLOCKS_REMAINING;
                     }
                     i_node->block_indices[DIRECT_BLOCKS_PER_INODE] = new_block.index;
-                    indirect_block_data = (uint32_t *)&blocks[i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
+                    indirect_block_data = (size_t *)&blocks[i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
                 }
                 
-                block_info.is_indirect = 1;
+                block_info.is_indirect = true;
                 block_info.i_node_block_index = 0;
             } else {
                 block_info.i_node_block_index++;
             }
         }
         block_info.block_offset = 0;
-        if (!rnw){
+        if (!rnw) {
             if (i_node->blocks_used <= block_info.i_node_block_index + (block_info.is_indirect ? DIRECT_BLOCKS_PER_INODE : 0)) {
                 block_id_result_t new_block = allocate_block();
                 if (new_block.return_code != FS_OK) {

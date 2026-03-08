@@ -1,17 +1,15 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
-#include "fs_shared.h"
-#include "fs_internal.h"
-#include "fs_block_manager.h"
-#include "fs_i_node_manager.h"
-#include "fs_file_table_manager.h"
-
-#include "fs_utils.h"
-
-#include "fs_state.h"
+#include "include/fs_shared.h"
+#include "include/fs_internal.h"
+#include "include/fs_block_manager.h"
+#include "include/fs_i_node_manager.h"
+#include "include/fs_file_table_manager.h"
+#include "include/fs_utils.h"
+#include "include/fs_state.h"
 
 child_slot_and_block_result_t get_free_child_slot(const uint32_t parent_i_node_index) {
     i_node_t *parent_i_node = &i_node_table[parent_i_node_index];
@@ -104,7 +102,7 @@ i_node_result_t add_entry(const uint32_t parent_i_node_index, unsigned char *nam
 
     parent_i_node->entry_size += 1;
 
-    i_node_table[new_i_node_info.index].mode = IN_USE_BIT_SET | (is_directory << IS_DIRECTORY_BIT_START) | (permissions << PERMISSION_BITS_START); // not deleted, in use, dir, permissions
+    i_node_table[new_i_node_info.index].mode = IN_USE_BIT_SET | (is_directory << DIRECTORY_BIT_START) | (permissions << PERMISSION_BITS_START); // not deleted, in use, dir, permissions
     i_node_table[new_i_node_info.index].owner_id = client_id;
     i_node_table[new_i_node_info.index].block_indices[0] = new_block.index;
     i_node_table[new_i_node_info.index].entry_size = 0;

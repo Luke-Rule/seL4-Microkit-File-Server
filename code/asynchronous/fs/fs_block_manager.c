@@ -1,13 +1,12 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
-#include "debug_output.h"
-
-#include "fs_buffer_manager.h"
-#include "fs_shared.h"
-#include "fs_internal.h"
-
-#include "fs_state.h"
+#include "../debug_output.h"
+#include "include/fs_buffer_manager.h"
+#include "include/fs_shared.h"
+#include "include/fs_internal.h"
+#include "include/fs_state.h"
 
 block_id_result_t allocate_block(void) {
     for (size_t i = 0; i < MAX_NUMBER_OF_BLOCKS; i++) {
@@ -20,15 +19,15 @@ block_id_result_t allocate_block(void) {
 }
 
 
-void release_block(const uint32_t block_index) {
+void release_block(const size_t block_index) {
     if (block_index < MAX_NUMBER_OF_BLOCKS && block_table[block_index] == 1) {
         block_table[block_index] = 0;
     }
 }
 
 
-void release_indirect_block(const uint32_t indirect_block_index, const int size_in_blocks) {
-    uint32_t *indirect_entries = (uint32_t *)&blocks[indirect_block_index].data;
+void release_indirect_block(const size_t indirect_block_index, const size_t size_in_blocks) {
+    size_t *indirect_entries = (size_t *)&blocks[indirect_block_index].data;
     for (size_t i = 0; i < size_in_blocks; i++) {
         release_block(indirect_entries[i]);
     }

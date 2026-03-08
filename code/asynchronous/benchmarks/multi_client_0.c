@@ -1,7 +1,7 @@
 #include <microkit.h>
 #include <stdint.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
 #include "benchmark_utils.h"
 

@@ -1,15 +1,13 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
-#include "fs_shared.h"
-#include "fs_internal.h"
-#include "fs_block_manager.h"
-
-#include "fs_utils.h"
-
-#include "fs_state.h"
+#include "include/fs_shared.h"
+#include "include/fs_internal.h"
+#include "include/fs_block_manager.h"
+#include "include/fs_utils.h"
+#include "include/fs_state.h"
 
 
 i_node_result_t allocate_i_node(void) {

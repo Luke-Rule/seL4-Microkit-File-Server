@@ -1,20 +1,20 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
-#include "fs_buffer_manager.h"
-#include "fs_shared.h"
-#include "fs_internal.h"
+#include "include/fs_buffer_manager.h"
+#include "include/fs_shared.h"
+#include "include/fs_internal.h"
+#include "include/fs_state.h"
+#include "include/fs_utils.h"
 
-#include "fs_state.h"
-#include "fs_utils.h"
-
-file_descriptor_result_t get_file_descriptor(const uint32_t client_id, const uint32_t file_index) {
-    if (file_index >= MAX_OPEN_FILES_PER_CLIENT) {
+file_descriptor_result_t get_file_descriptor(const uint8_t client_id, const size_t file_id) {
+    if (file_id >= MAX_OPEN_FILES_PER_CLIENT) {
         return (file_descriptor_result_t){NULL, FS_ERR_FILE_DESCRIPTOR_NOT_FOUND};
     }
-    file_descriptor_t *fd = &file_descriptor_table[client_id * MAX_OPEN_FILES_PER_CLIENT + file_index];
+    file_descriptor_t *fd = &file_descriptor_table[client_id * MAX_OPEN_FILES_PER_CLIENT + file_id];
     if (fd->i_node_index == -1) {
         return (file_descriptor_result_t){NULL, FS_ERR_FILE_DESCRIPTOR_NOT_FOUND};
     }
@@ -22,47 +22,47 @@ file_descriptor_result_t get_file_descriptor(const uint32_t client_id, const uin
 }
 
 
-uint8_t is_i_node_open(const uint32_t i_node_index) {
+bool is_i_node_open(const uint32_t i_node_index) {
     for (size_t client_id = 0; client_id < NUMBER_OF_CLIENTS; client_id++) {
-        for (size_t file_index = 0; file_index < MAX_OPEN_FILES_PER_CLIENT; file_index++) {
-            if (file_descriptor_table[client_id * MAX_OPEN_FILES_PER_CLIENT + file_index].i_node_index == i_node_index) {
-                return 1;
+        for (size_t file_id = 0; file_id < MAX_OPEN_FILES_PER_CLIENT; file_id++) {
+            if (file_descriptor_table[client_id * MAX_OPEN_FILES_PER_CLIENT + file_id].i_node_index == i_node_index) {
+                return true;
             }
         }
     }
-    return 0;
+    return false;
 }
 
 
-file_index_and_cursor_result_t add_i_node_to_fd_table(const uint32_t client_id, const uint32_t i_node_index,
-                                                     const uint8_t requested_operations) {
+file_id_and_cursor_result_t add_i_node_to_fd_table(const uint8_t client_id, const uint32_t i_node_index,
+                                                     const file_open_operations_t requested_operations) {
     for (size_t i = 0; i < MAX_OPEN_FILES_PER_CLIENT; i++) {
         if (file_descriptor_table[client_id * MAX_OPEN_FILES_PER_CLIENT + i].i_node_index == i_node_index) {
             if (file_descriptor_table[client_id * MAX_OPEN_FILES_PER_CLIENT + i].valid_operations != requested_operations) {
                 if (!valid_permissions(&i_node_table[i_node_index], client_id, requested_operations)) {
-                    return (file_index_and_cursor_result_t){-1, -1, FS_ERR_PERMISSION};
+                    return (file_id_and_cursor_result_t){-1, -1, FS_ERR_PERMISSION};
                 }
                 file_descriptor_table[client_id * MAX_OPEN_FILES_PER_CLIENT + i].valid_operations = requested_operations;
             }
-            return (file_index_and_cursor_result_t){i, file_descriptor_table[client_id * MAX_OPEN_FILES_PER_CLIENT + i].cursor_position, FS_OK};
+            return (file_id_and_cursor_result_t){i, file_descriptor_table[client_id * MAX_OPEN_FILES_PER_CLIENT + i].cursor_position, FS_OK};
         }
     }
     for (size_t i = 0; i < MAX_OPEN_FILES_PER_CLIENT; i++) {
         if (file_descriptor_table[client_id * MAX_OPEN_FILES_PER_CLIENT + i].i_node_index == -1) {
             if (!valid_permissions(&i_node_table[i_node_index], client_id, requested_operations)) {
-                return (file_index_and_cursor_result_t){-1, -1, FS_ERR_PERMISSION};
+                return (file_id_and_cursor_result_t){-1, -1, FS_ERR_PERMISSION};
             }
             file_descriptor_table[client_id * MAX_OPEN_FILES_PER_CLIENT + i].valid_operations = requested_operations;
             file_descriptor_table[client_id * MAX_OPEN_FILES_PER_CLIENT + i].i_node_index = i_node_index;
             file_descriptor_table[client_id * MAX_OPEN_FILES_PER_CLIENT + i].cursor_position = 0;
-            return (file_index_and_cursor_result_t){i, 0, FS_OK};
+            return (file_id_and_cursor_result_t){i, 0, FS_OK};
         }
     }
-    return (file_index_and_cursor_result_t){-1, -1, FS_ERR_MAX_OPEN_FILES_REACHED};
+    return (file_id_and_cursor_result_t){-1, -1, FS_ERR_MAX_OPEN_FILES_REACHED};
 }
 
 
-fs_result_t close_file_by_i_node_index(const uint32_t client_id, const uint32_t i_node_index) {
+fs_result_t close_file_by_i_node_index(const uint8_t client_id, const uint32_t i_node_index) {
     microkit_debug_puts(OUTPUT_VERBOSITY, "closing i node ");
     microkit_debug_put32(OUTPUT_VERBOSITY, i_node_index);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");

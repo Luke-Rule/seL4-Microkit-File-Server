@@ -3,10 +3,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../../debug_output.h"
 
-#include "test_utils.h"
-#include "fs_api.h"
+#include "../include/test_utils.h"
+#include "../../fs/include/fs_api.h"
 
 extern int tests_passed;
 extern int tests_failed;
@@ -22,8 +22,8 @@ extern int tests_failed;
 
 static void clear_all_client_buffers(client_t *client_data) {
     for (size_t i = 0; i < NUMBER_OF_BUFFERS_PER_CLIENT; i++) {
-        client_data->submission_buffer_table[i] = 0;
-        client_data->completion_buffer_table[i] = 0;
+        client_data->submission_buffer_table[i] = false;
+        client_data->completion_buffer_table[i] = false;
         for (size_t j = 0; j < CLIENT_BUFFER_SIZE; j++) {
             client_data->submission_buffers[i].data[j] = 0;
             client_data->completion_buffers[i].data[j] = 0;
@@ -187,7 +187,7 @@ bool fs_test_open_expect_rc(
     const char *step_name,
     client_t *client_data
 ) {
-    fs_result_t rc = send_open_file_request(ops, path, client_data);
+    fs_result_t rc = send_open_file_request(path, ops, client_data);
     if (!expect_eq_int(rc, FS_OK, step_name)) {
         return false;
     }
@@ -230,7 +230,7 @@ bool fs_test_open_read_expect(
     const char *step_name,
     client_t *client_data
 ) {
-    fs_result_t rc = send_open_file_request(READ_OP, path, client_data);
+    fs_result_t rc = send_open_file_request(path, READ_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, step_name)) {
         return false;
     }
@@ -293,7 +293,7 @@ bool fs_test_open_write_close(
     const char *step_name,
     client_t *client_data
 ) {
-    fs_result_t rc = send_open_file_request(READ_WRITE_OP, path, client_data);
+    fs_result_t rc = send_open_file_request(path, READ_WRITE_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, step_name)) {
         return false;
     }

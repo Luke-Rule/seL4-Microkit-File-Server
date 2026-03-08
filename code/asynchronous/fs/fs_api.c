@@ -1,21 +1,22 @@
 #include <microkit.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
-#include "fs_api.h"
-#include "fs_buffer_manager.h"
-#include "fs_queue_manager_client.h"
+#include "include/fs_api.h"
+#include "include/fs_buffer_manager.h"
+#include "include/fs_queue_manager_client.h"
 
 // ------------------------ Debug functions -------------------------- //
 
 void mark_client_as_finished_running(client_t *client_data) {
-    client_data->flags.finished_running_flag = 1;
+    client_data->flags.finished_running_flag = true;
     microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: marked as finished running.\n");
 }
 
-void debug_print_return_code(const char *operation, int return_code) {
+void debug_print_return_code(const char *operation, const uint8_t return_code) {
     microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: ");
     microkit_debug_puts(OUTPUT_VERBOSITY, operation);
     microkit_debug_puts(OUTPUT_VERBOSITY, " operation returned code: ");
@@ -77,18 +78,18 @@ void debug_print_return_code(const char *operation, int return_code) {
 
 // ------------------------------ File system interface functions ------------------------------- //
 
-void notify_file_server(client_t *client_data, int block) {
-    client_data->flags.ready_flag = 1;
-    client_data->flags.complete_flag = 0;
+void notify_file_server(client_t *client_data, const bool wait_for_completion) {
+    client_data->flags.ready_flag = true;
+    client_data->flags.complete_flag = false;
     // this will do the same thing unless the fs has no budget left
-    if (block) {
+    if (wait_for_completion) {
         microkit_ppcall(FILE_SERVER_CHANNEL_ID, seL4_MessageInfo_new(0, 0, 0, 0));
     } else {
         microkit_notify(FILE_SERVER_CHANNEL_ID);
     }
 }
 
-uint8_t get_if_any_operations_completed(client_t *client_data) {
+bool get_if_any_operations_completed(client_t *client_data) {
     return client_data->flags.complete_flag;
 }
 
@@ -102,25 +103,25 @@ uint8_t get_number_of_completed_operations(client_t *client_data) {
     }
 }
 
-void wait_until_n_operations_completed(client_t *client_data, uint8_t n) {
+void wait_until_n_operations_completed(client_t *client_data, const size_t n) {
     while (get_number_of_completed_operations(client_data) < n) {
         notify_file_server(client_data, BLOCK_ON_NOTIFY);
     }
 }
 
-void notify_file_server_and_wait_for_all_operations(client_t *client_data, uint8_t number_of_operations) {
+void notify_file_server_and_wait_for_all_operations(client_t *client_data, const size_t number_of_operations) {
     notify_file_server(client_data, BLOCK_ON_NOTIFY);
     wait_until_n_operations_completed(client_data, number_of_operations);
 }
 
-void set_free_completion_buffer(client_t *client_data, int buffer_index) {
-    if (buffer_index < 0 || buffer_index >= NUMBER_OF_BUFFERS_PER_CLIENT) {
+void set_free_completion_buffer(client_t *client_data, const size_t buffer_index) {
+    if (buffer_index >= NUMBER_OF_BUFFERS_PER_CLIENT) {
         return;
     }
-    client_data->completion_buffer_table[buffer_index] = 0;
+    client_data->completion_buffer_table[buffer_index] = false;
 }
 
-int get_next_completion_entry(client_t *client_data, completion_queue_entry_t *out) {
+fs_result_t get_next_completion_entry(client_t *client_data, completion_queue_entry_t *out) {
     if (client_data->completion_queue_head == client_data->completion_queue_tail) {
         return FS_ERROR_NO_COMPLETION_ENTRIES_AVAILABLE;
     }
@@ -142,7 +143,7 @@ fs_result_t send_create_file_request(const unsigned char *file_name, const permi
         return copy_result.rc;
     }
     microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: requested to create file: ");
-    microkit_debug_puts(OUTPUT_VERBOSITY, (const char *)client_data->submission_buffers[copy_result.buffer_index].data);
+    microkit_debug_puts(OUTPUT_VERBOSITY, (const unsigned char *)client_data->submission_buffers[copy_result.buffer_index].data);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
     microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: with permissions: ");
     microkit_debug_put32(OUTPUT_VERBOSITY, (uint32_t)permissions);
@@ -159,7 +160,7 @@ fs_result_t send_create_directory_request(const unsigned char *dir_name, const p
     }
 
     microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: requested to create directory: ");
-    microkit_debug_puts(OUTPUT_VERBOSITY, (const char *)client_data->submission_buffers[copy_result.buffer_index].data);
+    microkit_debug_puts(OUTPUT_VERBOSITY, (const unsigned char *)client_data->submission_buffers[copy_result.buffer_index].data);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
     microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: with permissions: ");
     microkit_debug_put32(OUTPUT_VERBOSITY, (uint32_t)permissions);
@@ -169,7 +170,7 @@ fs_result_t send_create_directory_request(const unsigned char *dir_name, const p
 }
 
 
-fs_result_t send_open_file_request(const file_open_operations_t ops, const unsigned char *file_name, client_t *client_data) {
+fs_result_t send_open_file_request(const unsigned char *file_name, const file_open_operations_t ops, client_t *client_data) {
     buffer_copy_result_t copy_result = copy_string_to_submission_buffer(file_name, client_data);
     if (copy_result.rc != FS_OK) {
         return copy_result.rc;
@@ -186,18 +187,18 @@ fs_result_t send_close_file_request(const uint32_t file_id, client_t *client_dat
     microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: requested to close file: ");
     microkit_debug_put32(OUTPUT_VERBOSITY, file_id);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
-    add_submission_entry(OP_CLOSE, file_id, 0, client_data, -1);
+    add_submission_entry(OP_CLOSE, file_id, 0, client_data, SIZE_MAX);
     return FS_OK;
 }
 
-fs_result_t send_read_file_request(const uint32_t file_id, const uint32_t length, client_t *client_data) {
+fs_result_t send_read_file_request(const uint32_t file_id, const size_t length, client_t *client_data) {
     microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: requested to read file: ");
     microkit_debug_put32(OUTPUT_VERBOSITY, file_id);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
     microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: with length: ");
     microkit_debug_put32(OUTPUT_VERBOSITY, (uint32_t)length);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
-    add_submission_entry(OP_READ, file_id, length < CLIENT_BUFFER_SIZE ? length : CLIENT_BUFFER_SIZE, client_data, -1);
+    add_submission_entry(OP_READ, file_id, length < CLIENT_BUFFER_SIZE ? length : CLIENT_BUFFER_SIZE, client_data, SIZE_MAX);
     return FS_OK;
 }
 
@@ -227,7 +228,7 @@ fs_result_t send_seek_file_request(const uint32_t file_id, const uint32_t positi
     microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: to position: ");
     microkit_debug_put32(OUTPUT_VERBOSITY, position);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
-    add_submission_entry(OP_SEEK, file_id, position, client_data, -1);
+    add_submission_entry(OP_SEEK, file_id, position, client_data, SIZE_MAX);
     return FS_OK;
 }
 

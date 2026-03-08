@@ -1,39 +1,40 @@
 #include <microkit.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
-#include "fs_buffer_manager.h"
-#include "fs_shared.h"
+#include "include/fs_buffer_manager.h"
+#include "include/fs_shared.h"
 
 // ------------------------ Buffer management -------------------------- //
 
-int get_free_buffer(uint8_t *buffer_table) {
+size_t get_free_buffer(bool *buffer_table) {
     for (size_t i = 0; i < NUMBER_OF_BUFFERS_PER_CLIENT; i++) {
-        if (buffer_table[i] == 0) {
-            buffer_table[i] = 1;
+        if (buffer_table[i] == false) {
+            buffer_table[i] = true;
             return i;
         }
     }
-    return -1;
+    return SIZE_MAX;
 }
 
-void set_free_buffer(int buffer_index, uint8_t *buffer_table) {
-    if (buffer_index < 0 || buffer_index >= NUMBER_OF_BUFFERS_PER_CLIENT) {
+void set_free_buffer(const size_t buffer_index, bool *buffer_table) {
+    if (buffer_index >= NUMBER_OF_BUFFERS_PER_CLIENT) {
         return;
     }
-    buffer_table[buffer_index] = 0;
+    buffer_table[buffer_index] = false;
 }
 
 // ------------------------------ Buffer data management ------------------------------- //
 
 buffer_copy_result_t copy_string_to_submission_buffer(const unsigned char *src, client_t *client_data) {
     buffer_copy_result_t result;
-    int buffer_index = get_free_buffer(client_data->submission_buffer_table);
-    if (buffer_index == -1) {
+    size_t buffer_index = get_free_buffer(client_data->submission_buffer_table);
+    if (buffer_index == SIZE_MAX) {
         result.rc = FS_ERROR_NO_FREE_SUBMISSION_BUFFERS;
-        result.buffer_index = -1;
+        result.buffer_index = SIZE_MAX;
         return result;
     }
     microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: copying string to submission buffer at index ");
@@ -62,10 +63,10 @@ buffer_copy_result_t copy_string_to_submission_buffer(const unsigned char *src, 
 
 buffer_copy_result_t copy_data_to_submission_buffer(const uint8_t *src, const size_t length, client_t *client_data) {
     buffer_copy_result_t result;
-    int buffer_index = get_free_buffer(client_data->submission_buffer_table);
-    if (buffer_index == -1) {
+    size_t buffer_index = get_free_buffer(client_data->submission_buffer_table);
+    if (buffer_index == SIZE_MAX) {
         result.rc = FS_ERROR_NO_FREE_SUBMISSION_BUFFERS;
-        result.buffer_index = -1;
+        result.buffer_index = SIZE_MAX;
         return result;
     }
     uint8_t *dest = (uint8_t *)&client_data->submission_buffers[buffer_index];

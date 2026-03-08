@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
 #include "benchmark_utils.h"
 #include "../fs/include/fs_api.h"
@@ -114,8 +114,8 @@ static void clear_client_state(client_t *client_data)
 	}
 
 	for (size_t i = 0; i < NUMBER_OF_BUFFERS_PER_CLIENT; i++) {
-		client_data->submission_buffer_table[i] = 0;
-		client_data->completion_buffer_table[i] = 0;
+		client_data->submission_buffer_table[i] = false;
+		client_data->completion_buffer_table[i] = false;
 		for (size_t j = 0; j < CLIENT_BUFFER_SIZE; j++) {
 			client_data->submission_buffers[i].data[j] = 0;
 			client_data->completion_buffers[i].data[j] = 0;
@@ -267,7 +267,7 @@ static int drain_file_batch(client_t *client_data, const uint8_t *expected_data,
 								   next_file_id);
 }
 
-int benchmark_run_workload(client_t *client_data, const unsigned char *root_path,
+bool benchmark_run_workload(client_t *client_data, const unsigned char *root_path,
 						   uint32_t seed_base)
 {
 	unsigned char current_path[96];
@@ -350,7 +350,7 @@ int benchmark_run_workload(client_t *client_data, const unsigned char *root_path
 	return 1;
 }
 
-void benchmark_finish(client_t *client_data, int success)
+void benchmark_finish(client_t *client_data, bool success)
 {
 	if (!success) {
 		microkit_debug_puts(TEST_VERBOSITY, "benchmark client failed\n");

@@ -4,11 +4,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../../debug_output.h"
 
-#include "fs_api.h"
-#include "fs_shared.h"
-#include "test_utils.h"
+#include "../../fs/include/fs_api.h"
+#include "../../fs/include/fs_shared.h"
+#include "../include/test_utils.h"
 
 uintptr_t fs_data_base;
 client_t *client_data;

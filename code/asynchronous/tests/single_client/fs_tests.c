@@ -10,11 +10,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../../debug_output.h"
 
-#include "fs_api.h"
-#include "fs_shared.h"
-#include "test_utils.h"
+#include "../../fs/include/fs_api.h"
+#include "../../fs/include/fs_shared.h"
+#include "../include/test_utils.h"
 
 // ------------------------------- Globals --------------------------------- //
 
@@ -899,7 +899,7 @@ static bool test_close_fd_errors_and_permissions(void) {
     output_pass((unsigned char *)"Set/get permissions on path");
 
     test_begin((char *)"Reopen read-only and verify you can't write, but can read what was written");
-    rc = send_open_file_request(READ_OP, path, client_data);
+    rc = send_open_file_request(path, READ_OP, client_data);
     if (!expect_eq_int(rc, FS_OK, "Queue open read-only")) {
         return false;
     }

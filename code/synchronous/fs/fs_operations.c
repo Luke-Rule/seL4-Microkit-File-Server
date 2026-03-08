@@ -1,19 +1,17 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
-#include "fs_shared.h"
-#include "fs_internal.h"
-#include "fs_block_manager.h"
-#include "fs_block_data_manager.h"
-#include "fs_i_node_manager.h"
-#include "fs_directory_manager.h"
-#include "fs_file_table_manager.h"
-
-#include "fs_utils.h"
-
-#include "fs_state.h"
+#include "include/fs_shared.h"
+#include "include/fs_internal.h"
+#include "include/fs_block_manager.h"
+#include "include/fs_block_data_manager.h"
+#include "include/fs_i_node_manager.h"
+#include "include/fs_directory_manager.h"
+#include "include/fs_file_table_manager.h"
+#include "include/fs_utils.h"
+#include "include/fs_state.h"
 
 // ------------------------------ Directory entry management functions ------------------------------- //
 
@@ -235,9 +233,12 @@ fs_result_t list_directory_operation(const uint32_t client_id, unsigned char *pa
         child_entry_t *child_entries = (child_entry_t *)&blocks[block_index].data;
         for (size_t j = 0; j < MAX_CHILD_ENTRIES_PER_BLOCK; j++) {
             if (child_entries[j].name[0] != '\0') {
-                // TODO: bro
-                chars_written += copy_string_from_buffer(child_entries[j].name, &client_buffer_data[chars_written], (MAX_NAME_LENGTH > CLIENT_BUFFER_SIZE - chars_written) ? CLIENT_BUFFER_SIZE - chars_written : MAX_NAME_LENGTH);
+                const size_t max_amount_to_copy = (MAX_NAME_LENGTH > CLIENT_BUFFER_SIZE - chars_written) ? CLIENT_BUFFER_SIZE - chars_written : MAX_NAME_LENGTH;
+                chars_written += copy_string_from_buffer(child_entries[j].name, &client_buffer_data[chars_written], max_amount_to_copy);
                 if (chars_written >= CLIENT_BUFFER_SIZE) {
+                    client_buffer_data[chars_written - 4] = '.';
+                    client_buffer_data[chars_written - 3] = '.';
+                    client_buffer_data[chars_written - 2] = '.';
                     client_buffer_data[chars_written - 1] = '\n';
                     break;
                 }

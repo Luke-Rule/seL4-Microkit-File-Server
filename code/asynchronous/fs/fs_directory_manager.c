@@ -1,27 +1,26 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
-#include "fs_buffer_manager.h"
-#include "fs_shared.h"
-#include "fs_internal.h"
-#include "fs_block_manager.h"
-#include "fs_i_node_manager.h"
-#include "fs_queue_manager_server.h"
-#include "fs_file_table_manager.h"
-
-#include "fs_utils.h"
-
-#include "fs_state.h"
+#include "include/fs_buffer_manager.h"
+#include "include/fs_shared.h"
+#include "include/fs_internal.h"
+#include "include/fs_block_manager.h"
+#include "include/fs_i_node_manager.h"
+#include "include/fs_queue_manager_server.h"
+#include "include/fs_file_table_manager.h"
+#include "include/fs_utils.h"
+#include "include/fs_state.h"
 
 child_slot_and_block_result_t get_free_child_slot(const uint32_t parent_i_node_index) {
     i_node_t *parent_i_node = &i_node_table[parent_i_node_index];
     microkit_debug_puts(OUTPUT_VERBOSITY, "checking parent ");
     microkit_debug_put32(OUTPUT_VERBOSITY, parent_i_node_index);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
-    uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
-    for (int i = 0; i < parent_i_node->blocks_used; i++) {
+    size_t *indirect_block_data = (size_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
+    for (size_t i = 0; i < parent_i_node->blocks_used; i++) {
         microkit_debug_puts(OUTPUT_VERBOSITY, "checking block ");
         microkit_debug_put32(OUTPUT_VERBOSITY, i);
         microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
@@ -59,7 +58,7 @@ child_slot_and_block_result_t get_free_child_slot(const uint32_t parent_i_node_i
             }
             parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE] = indirect_block.index;
         }
-        uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
+        size_t *indirect_block_data = (size_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
         indirect_block_data[parent_i_node->blocks_used - DIRECT_BLOCKS_PER_INODE] = new_block.index;
     }
     parent_i_node->blocks_used += 1;
@@ -67,18 +66,18 @@ child_slot_and_block_result_t get_free_child_slot(const uint32_t parent_i_node_i
 }
 
 
-i_node_result_t add_entry(const uint32_t parent_i_node_index, unsigned char *name, const permissions_t permissions,
-                          const uint8_t client_id, const uint32_t block_index, const uint32_t entry_index,
-                          const int is_directory) {
+i_node_result_t add_entry(const uint32_t parent_i_node_index, const unsigned char *name, const permissions_t permissions,
+                          const uint8_t client_id, const size_t block_index, const size_t entry_index,
+                          const bool is_directory) {
     microkit_debug_puts(OUTPUT_VERBOSITY, name);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
     if (!valid_name(name)) {
-        add_completion_entry(client_id, FS_ERR_INVALID_PATH, 0, 0, -1);
+        add_completion_entry(client_id, FS_ERR_INVALID_PATH, 0, 0, SIZE_MAX);
         return (i_node_result_t){-1, FS_ERR_INVALID_PATH};
     }
     i_node_result_t new_i_node_info = allocate_i_node();
     if (new_i_node_info.return_code != FS_OK) {
-        add_completion_entry(client_id, new_i_node_info.return_code, 0, 0, -1);
+        add_completion_entry(client_id, new_i_node_info.return_code, 0, 0, SIZE_MAX);
         return new_i_node_info;
     }
     i_node_t *parent_i_node = &i_node_table[parent_i_node_index];
@@ -98,7 +97,7 @@ i_node_result_t add_entry(const uint32_t parent_i_node_index, unsigned char *nam
     block_id_result_t new_block = allocate_block();
     if (new_block.return_code != FS_OK) {
         release_i_node(new_i_node_info.index);
-        add_completion_entry(client_id, new_block.return_code, 0, 0, -1);
+        add_completion_entry(client_id, new_block.return_code, 0, 0, SIZE_MAX);
         return (i_node_result_t){-1, new_block.return_code};
     }
 
@@ -108,14 +107,14 @@ i_node_result_t add_entry(const uint32_t parent_i_node_index, unsigned char *nam
 
     parent_i_node->entry_size += 1;
 
-    i_node_table[new_i_node_info.index].mode = IN_USE_BIT_SET | (is_directory << IS_DIRECTORY_BIT_START) | (permissions << PERMISSION_BITS_START); // not deleted, in use, dir, permissions
+    i_node_table[new_i_node_info.index].mode = IN_USE_BIT_SET | (is_directory << DIRECTORY_BIT_START) | (permissions << PERMISSION_BITS_START); // not deleted, in use, dir, permissions
     i_node_table[new_i_node_info.index].owner_id = client_id;
     i_node_table[new_i_node_info.index].block_indices[0] = new_block.index;
     i_node_table[new_i_node_info.index].entry_size = 0;
     i_node_table[new_i_node_info.index].blocks_used = 1;
 
     if (is_directory) {
-        add_completion_entry(client_id, FS_OK, 0, 0, -1);
+        add_completion_entry(client_id, FS_OK, 0, 0, SIZE_MAX);
     }
     return new_i_node_info;
 }
@@ -123,9 +122,9 @@ i_node_result_t add_entry(const uint32_t parent_i_node_index, unsigned char *nam
 
 fs_result_t delete_directory_contents(const uint32_t i_node_index) {
     i_node_t *dir_i_node = &i_node_table[i_node_index];
-    uint32_t *indirect_block_data = (uint32_t *)&blocks[dir_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
-    for (int i = 0; i < dir_i_node->blocks_used; i++) {
-        uint32_t block_index;
+    size_t *indirect_block_data = (size_t *)&blocks[dir_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
+    for (size_t i = 0; i < dir_i_node->blocks_used; i++) {
+        size_t block_index;
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = dir_i_node->block_indices[i];
         } else {
@@ -167,13 +166,13 @@ void defragment_directory(i_node_t *parent_i_node) {
     microkit_debug_puts(OUTPUT_VERBOSITY, "defragmenting directory i node ");
     microkit_debug_put32(OUTPUT_VERBOSITY, parent_i_node - i_node_table);
     microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
-    uint32_t *indirect_block_data = (uint32_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
-    int filling_block_index = 0;
-    int last_free_child_index = -1;
-    int current_child_index = 0;
-    uint32_t filling_block;
-    for (int i = 0; i < parent_i_node->blocks_used; i++) {
-        uint32_t block_index;
+    size_t *indirect_block_data = (size_t *)&blocks[parent_i_node->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
+    size_t filling_block_index = 0;
+    size_t last_free_child_index = -1;
+    size_t current_child_index = 0;
+    size_t filling_block;
+    for (size_t i = 0; i < parent_i_node->blocks_used; i++) {
+        size_t block_index;
         if (i < DIRECT_BLOCKS_PER_INODE) {
             block_index = parent_i_node->block_indices[i];
         } else {

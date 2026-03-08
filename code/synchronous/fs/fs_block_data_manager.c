@@ -1,14 +1,13 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "debug_output.h"
+#include "../debug_output.h"
 
-#include "fs_shared.h"
-#include "fs_internal.h"
-#include "fs_block_manager.h"
-#include "fs_utils.h"
-
-#include "fs_state.h"
+#include "include/fs_shared.h"
+#include "include/fs_internal.h"
+#include "include/fs_block_manager.h"
+#include "include/fs_utils.h"
+#include "include/fs_state.h"
 
 block_search_result_t get_inode_block_index_from_file_index(const uint32_t file_index) {
     uint32_t block_index = file_index / BLOCK_SIZE;

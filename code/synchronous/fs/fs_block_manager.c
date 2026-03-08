@@ -1,12 +1,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "debug_output.h"
-
-#include "fs_shared.h"
-#include "fs_internal.h"
-
-#include "fs_state.h"
+#include "../debug_output.h"
+#include "include/fs_shared.h"
+#include "include/fs_internal.h"
+#include "include/fs_state.h"
 
 block_id_result_t allocate_block(void) {
     for (size_t i = 0; i < MAX_NUMBER_OF_BLOCKS; i++) {
