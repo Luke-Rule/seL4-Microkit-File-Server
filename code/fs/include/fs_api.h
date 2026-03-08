@@ -6,11 +6,17 @@
 #include "fs_shared.h"
 
 #define FILE_SERVER_CHANNEL_ID 0
+#define BLOCK_ON_NOTIFY 1
+#define DONT_BLOCK_ON_NOTIFY 0
 
 void mark_client_as_finished_running(client_t *client_data);
 void debug_print_return_code(const char *operation, int return_code);
 
 void notify_file_server(client_t *client_data, int wait_for_completion);
+uint8_t get_if_any_operations_completed(client_t *client_data);
+uint8_t get_number_of_completed_operations(client_t *client_data);
+void wait_until_n_operations_completed(client_t *client_data, uint8_t n);
+void notify_file_server_and_wait_for_all_operations(client_t *client_data, uint8_t number_of_operations);
 void set_free_completion_buffer(client_t *client_data, int buffer_index);
 int get_next_completion_entry(client_t *client_data, completion_queue_entry_t *out);
 

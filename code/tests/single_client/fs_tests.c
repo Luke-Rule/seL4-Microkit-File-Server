@@ -43,7 +43,7 @@ static bool test_list_empty_directory(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue list /__tests")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c;
     if (!get_completion(&c, "List /__tests", client_data)) {
         return false;
@@ -70,7 +70,7 @@ static bool test_create_write_read_roundtrip(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create a.txt")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_create;
     if (!get_completion(&c_create, "Create a.txt", client_data)) {
         return false;
@@ -85,7 +85,7 @@ static bool test_create_write_read_roundtrip(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue write 0 bytes")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_w0;
     if (!get_completion(&c_w0, "Write 0 bytes", client_data)) {
         return false;
@@ -104,7 +104,7 @@ static bool test_create_write_read_roundtrip(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue read 0 bytes")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_r0;
     if (!get_completion(&c_r0, "Read 0 bytes", client_data)) {
         return false;
@@ -126,7 +126,7 @@ static bool test_create_write_read_roundtrip(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue write data")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_w;
     if (!get_completion(&c_w, "Write data", client_data)) {
         return false;
@@ -142,7 +142,7 @@ static bool test_create_write_read_roundtrip(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue seek 0")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_s;
     if (!get_completion(&c_s, "Seek 0", client_data)) {
         return false;
@@ -155,7 +155,7 @@ static bool test_create_write_read_roundtrip(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue read back")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_r;
     if (!get_completion(&c_r, "Read back", client_data)) {
         return false;
@@ -174,7 +174,7 @@ static bool test_create_write_read_roundtrip(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue close")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_close;
     if (!get_completion(&c_close, "Close", client_data)) {
         return false;
@@ -198,7 +198,7 @@ static bool test_duplicate_create_fails(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create dup.txt")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c1;
     if (!get_completion(&c1, "Create dup.txt", client_data)) {
         return false;
@@ -211,7 +211,7 @@ static bool test_duplicate_create_fails(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create duplicate")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c2;
     if (!get_completion(&c2, "Create duplicate", client_data)) {
         return false;
@@ -233,7 +233,7 @@ static bool test_directory_file_conflicts(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue mkdir subdir")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_mkdir;
     if (!get_completion(&c_mkdir, "Mkdir subdir", client_data)) {
         return false;
@@ -253,7 +253,7 @@ static bool test_directory_file_conflicts(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create file named subdir")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_cf;
     if (!get_completion(&c_cf, "Create file named subdir", client_data)) {
         return false;
@@ -269,7 +269,7 @@ static bool test_directory_file_conflicts(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create a.txt")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_file;
     if (!get_completion(&c_file, "Create a.txt", client_data)) {
         return false;
@@ -282,7 +282,7 @@ static bool test_directory_file_conflicts(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue mkdir with file name")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_mkdir2;
     if (!get_completion(&c_mkdir2, "Mkdir with file name", client_data)) {
         return false;
@@ -309,7 +309,7 @@ static bool test_nested_directory_listing_and_size(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue mkdir subdir")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_mkdir;
     if (!get_completion(&c_mkdir, "Mkdir subdir", client_data)) {
         return false;
@@ -322,7 +322,7 @@ static bool test_nested_directory_listing_and_size(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue list empty subdir")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_list_empty;
     if (!get_completion(&c_list_empty, "List empty subdir", client_data)) {
         return false;
@@ -338,7 +338,7 @@ static bool test_nested_directory_listing_and_size(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create nested file")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_create;
     if (!get_completion(&c_create, "Create nested file", client_data)) {
         return false;
@@ -352,7 +352,7 @@ static bool test_nested_directory_listing_and_size(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue write nested")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_write;
     if (!get_completion(&c_write, "Write nested", client_data)) {
         return false;
@@ -365,7 +365,7 @@ static bool test_nested_directory_listing_and_size(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue seek nested 0")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_seek;
     if (!get_completion(&c_seek, "Seek nested 0", client_data)) {
         return false;
@@ -378,7 +378,7 @@ static bool test_nested_directory_listing_and_size(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue read nested")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_read;
     if (!get_completion(&c_read, "Read nested", client_data)) {
         return false;
@@ -394,7 +394,7 @@ static bool test_nested_directory_listing_and_size(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue list subdir")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_list1;
     if (!get_completion(&c_list1, "List subdir", client_data)) {
         return false;
@@ -411,7 +411,7 @@ static bool test_nested_directory_listing_and_size(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue delete nested file")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_del;
     if (!get_completion(&c_del, "Delete nested file", client_data)) {
         return false;
@@ -424,7 +424,7 @@ static bool test_nested_directory_listing_and_size(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue list subdir after delete")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_list2;
     if (!get_completion(&c_list2, "List subdir after delete", client_data)) {
         return false;
@@ -443,7 +443,7 @@ static bool test_nested_directory_listing_and_size(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue size subdir")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_size0;
     if (!get_completion(&c_size0, "Size subdir", client_data)) {
         return false;
@@ -459,7 +459,7 @@ static bool test_nested_directory_listing_and_size(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue re-create nested")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_recreate;
     if (!get_completion(&c_recreate, "Re-create nested", client_data)) {
         return false;
@@ -472,7 +472,7 @@ static bool test_nested_directory_listing_and_size(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue exists nested")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_exists;
     if (!get_completion(&c_exists, "Exists nested", client_data)) {
         return false;
@@ -488,7 +488,7 @@ static bool test_nested_directory_listing_and_size(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue size subdir after recreate")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_size1;
     if (!get_completion(&c_size1, "Size subdir after recreate", client_data)) {
         return false;
@@ -519,7 +519,7 @@ static bool test_seek_overwrite_and_oob(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create seek.txt")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_create;
     if (!get_completion(&c_create, "Create seek.txt", client_data)) {
         return false;
@@ -533,7 +533,7 @@ static bool test_seek_overwrite_and_oob(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue write initial")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_write;
     if (!get_completion(&c_write, "Write initial", client_data)) {
         return false;
@@ -549,7 +549,7 @@ static bool test_seek_overwrite_and_oob(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue size seek.txt")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_size;
     if (!get_completion(&c_size, "Size seek.txt", client_data)) {
         return false;
@@ -566,7 +566,7 @@ static bool test_seek_overwrite_and_oob(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue read at end")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_read_end;
     if (!get_completion(&c_read_end, "Read at end", client_data)) {
         return false;
@@ -582,7 +582,7 @@ static bool test_seek_overwrite_and_oob(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue seek beyond end")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_seek_oob;
     if (!get_completion(&c_seek_oob, "Seek beyond end", client_data)) {
         return false;
@@ -595,7 +595,7 @@ static bool test_seek_overwrite_and_oob(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue seek 0")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_seek0;
     if (!get_completion(&c_seek0, "Seek 0", client_data)) {
         return false;
@@ -608,7 +608,7 @@ static bool test_seek_overwrite_and_oob(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue read initial back")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_read0;
     if (!get_completion(&c_read0, "Read initial back", client_data)) {
         return false;
@@ -624,7 +624,7 @@ static bool test_seek_overwrite_and_oob(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue seek middle")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_seek_mid;
     if (!get_completion(&c_seek_mid, "Seek middle", client_data)) {
         return false;
@@ -637,7 +637,7 @@ static bool test_seek_overwrite_and_oob(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue overwrite")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_over;
     if (!get_completion(&c_over, "Overwrite", client_data)) {
         return false;
@@ -650,7 +650,7 @@ static bool test_seek_overwrite_and_oob(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue seek 0 again")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_seek1;
     if (!get_completion(&c_seek1, "Seek 0 again", client_data)) {
         return false;
@@ -663,7 +663,7 @@ static bool test_seek_overwrite_and_oob(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue read full expected")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_full;
     if (!get_completion(&c_full, "Read full expected", client_data)) {
         return false;
@@ -679,7 +679,7 @@ static bool test_seek_overwrite_and_oob(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue close seek.txt")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_close;
     if (!get_completion(&c_close, "Close seek.txt", client_data)) {
         return false;
@@ -721,7 +721,7 @@ static bool test_large_write_read(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create large.txt")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_create;
     if (!get_completion(&c_create, "Create large.txt", client_data)) {
         return false;
@@ -735,7 +735,7 @@ static bool test_large_write_read(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue large write")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_write;
     if (!get_completion(&c_write, "Large write", client_data)) {
         return false;
@@ -751,7 +751,7 @@ static bool test_large_write_read(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue seek 0 large")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_seek;
     if (!get_completion(&c_seek, "Seek 0 large", client_data)) {
         return false;
@@ -764,7 +764,7 @@ static bool test_large_write_read(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue large read")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_read;
     if (!get_completion(&c_read, "Large read", client_data)) {
         return false;
@@ -783,7 +783,7 @@ static bool test_large_write_read(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue close large")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_close;
     if (!get_completion(&c_close, "Close large", client_data)) {
         return false;
@@ -807,7 +807,7 @@ static bool test_close_fd_errors_and_permissions(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create perm.txt")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_create;
     if (!get_completion(&c_create, "Create perm.txt", client_data)) {
         return false;
@@ -821,7 +821,7 @@ static bool test_close_fd_errors_and_permissions(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue write perm payload")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_write;
     if (!get_completion(&c_write, "Write perm payload", client_data)) {
         return false;
@@ -834,7 +834,7 @@ static bool test_close_fd_errors_and_permissions(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue close perm fd")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_close;
     if (!get_completion(&c_close, "Close perm fd", client_data)) {
         return false;
@@ -848,7 +848,7 @@ static bool test_close_fd_errors_and_permissions(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue close again")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_close2;
     if (!get_completion(&c_close2, "Close again", client_data)) {
         return false;
@@ -864,7 +864,7 @@ static bool test_close_fd_errors_and_permissions(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue read closed")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_read_closed;
     if (!get_completion(&c_read_closed, "Read closed", client_data)) {
         return false;
@@ -884,7 +884,7 @@ static bool test_close_fd_errors_and_permissions(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue get perm")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_getp;
     if (!get_completion(&c_getp, "Get perm", client_data)) {
         return false;
@@ -903,7 +903,7 @@ static bool test_close_fd_errors_and_permissions(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue open read-only")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_open;
     if (!get_completion(&c_open, "Open read-only", client_data)) {
         return false;
@@ -917,7 +917,7 @@ static bool test_close_fd_errors_and_permissions(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue seek 0 read-only")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_seek;
     if (!get_completion(&c_seek, "Seek 0 read-only", client_data)) {
         return false;
@@ -930,7 +930,7 @@ static bool test_close_fd_errors_and_permissions(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue read read-only")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_read;
     if (!get_completion(&c_read, "Read read-only", client_data)) {
         return false;
@@ -946,7 +946,7 @@ static bool test_close_fd_errors_and_permissions(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue write read-only")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_wro;
     if (!get_completion(&c_wro, "Write read-only", client_data)) {
         return false;
@@ -959,7 +959,7 @@ static bool test_close_fd_errors_and_permissions(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue close read-only fd")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_close_ro;
     if (!get_completion(&c_close_ro, "Close read-only fd", client_data)) {
         return false;
@@ -983,7 +983,7 @@ static bool test_deleted_directory_operations_fail(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue mkdir deldir")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_mkdir;
     if (!get_completion(&c_mkdir, "Mkdir deldir", client_data)) {
         return false;
@@ -996,7 +996,7 @@ static bool test_deleted_directory_operations_fail(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create nested in deldir")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_create;
     if (!get_completion(&c_create, "Create nested in deldir", client_data)) {
         return false;
@@ -1013,7 +1013,7 @@ static bool test_deleted_directory_operations_fail(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue delete deldir")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_del;
     if (!get_completion(&c_del, "Delete deldir", client_data)) {
         return false;
@@ -1036,7 +1036,7 @@ static bool test_deleted_directory_operations_fail(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue read stale fd")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_read;
     if (!get_completion(&c_read, "Read stale fd", client_data)) {
         return false;
@@ -1052,7 +1052,7 @@ static bool test_deleted_directory_operations_fail(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue exists deldir")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_exists;
     if (!get_completion(&c_exists, "Exists deldir", client_data)) {
         return false;
@@ -1071,7 +1071,7 @@ static bool test_deleted_directory_operations_fail(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue list deleted deldir")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_list;
     if (!get_completion(&c_list, "List deleted deldir", client_data)) {
         return false;
@@ -1103,7 +1103,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create invalid /__tests/")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_inv1;
     if (!get_completion(&c_inv1, "Create invalid /__tests/", client_data)) {
         return false;
@@ -1116,7 +1116,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create invalid d/f")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_inv2;
     if (!get_completion(&c_inv2, "Create invalid d/f", client_data)) {
         return false;
@@ -1129,7 +1129,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create invalid NUL")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_inv3;
     if (!get_completion(&c_inv3, "Create invalid NUL", client_data)) {
         return false;
@@ -1142,7 +1142,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create invalid empty")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_inv4;
     if (!get_completion(&c_inv4, "Create invalid empty", client_data)) {
         return false;
@@ -1155,7 +1155,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue mkdir invalid /__tests/")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_m1;
     if (!get_completion(&c_m1, "Mkdir invalid /__tests/", client_data)) {
         return false;
@@ -1168,7 +1168,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue mkdir invalid d/f")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_m2;
     if (!get_completion(&c_m2, "Mkdir invalid d/f", client_data)) {
         return false;
@@ -1181,7 +1181,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue mkdir invalid NUL")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_m3;
     if (!get_completion(&c_m3, "Mkdir invalid NUL", client_data)) {
         return false;
@@ -1194,7 +1194,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue mkdir invalid empty")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_m4;
     if (!get_completion(&c_m4, "Mkdir invalid empty", client_data)) {
         return false;
@@ -1217,7 +1217,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue write invalid fd")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_fd;
     if (!get_completion(&c_fd, "Write invalid fd", client_data)) {
         return false;
@@ -1233,7 +1233,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create maxlen file")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_ml1;
     if (!get_completion(&c_ml1, "Create maxlen file", client_data)) {
         return false;
@@ -1246,7 +1246,7 @@ static bool test_invalid_inputs_and_edge_cases(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue mkdir maxlen")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_ml2;
     if (!get_completion(&c_ml2, "Mkdir maxlen", client_data)) {
         return false;
@@ -1272,7 +1272,7 @@ static bool test_batched_operations_roundtrip(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue create batch.txt")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_create;
     if (!get_completion(&c_create, "Create batch.txt", client_data)) {
         return false;
@@ -1296,7 +1296,7 @@ static bool test_batched_operations_roundtrip(void) {
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server_and_wait_for_all_operations(client_data, 3);
     completion_queue_entry_t c_w;
     if (!get_completion(&c_w, "Batched write", client_data)) {
         return false;
@@ -1326,7 +1326,7 @@ static bool test_batched_operations_roundtrip(void) {
     if (!expect_eq_int(rc, FS_OK, "Queue close batch fd")) {
         return false;
     }
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c_close;
     if (!get_completion(&c_close, "Close batch fd", client_data)) {
         return false;
@@ -1384,6 +1384,6 @@ void init(void) {
     run_tests();
 
     mark_client_as_finished_running(client_data);
-    notify_file_server(client_data, 0);
+    notify_file_server(client_data, DONT_BLOCK_ON_NOTIFY);
     seL4_Yield();
 }

@@ -77,14 +77,40 @@ void debug_print_return_code(const char *operation, int return_code) {
 
 // ------------------------------ File system interface functions ------------------------------- //
 
-void notify_file_server(client_t *client_data, int wait_for_completion) {
+void notify_file_server(client_t *client_data, int block) {
     client_data->flags.ready_flag = 1;
+    client_data->flags.complete_flag = 0;
     // this will do the same thing unless the fs has no budget left
-    if (wait_for_completion) {
+    if (block) {
         microkit_ppcall(FILE_SERVER_CHANNEL_ID, seL4_MessageInfo_new(0, 0, 0, 0));
     } else {
         microkit_notify(FILE_SERVER_CHANNEL_ID);
     }
+}
+
+uint8_t get_if_any_operations_completed(client_t *client_data) {
+    return client_data->flags.complete_flag;
+}
+
+
+// These are required as the FS limits ops per service to prevent starvation of other clients, so a re-notify may be required 
+uint8_t get_number_of_completed_operations(client_t *client_data) {
+    if (client_data->completion_queue_tail >= client_data->completion_queue_head) {
+        return client_data->completion_queue_tail - client_data->completion_queue_head;
+    } else {
+        return MAX_QUEUE_ENTRIES - (client_data->completion_queue_head - client_data->completion_queue_tail);
+    }
+}
+
+void wait_until_n_operations_completed(client_t *client_data, uint8_t n) {
+    while (get_number_of_completed_operations(client_data) < n) {
+        notify_file_server(client_data, BLOCK_ON_NOTIFY);
+    }
+}
+
+void notify_file_server_and_wait_for_all_operations(client_t *client_data, uint8_t number_of_operations) {
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
+    wait_until_n_operations_completed(client_data, number_of_operations);
 }
 
 void set_free_completion_buffer(client_t *client_data, int buffer_index) {

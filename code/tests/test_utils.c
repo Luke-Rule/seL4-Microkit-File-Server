@@ -65,7 +65,7 @@ bool delete_entry_allow_missing(const unsigned char *path, const char *step_name
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c;
     if (!get_completion(&c, step_name, client_data)) {
         return false;
@@ -88,7 +88,7 @@ bool ensure_clean_test_root(client_t *client_data) {
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
     completion_queue_entry_t c;
     if (!get_completion(&c, "Create /__tests", client_data)) {
         return false;
@@ -108,7 +108,7 @@ static bool fs_test_seek0(uint32_t fd, client_t *client_data) {
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c_seek;
     if (!get_completion(&c_seek, "Seek", client_data)) {
@@ -129,7 +129,7 @@ bool fs_test_await_exists(
             return false;
         }
 
-        notify_file_server(client_data, 1);
+        notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
         completion_queue_entry_t c;
         if (!get_completion(&c, step_name, client_data)) {
@@ -155,7 +155,7 @@ bool fs_test_create_marker(const unsigned char *path, const char *step_name, cli
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c_create;
     if (!get_completion(&c_create, step_name, client_data)) {
@@ -171,7 +171,7 @@ bool fs_test_create_marker(const unsigned char *path, const char *step_name, cli
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c_close;
     if (!get_completion(&c_close, "Close marker", client_data)) {
@@ -192,7 +192,7 @@ bool fs_test_open_expect_rc(
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c_open;
     if (!get_completion(&c_open, step_name, client_data)) {
@@ -210,7 +210,7 @@ bool fs_test_open_expect_rc(
             return false;
         }
 
-        notify_file_server(client_data, 1);
+        notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
         completion_queue_entry_t c_close;
         if (!get_completion(&c_close, "Close", client_data)) {
@@ -235,7 +235,7 @@ bool fs_test_open_read_expect(
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c_open;
     if (!get_completion(&c_open, step_name, client_data)) {
@@ -256,7 +256,7 @@ bool fs_test_open_read_expect(
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c_read;
     if (!get_completion(&c_read, "Read", client_data)) {
@@ -277,7 +277,7 @@ bool fs_test_open_read_expect(
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c_close;
     if (!get_completion(&c_close, "Close", client_data)) {
@@ -298,7 +298,7 @@ bool fs_test_open_write_close(
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c_open;
     if (!get_completion(&c_open, step_name, client_data)) {
@@ -319,7 +319,7 @@ bool fs_test_open_write_close(
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c_write;
     if (!get_completion(&c_write, "Write", client_data)) {
@@ -334,7 +334,7 @@ bool fs_test_open_write_close(
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c_close;
     if (!get_completion(&c_close, "Close", client_data)) {
@@ -357,7 +357,7 @@ bool fs_test_create_and_write_file(
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c_create;
     if (!get_completion(&c_create, step_name, client_data)) {
@@ -378,7 +378,7 @@ bool fs_test_create_and_write_file(
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c_write;
     if (!get_completion(&c_write, "Write", client_data)) {
@@ -393,7 +393,7 @@ bool fs_test_create_and_write_file(
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c_close;
     if (!get_completion(&c_close, "Close", client_data)) {
@@ -415,7 +415,7 @@ bool fs_test_create_file_expect_rc(
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c_create;
     if (!get_completion(&c_create, step_name, client_data)) {
@@ -432,7 +432,7 @@ bool fs_test_create_file_expect_rc(
             return false;
         }
 
-        notify_file_server(client_data, 1);
+        notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
         completion_queue_entry_t c_close;
         if (!get_completion(&c_close, "Close", client_data)) {
@@ -455,7 +455,7 @@ bool fs_test_delete_expect_rc(
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c_del;
     if (!get_completion(&c_del, step_name, client_data)) {
@@ -477,7 +477,7 @@ bool fs_test_set_perm_expect_rc(
         return false;
     }
 
-    notify_file_server(client_data, 1);
+    notify_file_server(client_data, BLOCK_ON_NOTIFY);
 
     completion_queue_entry_t c;
     if (!get_completion(&c, step_name, client_data)) {

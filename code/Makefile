@@ -16,18 +16,24 @@ AS := $(TOOLCHAIN)-as
 MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
 # VPATH to find sources in subdirectories
-VPATH := fs:tests:tests/single_client:tests/multi_client
+VPATH := fs:tests:tests/single_client:tests/multi_client:benchmarks
 
 CLIENT_OBJS := client.o $(COMMON_OBJS)
 
 SINGLE_TEST_OBJS := fs_tests.o test_utils.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o $(COMMON_OBJS)
+
+BENCHMARK_COMMON_OBJS := benchmark_utils.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o $(COMMON_OBJS)
+SINGLE_BENCHMARK_OBJS := single_client.o $(BENCHMARK_COMMON_OBJS)
+MULTI_BENCHMARK0_OBJS := multi_client_0.o $(BENCHMARK_COMMON_OBJS)
+MULTI_BENCHMARK1_OBJS := multi_client_1.o $(BENCHMARK_COMMON_OBJS)
+MULTI_BENCHMARK2_OBJS := multi_client_2.o $(BENCHMARK_COMMON_OBJS)
 
 MULTI_CLIENT_COMMON_OBJS := test_utils.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o $(COMMON_OBJS)
 MULTI_CLIENT0_OBJ := client_0.o
 MULTI_CLIENT1_OBJ := client_1.o
 MULTI_CLIENT2_OBJ := client_2.o
 # FILESERVER_OBJS := file_server.o
-FILESERVER_DYNAMIC_OBJS := file_server.o \
+FILESERVER_DYNAMIC_OBJS := file_server_test.o \
 	$(COMMON_OBJS) \
 	fs_operations.o \
 	fs_directory_manager.o \
@@ -38,7 +44,29 @@ FILESERVER_DYNAMIC_OBJS := file_server.o \
 	fs_queue_manager_server.o \
 	fs_utils.o
 
-FILESERVER_MULTI_DYNAMIC_OBJS := file_server_multi.o \
+FILESERVER_MULTI_DYNAMIC_OBJS := file_server_multi_test.o \
+	$(COMMON_OBJS) \
+	fs_operations.o \
+	fs_directory_manager.o \
+	fs_i_node_manager.o \
+	fs_file_table_manager.o \
+	fs_block_manager.o \
+	fs_block_data_manager.o \
+	fs_queue_manager_server.o \
+	fs_utils.o
+
+FILESERVER_BENCHMARK_DYNAMIC_OBJS := file_server_benchmark.o \
+	$(COMMON_OBJS) \
+	fs_operations.o \
+	fs_directory_manager.o \
+	fs_i_node_manager.o \
+	fs_file_table_manager.o \
+	fs_block_manager.o \
+	fs_block_data_manager.o \
+	fs_queue_manager_server.o \
+	fs_utils.o
+
+FILESERVER_MULTI_BENCHMARK_DYNAMIC_OBJS := file_server_multi_benchmark.o \
 	$(COMMON_OBJS) \
 	fs_operations.o \
 	fs_directory_manager.o \
@@ -59,20 +87,30 @@ LIBS := -lmicrokit -Tmicrokit.ld
 # Output files
 CLIENT_ELF := $(BUILD_DIR)/client.elf
 SINGLE_TEST_ELF := $(BUILD_DIR)/fs_tests.elf
+SINGLE_BENCHMARK_ELF := $(BUILD_DIR)/single_client.elf
 
 MULTI_CLIENT0_ELF := $(BUILD_DIR)/client_0.elf
 MULTI_CLIENT1_ELF := $(BUILD_DIR)/client_1.elf
 MULTI_CLIENT2_ELF := $(BUILD_DIR)/client_2.elf
+MULTI_BENCHMARK0_ELF := $(BUILD_DIR)/multi_client_0.elf
+MULTI_BENCHMARK1_ELF := $(BUILD_DIR)/multi_client_1.elf
+MULTI_BENCHMARK2_ELF := $(BUILD_DIR)/multi_client_2.elf
 # FILESERVER_ELF := $(BUILD_DIR)/file_server.elf
-FILESERVER_DYNAMIC_ELF := $(BUILD_DIR)/file_server.elf
-FILESERVER_MULTI_DYNAMIC_ELF := $(BUILD_DIR)/file_server_multi.elf
+FILESERVER_DYNAMIC_ELF := $(BUILD_DIR)/file_server_test.elf
+FILESERVER_MULTI_DYNAMIC_ELF := $(BUILD_DIR)/file_server_multi_test.elf
+FILESERVER_BENCHMARK_DYNAMIC_ELF := $(BUILD_DIR)/file_server.elf
+FILESERVER_MULTI_BENCHMARK_DYNAMIC_ELF := $(BUILD_DIR)/file_server_multi.elf
 # IMAGE_FILE = $(BUILD_DIR)/loader.img
 SINGLE_TEST_IMAGE_FILE = $(BUILD_DIR)/single_test_loader.img
 MULTI_TEST_IMAGE_FILE = $(BUILD_DIR)/multi_test_loader.img
+SINGLE_BENCHMARK_IMAGE_FILE = $(BUILD_DIR)/benchmark_1_loader.img
+MULTI_BENCHMARK_IMAGE_FILE = $(BUILD_DIR)/benchmark_3_loader.img
 REPORT_FILE = $(BUILD_DIR)/report.txt
 SYSTEM_FILE := file.system
 SINGLE_TEST_SYSTEM_FILE := tests/single_client/single_client_test.system
 MULTI_TEST_SYSTEM_FILE := tests/multi_client/multi_client_test.system
+SINGLE_BENCHMARK_SYSTEM_FILE := benchmarks/1.system
+MULTI_BENCHMARK_SYSTEM_FILE := benchmarks/3.system
 
 # Targets
 # all: directories $(IMAGE_FILE) $(TEST_IMAGE_FILE)
@@ -97,6 +135,9 @@ $(CLIENT_ELF): $(addprefix $(BUILD_DIR)/, $(CLIENT_OBJS))
 $(SINGLE_TEST_ELF): $(addprefix $(BUILD_DIR)/, $(SINGLE_TEST_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
+$(SINGLE_BENCHMARK_ELF): $(addprefix $(BUILD_DIR)/, $(SINGLE_BENCHMARK_OBJS))
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
+
 $(MULTI_CLIENT0_ELF): $(addprefix $(BUILD_DIR)/, $(MULTI_CLIENT0_OBJ) $(MULTI_CLIENT_COMMON_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
@@ -106,6 +147,15 @@ $(MULTI_CLIENT1_ELF): $(addprefix $(BUILD_DIR)/, $(MULTI_CLIENT1_OBJ) $(MULTI_CL
 $(MULTI_CLIENT2_ELF): $(addprefix $(BUILD_DIR)/, $(MULTI_CLIENT2_OBJ) $(MULTI_CLIENT_COMMON_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
+$(MULTI_BENCHMARK0_ELF): $(addprefix $(BUILD_DIR)/, $(MULTI_BENCHMARK0_OBJS))
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
+
+$(MULTI_BENCHMARK1_ELF): $(addprefix $(BUILD_DIR)/, $(MULTI_BENCHMARK1_OBJS))
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
+
+$(MULTI_BENCHMARK2_ELF): $(addprefix $(BUILD_DIR)/, $(MULTI_BENCHMARK2_OBJS))
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
+
 # $(FILESERVER_ELF): $(addprefix $(BUILD_DIR)/, $(FILESERVER_OBJS))
 # 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
@@ -113,6 +163,12 @@ $(FILESERVER_DYNAMIC_ELF): $(addprefix $(BUILD_DIR)/, $(FILESERVER_DYNAMIC_OBJS)
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
 $(FILESERVER_MULTI_DYNAMIC_ELF): $(addprefix $(BUILD_DIR)/, $(FILESERVER_MULTI_DYNAMIC_OBJS))
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
+
+$(FILESERVER_BENCHMARK_DYNAMIC_ELF): $(addprefix $(BUILD_DIR)/, $(FILESERVER_BENCHMARK_DYNAMIC_OBJS))
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
+
+$(FILESERVER_MULTI_BENCHMARK_DYNAMIC_ELF): $(addprefix $(BUILD_DIR)/, $(FILESERVER_MULTI_BENCHMARK_DYNAMIC_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
 # Build Microkit image
@@ -132,8 +188,27 @@ $(MULTI_TEST_IMAGE_FILE): $(MULTI_CLIENT0_ELF) $(MULTI_CLIENT1_ELF) $(MULTI_CLIE
 		--board $(BOARD) --config $(MICROKIT_CONFIG) \
 		-o $(MULTI_TEST_IMAGE_FILE) -r $(REPORT_FILE)
 
-$(BUILD_DIR)/file_server_multi.o: fs/file_server.c Makefile | $(BUILD_DIR)
-	$(CC) -c $(CFLAGS) -DNUMBER_OF_CLIENTS=3 -MMD -MP $< -o $@
+$(SINGLE_BENCHMARK_IMAGE_FILE): $(SINGLE_BENCHMARK_ELF) $(FILESERVER_BENCHMARK_DYNAMIC_ELF) $(SINGLE_BENCHMARK_SYSTEM_FILE)
+	$(MICROKIT_TOOL) $(SINGLE_BENCHMARK_SYSTEM_FILE) --search-path $(BUILD_DIR) \
+		--board $(BOARD) --config $(MICROKIT_CONFIG) \
+		-o $(SINGLE_BENCHMARK_IMAGE_FILE) -r $(REPORT_FILE)
+
+$(MULTI_BENCHMARK_IMAGE_FILE): $(MULTI_BENCHMARK0_ELF) $(MULTI_BENCHMARK1_ELF) $(MULTI_BENCHMARK2_ELF) $(FILESERVER_MULTI_BENCHMARK_DYNAMIC_ELF) $(MULTI_BENCHMARK_SYSTEM_FILE)
+	$(MICROKIT_TOOL) $(MULTI_BENCHMARK_SYSTEM_FILE) --search-path $(BUILD_DIR) \
+		--board $(BOARD) --config $(MICROKIT_CONFIG) \
+		-o $(MULTI_BENCHMARK_IMAGE_FILE) -r $(REPORT_FILE)
+
+$(BUILD_DIR)/file_server_test.o: fs/file_server.c Makefile | $(BUILD_DIR)
+	$(CC) -c $(CFLAGS) -DBENCHMARKING=0 -MMD -MP $< -o $@
+
+$(BUILD_DIR)/file_server_benchmark.o: fs/file_server.c Makefile | $(BUILD_DIR)
+	$(CC) -c $(CFLAGS) -DBENCHMARKING=1 -MMD -MP $< -o $@
+
+$(BUILD_DIR)/file_server_multi_test.o: fs/file_server.c Makefile | $(BUILD_DIR)
+	$(CC) -c $(CFLAGS) -DNUMBER_OF_CLIENTS=3 -DBENCHMARKING=0 -MMD -MP $< -o $@
+
+$(BUILD_DIR)/file_server_multi_benchmark.o: fs/file_server.c Makefile | $(BUILD_DIR)
+	$(CC) -c $(CFLAGS) -DNUMBER_OF_CLIENTS=3 -DBENCHMARKING=1 -MMD -MP $< -o $@
 
 # Run in QEMU
 # run: $(IMAGE_FILE)
@@ -168,8 +243,34 @@ multi_test: $(MULTI_TEST_IMAGE_FILE)
 		-netdev user,id=mynet0 \
 		-device virtio-net-device,netdev=mynet0,mac=52:55:00:d1:55:01
 
+single_benchmark: $(SINGLE_BENCHMARK_IMAGE_FILE)
+	qemu-system-aarch64 -machine virt,virtualization=on \
+		-cpu $(CPU) \
+		-serial mon:stdio \
+		-device loader,file=$(SINGLE_BENCHMARK_IMAGE_FILE),addr=0x70000000,cpu-num=0 \
+		-m size=2G \
+		-nographic \
+		-netdev user,id=mynet0 \
+		-device virtio-net-device,netdev=mynet0,mac=52:55:00:d1:55:01
+
+multi_benchmark: $(MULTI_BENCHMARK_IMAGE_FILE)
+	qemu-system-aarch64 -machine virt,virtualization=on \
+		-cpu $(CPU) \
+		-serial mon:stdio \
+		-device loader,file=$(MULTI_BENCHMARK_IMAGE_FILE),addr=0x70000000,cpu-num=0 \
+		-m size=2G \
+		-nographic \
+		-netdev user,id=mynet0 \
+		-device virtio-net-device,netdev=mynet0,mac=52:55:00:d1:55:01
+
+benchmark_1: $(SINGLE_BENCHMARK_IMAGE_FILE)
+
+benchmark_3: $(MULTI_BENCHMARK_IMAGE_FILE)
+
 # Back-compat alias
 test: single_test
+
+.PHONY: all single_test multi_test single_benchmark multi_benchmark benchmark_1 benchmark_3 test clean
 
 $(BUILD_DIR)/client_0.o: tests/multi_client/client_0.c Makefile | $(BUILD_DIR)
 	$(CC) -c $(CFLAGS) -MMD -MP $< -o $@

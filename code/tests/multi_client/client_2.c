@@ -129,6 +129,6 @@ void init(void) {
 
 	microkit_debug_puts(TEST_VERBOSITY, "\nMULTI TEST client 2: finished\n");
 	mark_client_as_finished_running(client_data);
-	notify_file_server(client_data, 0);
+	notify_file_server(client_data, DONT_BLOCK_ON_NOTIFY);
 	seL4_Yield();
 }

@@ -20,7 +20,9 @@
 #include "fs_i_node_manager.h"
 #include "fs_operations.h"
 
-#define BENCHMARKING 1
+#ifndef BENCHMARKING
+#define BENCHMARKING 0
+#endif
 
 // ------------------------------ Globals ------------------------------- //
 
@@ -222,12 +224,10 @@ void handle_operation(file_operation_t operation, submission_queue_entry_t *subm
 }
 
 void service_client(uint32_t client_id) {
-    // TODO: limit number of operations per service to prevent starvation of other clients
     uint32_t num_operations = 0;
-    // TODO: should set complete flag if more entries?
     int unset_ready_flag = 0;
     // TODO: should prioritise operations, not really as OOO complications
-    while (num_operations < MAX_OPERATIONS_PER_SERVICE) {
+    while (num_operations < MAX_OPERATIONS_PER_CLIENT_SERVICE) {
         microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: servicing client: ");
         microkit_debug_put32(OUTPUT_VERBOSITY, client_id);
         microkit_debug_putc(OUTPUT_VERBOSITY, '\n');
@@ -275,9 +275,11 @@ void service_client(uint32_t client_id) {
     }
 }
 
-
+// this is only required if the fs is pre-empted and a different client submits a request
+// this is reasonably unlikely so doesnt require fairness counting
 void poll_clients() {
     for (size_t i = 0; i < NUMBER_OF_CLIENTS; i++) {
+        // to not service client that already reached max / hasnt read queue
         if (clients[i].flags.ready_flag && !clients[i].flags.complete_flag) {
             microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: client ");
             microkit_debug_put32(OUTPUT_VERBOSITY, i);
@@ -285,6 +287,48 @@ void poll_clients() {
             service_client(i);
         }
     }
+}
+
+void check_end_of_benchmark() {
+    if (benchmark_reported) {
+        return;
+    }
+    for (int i = 0; i < NUMBER_OF_CLIENTS; i++) {
+        if (!clients[i].flags.finished_running_flag) {
+            return;
+        }
+    }
+    uint64_t end = read_cntvct();
+    uint64_t delta_ticks = end - start;
+
+    uint64_t whole_s = 0;
+    uint32_t frac_us = 0;
+    if (freq != 0) {
+        whole_s = delta_ticks / freq;
+        uint64_t rem = delta_ticks % freq;
+        frac_us = (uint32_t)((rem * 1000000u) / freq);
+    }
+
+    microkit_dbg_puts("Benchmark took: ");
+    microkit_dbg_putu64(whole_s);
+    microkit_dbg_putc('.');
+    microkit_dbg_putu32_6(frac_us);
+    microkit_dbg_puts(" s (");
+    microkit_dbg_putu64(delta_ticks);
+    microkit_dbg_puts(" ticks @ ");
+    microkit_dbg_putu64(freq);
+    microkit_dbg_puts(" Hz)\n");
+
+    benchmark_reported = 1;
+    seL4_Yield();
+}
+
+void service_and_poll(uint8_t client_id) {
+    if (BENCHMARKING) {
+        check_end_of_benchmark();
+    }
+    service_client(client_id);
+    poll_clients();
 }
 
 // ------------------------- MicroKit Interface -------------------------- //
@@ -343,54 +387,13 @@ void init(void) {
     benchmark_reported = 0;
 }
 
-void check_end_of_benchmark() {
-    if (benchmark_reported) {
-        return;
-    }
-    for (int i = 0; i < NUMBER_OF_CLIENTS; i++) {
-        if (!clients[i].flags.finished_running_flag) {
-            return;
-        }
-    }
-    uint64_t end = read_cntvct();
-    uint64_t delta_ticks = end - start;
-
-    uint64_t whole_s = 0;
-    uint32_t frac_us = 0;
-    if (freq != 0) {
-        whole_s = delta_ticks / freq;
-        uint64_t rem = delta_ticks % freq;
-        frac_us = (uint32_t)((rem * 1000000u) / freq);
-    }
-
-    microkit_dbg_puts("Benchmark took: ");
-    microkit_dbg_putu64(whole_s);
-    microkit_dbg_putc('.');
-    microkit_dbg_putu32_6(frac_us);
-    microkit_dbg_puts(" s (");
-    microkit_dbg_putu64(delta_ticks);
-    microkit_dbg_puts(" ticks @ ");
-    microkit_dbg_putu64(freq);
-    microkit_dbg_puts(" Hz)\n");
-
-    benchmark_reported = 1;
-    seL4_Yield();
-}
-
-void fs_loop(uint8_t client_id) {
-    service_client(client_id);
-    poll_clients();
-    if (BENCHMARKING) {
-        check_end_of_benchmark();
-    }
-}
 
 microkit_msginfo protected(microkit_channel ch, microkit_msginfo msginfo) {
-    fs_loop(ch);
+    service_and_poll(ch);
     return msginfo;
 }
 
 
 void notified(microkit_channel ch) {
-    fs_loop(ch);
+    service_and_poll(ch);
 }

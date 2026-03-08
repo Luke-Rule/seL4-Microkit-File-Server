@@ -25,7 +25,7 @@ static bool ensure_clean_mc_root(void) {
 	if (!expect_eq_int(rc, FS_OK, "Queue create /__mc")) {
 		return false;
 	}
-	notify_file_server(client_data, 1);
+	notify_file_server(client_data, BLOCK_ON_NOTIFY);
 	completion_queue_entry_t c;
 	if (!get_completion(&c, "Create /__mc", client_data)) {
 		return false;
@@ -89,7 +89,7 @@ static bool run_multi_client_permissions_test(void) {
 	if (!expect_eq_int(rc, FS_OK, "Queue set public->private")) {
 		return false;
 	}
-	notify_file_server(client_data, 1);
+	notify_file_server(client_data, BLOCK_ON_NOTIFY);
 	completion_queue_entry_t c_setp;
 	if (!get_completion(&c_setp, "Set public->private", client_data)) {
 		return false;
@@ -102,7 +102,7 @@ static bool run_multi_client_permissions_test(void) {
 	if (!expect_eq_int(rc, FS_OK, "Queue set shared->read")) {
 		return false;
 	}
-	notify_file_server(client_data, 1);
+	notify_file_server(client_data, BLOCK_ON_NOTIFY);
 	completion_queue_entry_t c_set_shared;
 	if (!get_completion(&c_set_shared, "Set shared->read", client_data)) {
 		return false;
@@ -134,7 +134,7 @@ static bool run_multi_client_permissions_test(void) {
 	if (!expect_eq_int(rc, FS_OK, "Queue create x_only dir")) {
 		return false;
 	}
-	notify_file_server(client_data, 1);
+	notify_file_server(client_data, BLOCK_ON_NOTIFY);
 	completion_queue_entry_t c_xdir;
 	if (!get_completion(&c_xdir, "Create x_only dir", client_data)) {
 		return false;
@@ -162,7 +162,7 @@ static bool run_multi_client_permissions_test(void) {
 	if (!expect_eq_int(rc, FS_OK, "Queue create rw_no_x dir")) {
 		return false;
 	}
-	notify_file_server(client_data, 1);
+	notify_file_server(client_data, BLOCK_ON_NOTIFY);
 	completion_queue_entry_t c_rwdir;
 	if (!get_completion(&c_rwdir, "Create rw_no_x dir", client_data)) {
 		return false;
@@ -203,6 +203,6 @@ void init(void) {
 
 	microkit_debug_puts(TEST_VERBOSITY, "\nMULTI TEST client 0: finished\n");
 	mark_client_as_finished_running(client_data);
-	notify_file_server(client_data, 0);
+	notify_file_server(client_data, DONT_BLOCK_ON_NOTIFY);
 	seL4_Yield();
 }

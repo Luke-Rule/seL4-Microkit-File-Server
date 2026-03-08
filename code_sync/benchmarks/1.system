@@ -5,7 +5,7 @@
 
     <!-- File Server Protection Domain -->
     <protection_domain name="file_server" priority="1" >
-      <program_image path="file_server_test.elf"/>
+        <program_image path="file_server.elf"/>
 
         <map mr="fs_memory" vaddr="0x30000000" perms="rw" cached="true"
           setvar_vaddr="fs_memory_base"/>
@@ -15,11 +15,11 @@
     </protection_domain>
 
      <!-- Client Memory Regions -->
-    <memory_region name="client_0" size="0x81000" />
+    <memory_region name="client_0" size="0x40000" />
 
     <!-- Client Protection Domains -->
     <protection_domain name="client_0" priority="0" >
-        <program_image path="fs_tests.elf"/>
+        <program_image path="single_client.elf"/>
         <map mr="client_0" vaddr="0x30000000" perms="rw" cached="false"
           setvar_vaddr="fs_data_base"/>
     </protection_domain>
