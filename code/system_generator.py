@@ -1,6 +1,6 @@
 import sys
 # TODO: cache or not?
-def generate_synchronous_system_file(number_of_clients):
+def generate_synchronous_system_file(number_of_clients, client_names):
     base_vaddr = 0x30000000
     
     fs_size = 0x10133000
@@ -39,7 +39,7 @@ def generate_synchronous_system_file(number_of_clients):
         for i in range(number_of_clients):
             # client pds
             f.write(f"    <protection_domain name=\"client_{i}\" priority=\"0\" >\n")
-            f.write(f"        <program_image path=\"client{i}.elf\"/>\n")
+            f.write(f"        <program_image path=\"{client_names[i]}.elf\"/>\n")
             f.write(f"        <map mr=\"client_{i}\" vaddr=\"0x{(base_vaddr):X}\" perms=\"rw\" cached=\"false\"\n")
             f.write(f"          setvar_vaddr=\"fs_data_base\"/>\n")
             f.write(f"    </protection_domain>\n")
@@ -62,4 +62,7 @@ if num_clients > 16 or num_clients < 1:
     print("Error: Maximum number of clients is 16.")
     sys.exit(1)
 
-generate_synchronous_system_file(num_clients)
+if len(sys.argv) == num_clients + 2:
+    generate_synchronous_system_file(num_clients, sys.argv[2:])
+else:
+    generate_synchronous_system_file(num_clients, [f"client{i}" for i in range(num_clients)])
