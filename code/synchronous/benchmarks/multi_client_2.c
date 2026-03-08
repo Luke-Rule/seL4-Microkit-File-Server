@@ -16,7 +16,7 @@ void init(void) {
     uint8_t *fs_buffer_base = (uint8_t *)fs_data_base;
 
     microkit_debug_puts(TEST_VERBOSITY, "multi benchmark client 2 started\n");
-    int success = benchmark_run_workload(
+    bool success = benchmark_run_workload(
         fs_buffer_base,
         FILE_SERVER_CHANNEL_ID,
         (const unsigned char *)"/bench_mc2",

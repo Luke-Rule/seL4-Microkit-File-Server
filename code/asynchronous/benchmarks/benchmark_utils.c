@@ -1,4 +1,5 @@
 #include <microkit.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -81,15 +82,15 @@ static void fill_pattern(uint8_t *buffer, size_t length, uint32_t seed)
 	}
 }
 
-static int buffers_equal(const uint8_t *lhs, const uint8_t *rhs, size_t length)
+static bool buffers_equal(const uint8_t *lhs, const uint8_t *rhs, const size_t length)
 {
 	for (size_t i = 0; i < length; i++) {
 		if (lhs[i] != rhs[i]) {
-			return 0;
+			return false;
 		}
 	}
 
-	return 1;
+	return true;
 }
 
 static void clear_client_state(client_t *client_data)
@@ -123,125 +124,125 @@ static void clear_client_state(client_t *client_data)
 	}
 }
 
-static int expect_queue_rc(fs_result_t rc, const char *operation)
+static bool expect_queue_rc(const fs_result_t rc, const char *operation)
 {
 	if (rc == FS_OK) {
-		return 1;
+		return true;
 	}
 
 	microkit_debug_puts(TEST_VERBOSITY, operation);
 	microkit_debug_puts(TEST_VERBOSITY, " queue failed with rc=");
 	microkit_debug_put32(TEST_VERBOSITY, (uint32_t)rc);
 	microkit_debug_puts(TEST_VERBOSITY, "\n");
-	return 0;
+	return false;
 }
 
-static int expect_completion_rc(uint32_t rc, const char *operation)
+static bool expect_completion_rc(const uint8_t rc, const char *operation)
 {
 	if (rc == FS_OK) {
-		return 1;
+		return true;
 	}
 
 	microkit_debug_puts(TEST_VERBOSITY, operation);
 	microkit_debug_puts(TEST_VERBOSITY, " completion failed with rc=");
 	microkit_debug_put32(TEST_VERBOSITY, rc);
 	microkit_debug_puts(TEST_VERBOSITY, "\n");
-	return 0;
+	return false;
 }
 
-static int get_completion_or_fail(client_t *client_data,
-								  completion_queue_entry_t *completion,
-								  const char *operation)
+static bool get_completion_or_fail(client_t *client_data,
+							   completion_queue_entry_t *completion,
+							   const char *operation)
 {
-	int rc = get_next_completion_entry(client_data, completion);
+	fs_result_t rc = get_next_completion_entry(client_data, completion);
 	if (rc == FS_OK) {
-		return 1;
+		return true;
 	}
 
 	microkit_debug_puts(TEST_VERBOSITY, operation);
 	microkit_debug_puts(TEST_VERBOSITY, " had no completion rc=");
 	microkit_debug_put32(TEST_VERBOSITY, (uint32_t)rc);
 	microkit_debug_puts(TEST_VERBOSITY, "\n");
-	return 0;
+	return false;
 }
 
-static int queue_create_file(client_t *client_data, const unsigned char *path)
+static bool queue_create_file(client_t *client_data, const unsigned char *path)
 {
 	return expect_queue_rc(
 		send_create_file_request(path, PERM_PUBLIC, READ_WRITE_OP, client_data),
 		"create benchmark file");
 }
 
-static int queue_write_seek_read_close(client_t *client_data, uint32_t file_id,
-									   const uint8_t *write_buffer)
+static bool queue_write_seek_read_close(client_t *client_data, const uint32_t file_id,
+									    const uint8_t *write_buffer)
 {
 	if (!expect_queue_rc(
 			send_write_file_request(file_id, BENCHMARK_FILE_SIZE, write_buffer,
 									client_data),
 			"write benchmark file")) {
-		return 0;
+		return false;
 	}
 
 	if (!expect_queue_rc(send_seek_file_request(file_id, 0, client_data),
 						 "seek benchmark file")) {
-		return 0;
+		return false;
 	}
 
 	if (!expect_queue_rc(
 			send_read_file_request(file_id, BENCHMARK_FILE_SIZE, client_data),
 			"read benchmark file")) {
-		return 0;
+		return false;
 	}
 
 	return expect_queue_rc(send_close_file_request(file_id, client_data),
 						   "close benchmark file");
 }
 
-static int drain_create_completion(client_t *client_data, const char *operation,
-								   uint32_t *file_id)
+static bool drain_create_completion(client_t *client_data, const char *operation,
+								    uint32_t *file_id)
 {
 	completion_queue_entry_t completion;
 
 	if (!get_completion_or_fail(client_data, &completion, operation)) {
-		return 0;
+		return false;
 	}
 
 	if (!expect_completion_rc(completion.return_code, operation)) {
-		return 0;
+		return false;
 	}
 
 	*file_id = completion.parameter1;
-	return 1;
+	return true;
 }
 
-static int drain_file_batch(client_t *client_data, const uint8_t *expected_data,
-							int has_next_create, uint32_t *next_file_id)
+static bool drain_file_batch(client_t *client_data, const uint8_t *expected_data,
+							 const bool has_next_create, uint32_t *next_file_id)
 {
 	completion_queue_entry_t completion;
 
 	if (!get_completion_or_fail(client_data, &completion, "write benchmark file") ||
 		!expect_completion_rc(completion.return_code, "write benchmark file")) {
-		return 0;
+		return false;
 	}
 
 	if (completion.parameter1 != BENCHMARK_FILE_SIZE) {
 		microkit_debug_puts(TEST_VERBOSITY, "write size mismatch\n");
-		return 0;
+		return false;
 	}
 
 	if (!get_completion_or_fail(client_data, &completion, "seek benchmark file") ||
 		!expect_completion_rc(completion.return_code, "seek benchmark file")) {
-		return 0;
+		return false;
 	}
 
 	if (!get_completion_or_fail(client_data, &completion, "read benchmark file") ||
 		!expect_completion_rc(completion.return_code, "read benchmark file")) {
-		return 0;
+		return false;
 	}
 
 	if (completion.parameter1 != BENCHMARK_FILE_SIZE) {
 		microkit_debug_puts(TEST_VERBOSITY, "read size mismatch\n");
-		return 0;
+		return false;
 	}
 
 	if (!buffers_equal(
@@ -249,18 +250,18 @@ static int drain_file_batch(client_t *client_data, const uint8_t *expected_data,
 			expected_data, BENCHMARK_FILE_SIZE)) {
 		microkit_debug_puts(TEST_VERBOSITY, "readback mismatch\n");
 		set_free_completion_buffer(client_data, completion.buffer_index);
-		return 0;
+		return false;
 	}
 
 	set_free_completion_buffer(client_data, completion.buffer_index);
 
 	if (!get_completion_or_fail(client_data, &completion, "close benchmark file") ||
 		!expect_completion_rc(completion.return_code, "close benchmark file")) {
-		return 0;
+		return false;
 	}
 
 	if (!has_next_create) {
-		return 1;
+		return true;
 	}
 
 	return drain_create_completion(client_data, "create benchmark file",
@@ -281,19 +282,19 @@ bool benchmark_run_workload(client_t *client_data, const unsigned char *root_pat
 
 	if (!expect_queue_rc(send_delete_entry_request(root_path, client_data),
 						 "delete benchmark root")) {
-		return 0;
+		return false;
 	}
 
 	if (!expect_queue_rc(
 			send_create_directory_request(root_path, PERM_PUBLIC, client_data),
 			"create benchmark root")) {
-		return 0;
+		return false;
 	}
 
 	notify_file_server_and_wait_for_all_operations(client_data, 2);
 
 	if (!get_completion_or_fail(client_data, &completion, "delete benchmark root")) {
-		return 0;
+		return false;
 	}
 
 	if (completion.return_code != FS_OK && completion.return_code != FS_ERR_NOT_FOUND &&
@@ -303,18 +304,18 @@ bool benchmark_run_workload(client_t *client_data, const unsigned char *root_pat
 
 	if (!get_completion_or_fail(client_data, &completion, "create benchmark root") ||
 		!expect_completion_rc(completion.return_code, "create benchmark root")) {
-		return 0;
+		return false;
 	}
 
 	make_file_path(current_path, sizeof(current_path), root_path, 0);
 	if (!queue_create_file(client_data, current_path)) {
-		return 0;
+		return false;
 	}
 
 	notify_file_server_and_wait_for_all_operations(client_data, 1);
 	if (!drain_create_completion(client_data, "create benchmark file",
 								 &current_file_id)) {
-		return 0;
+		return false;
 	}
 
 	for (uint32_t iteration = 0; iteration < BENCHMARK_FILE_COUNT; iteration++) {
@@ -323,13 +324,13 @@ bool benchmark_run_workload(client_t *client_data, const unsigned char *root_pat
 		fill_pattern(write_buffer, sizeof(write_buffer), seed_base + iteration * 17u);
 
 		if (!queue_write_seek_read_close(client_data, current_file_id, write_buffer)) {
-			return 0;
+			return false;
 		}
 
 		if (has_next_create) {
 			make_file_path(next_path, sizeof(next_path), root_path, iteration + 1);
 			if (!queue_create_file(client_data, next_path)) {
-				return 0;
+				return false;
 			}
 		}
 
@@ -339,7 +340,7 @@ bool benchmark_run_workload(client_t *client_data, const unsigned char *root_pat
 
 		if (!drain_file_batch(client_data, write_buffer, has_next_create,
 							  &next_file_id)) {
-			return 0;
+			return false;
 		}
 
 		if (has_next_create) {
@@ -347,7 +348,7 @@ bool benchmark_run_workload(client_t *client_data, const unsigned char *root_pat
 		}
 	}
 
-	return 1;
+	return true;
 }
 
 void benchmark_finish(client_t *client_data, bool success)

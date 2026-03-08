@@ -75,14 +75,14 @@ static void fill_pattern(uint8_t *buffer, size_t length, uint32_t seed) {
     }
 }
 
-static int buffers_equal(const uint8_t *lhs, const uint8_t *rhs, size_t length) {
+static bool buffers_equal(const uint8_t *lhs, const uint8_t *rhs, size_t length) {
     for (size_t i = 0; i < length; i++) {
         if (lhs[i] != rhs[i]) {
-            return 0;
+            return false;
         }
     }
 
-    return 1;
+    return true;
 }
 
 static bool expect_rc(int rc, const char *operation) {
