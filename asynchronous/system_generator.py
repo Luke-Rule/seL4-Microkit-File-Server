@@ -1,12 +1,15 @@
+from pathlib import Path
 import sys
 # TODO: cache or not?
 def generate_synchronous_system_file(number_of_clients, client_names):
     base_vaddr = 0x30000000
     
     fs_size = 0x10133000
-    client_size = 0x40000
+    client_size = 0x81000
         
-    with open("/home/luker/project/seL4-Microkit-File-Server/code_sync/fs_tests.system", "w") as f:
+    output_path = Path(__file__).with_name("fs_tests.system")
+
+    with output_path.open("w") as f:
         f.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
         f.write("<system>\n")
 
@@ -26,7 +29,7 @@ def generate_synchronous_system_file(number_of_clients, client_names):
         f.write(f"          setvar_vaddr=\"clients_memory_base\"/>\n")
         
         for i in range(1, number_of_clients):
-            f.write(f"\n        <map mr=\"client_{i}\" vaddr=\"0x{(base_vaddr + fs_size + i * client_size):X}\" perms=\"rw\" cached=\"false\"/>\n")
+            f.write(f"\n        <map mr=\"client_base{i}\" vaddr=\"0x{(base_vaddr + fs_size + i * client_size):X}\" perms=\"rw\" cached=\"false\"/>\n")
         f.write("\n")
         f.write(f"    </protection_domain>\n")
 
