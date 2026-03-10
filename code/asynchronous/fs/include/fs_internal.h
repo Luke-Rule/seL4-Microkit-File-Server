@@ -76,6 +76,15 @@ struct child_entry
     uint32_t i_node_index;
 } typedef child_entry_t;
 
+struct fs_state
+{
+    uint8_t *block_table;
+    file_descriptor_t *file_descriptor_table;
+    i_node_t *i_node_table;
+    block_t *blocks;
+    client_t *clients;
+} typedef fs_state_t;
+
 // ----------------- Result function return structs --------------------- //
 
 struct file_descriptor_result

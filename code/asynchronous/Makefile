@@ -35,7 +35,6 @@ MULTI_CLIENT2_OBJ := client_2.o
 # FILESERVER_OBJS := file_server.o
 FILESERVER_DYNAMIC_OBJS := file_server_test.o \
 	$(COMMON_OBJS) \
-	fs_buffer_manager.o \
 	fs_operations.o \
 	fs_directory_manager.o \
 	fs_i_node_manager.o \
@@ -47,7 +46,6 @@ FILESERVER_DYNAMIC_OBJS := file_server_test.o \
 
 FILESERVER_MULTI_DYNAMIC_OBJS := file_server_multi_test.o \
 	$(COMMON_OBJS) \
-	fs_buffer_manager.o \
 	fs_operations.o \
 	fs_directory_manager.o \
 	fs_i_node_manager.o \
@@ -59,7 +57,6 @@ FILESERVER_MULTI_DYNAMIC_OBJS := file_server_multi_test.o \
 
 FILESERVER_BENCHMARK_DYNAMIC_OBJS := file_server_benchmark.o \
 	$(COMMON_OBJS) \
-	fs_buffer_manager.o \
 	fs_operations.o \
 	fs_directory_manager.o \
 	fs_i_node_manager.o \
@@ -71,7 +68,6 @@ FILESERVER_BENCHMARK_DYNAMIC_OBJS := file_server_benchmark.o \
 
 FILESERVER_MULTI_BENCHMARK_DYNAMIC_OBJS := file_server_multi_benchmark.o \
 	$(COMMON_OBJS) \
-	fs_buffer_manager.o \
 	fs_operations.o \
 	fs_directory_manager.o \
 	fs_i_node_manager.o \
