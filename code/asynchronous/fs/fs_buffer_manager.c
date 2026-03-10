@@ -6,11 +6,10 @@
 #include "../debug_output.h"
 
 #include "include/fs_buffer_manager.h"
-#include "include/fs_shared.h"
 
 // ------------------------ Buffer requirement checks -------------------------- //
 
-bool operation_requires_completion_buffer(const file_operation_t operation) {
+bool operation_requires_completion_buffer(const operation_t operation) {
     if (operation == OP_READ || operation == OP_LIST || operation == OP_GET_PERMISSIONS ||
         operation == OP_GET_SIZE || operation == OP_EXISTS
     ) {
@@ -20,7 +19,7 @@ bool operation_requires_completion_buffer(const file_operation_t operation) {
     return false;
 }
 
-bool operation_requires_submission_buffer(const file_operation_t operation) {
+bool operation_requires_submission_buffer(const operation_t operation) {
     if (operation == OP_CREATE_FILE || operation == OP_CREATE_DIRECTORY || operation == OP_OPEN ||
         operation == OP_WRITE || operation == OP_DELETE || operation == OP_SET_PERMISSIONS ||
         operation == OP_GET_PERMISSIONS || operation == OP_GET_SIZE || operation == OP_EXISTS ||

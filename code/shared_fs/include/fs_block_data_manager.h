@@ -6,7 +6,6 @@
 #include <stddef.h>
 
 #include "fs_internal.h"
-#include "fs_shared.h"
 
 block_search_result_t get_inode_block_index_from_file_cursor_position(const size_t file_cursor_position);
 

@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 #include "fs_internal.h"
-#include "fs_shared.h"
 
 file_descriptor_result_t get_file_descriptor(fs_state_t *state, const uint8_t client_id, const size_t file_id);
 

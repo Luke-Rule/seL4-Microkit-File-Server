@@ -8,8 +8,8 @@
 #include "include/fs_shared.h"
 #include "include/fs_queue_manager_server.h"
 
-void increment_submission_queue_head(fs_state_t *state, const uint8_t client_id) {
-    size_t *submission_queue_head = &state->clients[client_id].submission_queue_head;
+void increment_submission_queue_head(client_t *client) {
+    size_t *submission_queue_head = &client->submission_queue_head;
     if (*submission_queue_head >= MAX_QUEUE_ENTRIES - 1) {
         *submission_queue_head = 0;
         return;
@@ -17,9 +17,8 @@ void increment_submission_queue_head(fs_state_t *state, const uint8_t client_id)
     *submission_queue_head = *submission_queue_head + 1;
 }
 
-void add_completion_entry(fs_state_t *state, const uint8_t client_id, const uint8_t return_code,
-                          const uint32_t parameter1, const uint32_t parameter2, const size_t buffer_index) {
-    client_t *client = &state->clients[client_id];
+void add_completion_entry(client_t *client, const uint8_t return_code, const uint32_t parameter1,
+                          const uint32_t parameter2, const size_t buffer_index) {
     if (client->completion_queue_tail + 1 == client->completion_queue_head ||
         (client->completion_queue_head == 1 && client->completion_queue_tail == MAX_QUEUE_ENTRIES - 1)) {
         microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: no free completion entries available\n");

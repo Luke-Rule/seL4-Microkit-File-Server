@@ -12,13 +12,12 @@
 
 #include "../debug_output.h"
 
-#include "include/fs_internal.h"
 #include "include/fs_shared.h"
-#include "include/fs_utils.h"
-#include "include/fs_block_manager.h"
-#include "include/fs_i_node_manager.h"
+#include "fs_internal.h"
+#include "fs_utils.h"
+#include "fs_block_manager.h"
+#include "fs_i_node_manager.h"
 #include "include/fs_operations.h"
-#include "include/fs_state.h"
 
 #ifndef BENCHMARKING
 #define BENCHMARKING 0
@@ -29,15 +28,16 @@
 uintptr_t fs_memory_base;
 uintptr_t clients_memory_base;
 
-uint8_t *block_table;
-file_descriptor_t *file_descriptor_table;
-i_node_t *i_node_table;
-block_t *blocks;
-uint8_t *clients;
+static fs_state_t fs_state;
 
 uint64_t freq;
 uint64_t start;
 bool benchmark_reported;
+
+static inline uint8_t *client_buffer_base(const uint8_t client_id)
+{
+    return (uint8_t *)(clients_memory_base + ((uintptr_t)client_id * CLIENT_BUFFER_SIZE));
+}
 
 // ------------------------------ Benchmarking functions ------------------------------- //
 
@@ -97,8 +97,8 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
         return msginfo;
     }
 
-    uint32_t operation = microkit_mr_get(0);
-    int return_code = FS_ERR_UNSPECIFIED_ERROR;
+    const operation_t operation = microkit_mr_get(0);
+    fs_result_t return_code = FS_ERR_UNSPECIFIED_ERROR;
 
     switch (operation) {
         case OP_CREATE_FILE: {
@@ -106,13 +106,13 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            uint8_t permissions = (uint8_t)microkit_mr_get(1);
-            uint8_t operations = (uint8_t)microkit_mr_get(2);
-            i_node_result_t i_node = create_entry((unsigned char *)(CLIENT_BUFFER_BASE(channel)), ROOT_DIRECTORY_I_NODE_INDEX, permissions, channel, CREATE_FILE);
+            const permissions_t permissions = (permissions_t)microkit_mr_get(1);
+            const file_open_operations_t operations = (file_open_operations_t)microkit_mr_get(2);
+            const i_node_result_t i_node = create_entry(&fs_state, client_buffer_base(channel), ROOT_DIRECTORY_I_NODE_INDEX, permissions, channel, CREATE_FILE);
             if (i_node.return_code != FS_OK) {
                 return_code = i_node.return_code;
             } else {
-                fs_result_t fd_result = open_file_operation(channel, operations, (char *)(CLIENT_BUFFER_BASE(channel)));
+                fs_result_t fd_result = open_file_operation(&fs_state, channel, operations, client_buffer_base(channel));
                 return_code = fd_result;
             }
             break;
@@ -123,8 +123,8 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            uint8_t permissions = (uint8_t)microkit_mr_get(1);
-            i_node_result_t i_node = create_entry((unsigned char *)(CLIENT_BUFFER_BASE(channel)), ROOT_DIRECTORY_I_NODE_INDEX, permissions, channel, CREATE_DIRECTORY);
+            const permissions_t permissions = (permissions_t)microkit_mr_get(1);
+            const i_node_result_t i_node = create_entry(&fs_state, client_buffer_base(channel), ROOT_DIRECTORY_I_NODE_INDEX, permissions, channel, CREATE_DIRECTORY);
             return_code = i_node.return_code;
             break;
         }
@@ -134,8 +134,8 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            uint8_t requested_operations = (uint8_t)microkit_mr_get(1);
-            return_code = open_file_operation(channel, requested_operations, (char *)(CLIENT_BUFFER_BASE(channel)));
+            const file_open_operations_t requested_operations = (file_open_operations_t)microkit_mr_get(1);
+            return_code = open_file_operation(&fs_state, channel, requested_operations, client_buffer_base(channel));
             break;
 
 
@@ -144,8 +144,8 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            uint32_t file_id = microkit_mr_get(1);
-            return_code = close_file_operation(channel, file_id);
+            const uint32_t file_id = microkit_mr_get(1);
+            return_code = close_file_operation(&fs_state, channel, file_id);
             break;
 
 
@@ -154,9 +154,9 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            uint32_t file_id = microkit_mr_get(1);
-            size_t length = (size_t)microkit_mr_get(2);
-            return_code = read_file_operation(channel, file_id, length);
+            const uint32_t file_id = microkit_mr_get(1);
+            const size_t length = (size_t)microkit_mr_get(2);
+            return_code = read_file_operation(&fs_state, channel, file_id, length, client_buffer_base(channel));
             break;
         }
 
@@ -165,9 +165,9 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            uint32_t file_id = microkit_mr_get(1);
-            size_t write_length = (size_t)microkit_mr_get(2);
-            return_code = write_file_operation(channel, file_id, write_length);
+            const uint32_t file_id = microkit_mr_get(1);
+            const size_t write_length = (size_t)microkit_mr_get(2);
+            return_code = write_file_operation(&fs_state, channel, file_id, write_length, client_buffer_base(channel));
             break;
         }
 
@@ -176,9 +176,9 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            uint32_t file_id = microkit_mr_get(1);
-            uint32_t position = microkit_mr_get(2);
-            return_code = seek_file_operation(channel, file_id, position);
+            const uint32_t file_id = microkit_mr_get(1);
+            const size_t position = (size_t)microkit_mr_get(2);
+            return_code = seek_file_operation(&fs_state, channel, file_id, position);
             break;
         }
 
@@ -187,7 +187,7 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            return_code = delete_entry_operation(channel, (unsigned char *)(CLIENT_BUFFER_BASE(channel)));
+            return_code = delete_entry_operation(&fs_state, channel, client_buffer_base(channel));
             break;
         }
             
@@ -196,8 +196,8 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            uint8_t new_permissions = (uint8_t)microkit_mr_get(1);
-            return_code = set_entry_permissions_operation(channel, new_permissions, (unsigned char *)(CLIENT_BUFFER_BASE(channel)));
+            const permissions_t new_permissions = (permissions_t)microkit_mr_get(1);
+            return_code = set_entry_permissions_operation(&fs_state, channel, new_permissions, client_buffer_base(channel));
             break;
         }
 
@@ -206,7 +206,7 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            return_code = get_entry_permissions_operation(channel, (unsigned char *)(CLIENT_BUFFER_BASE(channel)));
+            return_code = get_entry_permissions_operation(&fs_state, channel, client_buffer_base(channel));
             break;
         }
 
@@ -215,17 +215,17 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
                 return_code = FS_ERR_INCORRECT_OP_PARAM_COUNT;
                 break;
             }
-            return_code = get_entry_size_operation(channel, (unsigned char *)(CLIENT_BUFFER_BASE(channel)));
+            return_code = get_entry_size_operation(&fs_state, channel, client_buffer_base(channel));
             break;
         }
 
         case OP_EXISTS: {
-            return_code = entry_exists_operation(channel, (unsigned char *)(CLIENT_BUFFER_BASE(channel)));
+            return_code = entry_exists_operation(&fs_state, channel, client_buffer_base(channel));
             break;
         }
 
         case OP_LIST: {
-            return_code = list_directory_operation(channel, (unsigned char *)(CLIENT_BUFFER_BASE(channel)));
+            return_code = list_directory_operation(&fs_state, channel, client_buffer_base(channel));
             break;
         }
 
@@ -243,23 +243,22 @@ microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
 
 void init(void) {
     microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: started\n");
-    block_table = (uint8_t *)fs_memory_base;
-    i_node_table = (i_node_t *)(fs_memory_base + MAX_NUMBER_OF_BLOCKS);
-    file_descriptor_table = (file_descriptor_t *)(fs_memory_base + MAX_NUMBER_OF_BLOCKS + sizeof(i_node_t) * MAX_NUMBER_OF_INODES);
-    blocks = (block_t *)(fs_memory_base + MAX_NUMBER_OF_BLOCKS + sizeof(i_node_t) * MAX_NUMBER_OF_INODES + sizeof(file_descriptor_t) * NUMBER_OF_CLIENTS * MAX_OPEN_FILES_PER_CLIENT);
-    clients = (uint8_t *)clients_memory_base;
+    fs_state.block_table = (uint8_t *)fs_memory_base;
+    fs_state.i_node_table = (i_node_t *)(fs_memory_base + MAX_NUMBER_OF_BLOCKS);
+    fs_state.file_descriptor_table = (file_descriptor_t *)(fs_memory_base + MAX_NUMBER_OF_BLOCKS + sizeof(i_node_t) * MAX_NUMBER_OF_INODES);
+    fs_state.blocks = (block_t *)(fs_memory_base + MAX_NUMBER_OF_BLOCKS + sizeof(i_node_t) * MAX_NUMBER_OF_INODES + sizeof(file_descriptor_t) * NUMBER_OF_CLIENTS * MAX_OPEN_FILES_PER_CLIENT);
 
     for (size_t i = 0; i < NUMBER_OF_CLIENTS * MAX_OPEN_FILES_PER_CLIENT; i++) {
-        file_descriptor_table[i].i_node_index = -1;
+        fs_state.file_descriptor_table[i].i_node_index = -1;
     }
 
     microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: allocating root block\n");
-    block_id_result_t initial_i_node_block = allocate_block();
+    block_id_result_t initial_i_node_block = allocate_block(&fs_state);
 
-    zero_block(blocks[initial_i_node_block.index].data);
+    zero_block(fs_state.blocks[initial_i_node_block.index].data);
 
     microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: initialising root block\n");
-    i_node_t *root_i_node = &i_node_table[allocate_i_node().index];
+    i_node_t *root_i_node = &fs_state.i_node_table[allocate_i_node(&fs_state).index];
     root_i_node->mode = IN_USE_BIT_SET | IS_DIRECTORY_BIT_SET | (PERM_EXECUTE | PERM_READ) << PERMISSION_BITS_START; // not deleted, in use, dir, permissions
     root_i_node->owner_id = -1; // owned by file server
     root_i_node->block_indices[0] = initial_i_node_block.index;
@@ -276,7 +275,7 @@ void check_end_of_benchmark() {
         return;
     }
     for (int i = 0; i < NUMBER_OF_CLIENTS; i++) {
-        if (!(((uint8_t *)(CLIENT_BUFFER_BASE(i)))[CLIENT_BUFFER_SIZE - 1])) {
+        if (!client_buffer_base(i)[CLIENT_BUFFER_SIZE - 1]) {
             return;
         }
     }
@@ -304,8 +303,7 @@ void check_end_of_benchmark() {
     benchmark_reported = true;
     seL4_Yield();
 }
-void notified(microkit_channel ch) {
-    (void)ch;
+void notified(microkit_channel) {
     if (BENCHMARKING) {
         check_end_of_benchmark();
     }

@@ -4,8 +4,6 @@
 
 #include "../debug_output.h"
 
-#include "include/fs_api.h"
-#include "include/fs_buffer_manager.h"
 #include "include/fs_shared.h"
 
 // ------------------------------ Client ------------------------------- //
@@ -30,7 +28,7 @@ void increment_completion_queue_head(size_t *completion_queue_head) {
 }
 
 
-void add_submission_entry(const file_operation_t operation_code, const uint32_t parameter1, const uint32_t parameter2,
+void add_submission_entry(const operation_t operation_code, const uint32_t parameter1, const uint32_t parameter2,
                       client_t *client_data, const size_t buffer_index) {
     if (client_data->submission_queue_tail + 1 == client_data->submission_queue_head || (client_data->submission_queue_head == 1 && client_data->submission_queue_tail == MAX_QUEUE_ENTRIES - 1)) {
         microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: no free submission entries available\n");

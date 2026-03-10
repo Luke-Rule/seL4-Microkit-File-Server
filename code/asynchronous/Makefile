@@ -16,7 +16,17 @@ AS := $(TOOLCHAIN)-as
 MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
 # VPATH to find sources in subdirectories
-VPATH := fs:tests:tests/single_client:tests/multi_client:benchmarks
+VPATH := fs:tests:tests/single_client:tests/multi_client:benchmarks:../shared_fs
+
+MOVED_SHARED_DEPS := $(addprefix $(BUILD_DIR)/, \
+	fs_block_data_manager.d \
+	fs_block_manager.d \
+	fs_directory_manager.d \
+	fs_file_table_manager.d \
+	fs_i_node_manager.d \
+	fs_utils.d)
+
+$(shell rm -f $(MOVED_SHARED_DEPS))
 
 CLIENT_OBJS := client.o $(COMMON_OBJS)
 
@@ -35,6 +45,7 @@ MULTI_CLIENT2_OBJ := client_2.o
 # FILESERVER_OBJS := file_server.o
 FILESERVER_DYNAMIC_OBJS := file_server_test.o \
 	$(COMMON_OBJS) \
+	fs_buffer_manager.o \
 	fs_operations.o \
 	fs_directory_manager.o \
 	fs_i_node_manager.o \
@@ -46,6 +57,7 @@ FILESERVER_DYNAMIC_OBJS := file_server_test.o \
 
 FILESERVER_MULTI_DYNAMIC_OBJS := file_server_multi_test.o \
 	$(COMMON_OBJS) \
+	fs_buffer_manager.o \
 	fs_operations.o \
 	fs_directory_manager.o \
 	fs_i_node_manager.o \
@@ -57,6 +69,7 @@ FILESERVER_MULTI_DYNAMIC_OBJS := file_server_multi_test.o \
 
 FILESERVER_BENCHMARK_DYNAMIC_OBJS := file_server_benchmark.o \
 	$(COMMON_OBJS) \
+	fs_buffer_manager.o \
 	fs_operations.o \
 	fs_directory_manager.o \
 	fs_i_node_manager.o \
@@ -68,6 +81,7 @@ FILESERVER_BENCHMARK_DYNAMIC_OBJS := file_server_benchmark.o \
 
 FILESERVER_MULTI_BENCHMARK_DYNAMIC_OBJS := file_server_multi_benchmark.o \
 	$(COMMON_OBJS) \
+	fs_buffer_manager.o \
 	fs_operations.o \
 	fs_directory_manager.o \
 	fs_i_node_manager.o \
@@ -80,7 +94,7 @@ FILESERVER_MULTI_BENCHMARK_DYNAMIC_OBJS := file_server_multi_benchmark.o \
 BOARD_DIR := $(MICROKIT_SDK)/board/$(BOARD)/$(MICROKIT_CONFIG)
 
 # Compiler and linker flags
-CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g -Werror $(OPT) -I$(BOARD_DIR)/include -Ivmm/src/util -Iinclude -Itests/include -DBOARD_$(BOARD) -I. -Ifs/include
+CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g -Werror $(OPT) -I$(BOARD_DIR)/include -Ivmm/src/util -Iinclude -Itests/include -DBOARD_$(BOARD) -I. -Ifs/include -I../shared_fs/include
 LDFLAGS := -L$(BOARD_DIR)/lib
 LIBS := -lmicrokit -Tmicrokit.ld
 

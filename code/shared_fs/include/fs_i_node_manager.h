@@ -5,7 +5,6 @@
 #include <stdbool.h>
 
 #include "fs_internal.h"
-#include "fs_shared.h"
 
 i_node_result_t allocate_i_node(fs_state_t *state);
 void release_i_node(fs_state_t *state, const uint32_t i_node_index);

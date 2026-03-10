@@ -2,16 +2,13 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "../debug_output.h"
+#include "debug_output.h"
 
-#include "include/fs_buffer_manager.h"
-#include "include/fs_shared.h"
-#include "include/fs_internal.h"
-#include "include/fs_block_manager.h"
-#include "include/fs_i_node_manager.h"
-#include "include/fs_queue_manager_server.h"
-#include "include/fs_file_table_manager.h"
-#include "include/fs_utils.h"
+#include "fs_internal.h"
+#include "fs_block_manager.h"
+#include "fs_i_node_manager.h"
+#include "fs_file_table_manager.h"
+#include "fs_utils.h"
 
 child_slot_and_block_result_t get_free_child_slot(fs_state_t *state, const uint32_t parent_i_node_index) {
     i_node_t *parent_i_node = &state->i_node_table[parent_i_node_index];
@@ -62,60 +59,6 @@ child_slot_and_block_result_t get_free_child_slot(fs_state_t *state, const uint3
     }
     parent_i_node->blocks_used += 1;
     return (child_slot_and_block_result_t){new_block.index, 0, FS_OK};
-}
-
-
-i_node_result_t add_entry(fs_state_t *state, const uint32_t parent_i_node_index, const unsigned char *name,
-                          const permissions_t permissions, const uint8_t client_id, const size_t block_index,
-                          const size_t entry_index, const bool is_directory) {
-    microkit_debug_puts(OUTPUT_VERBOSITY, name);
-    microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
-    if (!valid_name(name)) {
-        add_completion_entry(state, client_id, FS_ERR_INVALID_PATH, 0, 0, SIZE_MAX);
-        return (i_node_result_t){-1, FS_ERR_INVALID_PATH};
-    }
-    i_node_result_t new_i_node_info = allocate_i_node(state);
-    if (new_i_node_info.return_code != FS_OK) {
-        add_completion_entry(state, client_id, new_i_node_info.return_code, 0, 0, SIZE_MAX);
-        return new_i_node_info;
-    }
-    i_node_t *parent_i_node = &state->i_node_table[parent_i_node_index];
-    child_entry_t *child_entries = (child_entry_t *)&state->blocks[block_index].data;
-    copy_string_from_buffer(name, child_entries[entry_index].name, MAX_NAME_LENGTH);
-    microkit_debug_puts(OUTPUT_VERBOSITY, "parent ");
-    microkit_debug_put32(OUTPUT_VERBOSITY, parent_i_node_index);
-    microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
-    microkit_debug_puts(OUTPUT_VERBOSITY, "block ");
-    microkit_debug_put32(OUTPUT_VERBOSITY, block_index);
-    microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
-    microkit_debug_puts(OUTPUT_VERBOSITY, "entry ");
-    microkit_debug_put32(OUTPUT_VERBOSITY, entry_index);
-    microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
-    child_entries[entry_index].i_node_index = new_i_node_info.index;
-
-    block_id_result_t new_block = allocate_block(state);
-    if (new_block.return_code != FS_OK) {
-        release_i_node(state, new_i_node_info.index);
-        add_completion_entry(state, client_id, new_block.return_code, 0, 0, SIZE_MAX);
-        return (i_node_result_t){-1, new_block.return_code};
-    }
-
-    if (is_directory) {
-        zero_block(state->blocks[new_block.index].data);
-    }
-
-    parent_i_node->entry_size += 1;
-
-    state->i_node_table[new_i_node_info.index].mode = IN_USE_BIT_SET | (is_directory << DIRECTORY_BIT_START) | (permissions << PERMISSION_BITS_START); // not deleted, in use, dir, permissions
-    state->i_node_table[new_i_node_info.index].owner_id = client_id;
-    state->i_node_table[new_i_node_info.index].block_indices[0] = new_block.index;
-    state->i_node_table[new_i_node_info.index].entry_size = 0;
-    state->i_node_table[new_i_node_info.index].blocks_used = 1;
-
-    if (is_directory) {
-        add_completion_entry(state, client_id, FS_OK, 0, 0, SIZE_MAX);
-    }
-    return new_i_node_info;
 }
 
 

@@ -10,8 +10,8 @@ struct buffer_copy_result {
     fs_result_t rc;
 } typedef buffer_copy_result_t;
 
-bool operation_requires_completion_buffer(const file_operation_t operation);
-bool operation_requires_submission_buffer(const file_operation_t operation);
+bool operation_requires_completion_buffer(const operation_t operation);
+bool operation_requires_submission_buffer(const operation_t operation);
 
 size_t get_free_buffer(bool *buffer_table);
 void set_free_buffer(const size_t buffer_index, bool *buffer_table);

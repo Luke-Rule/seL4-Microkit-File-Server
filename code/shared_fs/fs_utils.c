@@ -2,10 +2,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "../debug_output.h"
+#include "debug_output.h"
 
-#include "include/fs_internal.h"
-#include "include/fs_shared.h"
+#include "fs_internal.h"
 
 
 int32_t compare_names(const unsigned char *name1, const unsigned char *name2) {

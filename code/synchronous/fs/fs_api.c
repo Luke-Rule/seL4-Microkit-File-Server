@@ -33,7 +33,7 @@ void mark_client_as_finished_running(uint8_t *buffer) {
     microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: marked as finished running.\n");
 }
 
-fs_result_fileid_t send_create_file_request(const unsigned char *file_name, const permissions_t permissions, file_open_operations_t operations,  uint8_t *fs_buffer_base, int channel_id) {
+fs_result_fileid_t send_create_file_request(const unsigned char *file_name, const permissions_t permissions, const file_open_operations_t operations, unsigned char *fs_buffer_base, const uint8_t channel_id) {
     microkit_msginfo msg = microkit_msginfo_new(0, 3);
 
     copy_string_from_buffer(file_name, (unsigned char *)fs_buffer_base, CLIENT_BUFFER_SIZE);
@@ -51,7 +51,7 @@ fs_result_fileid_t send_create_file_request(const unsigned char *file_name, cons
 }
 
 
-fs_result_t send_create_directory_request(const unsigned char *dir_name, const permissions_t permissions, uint8_t *fs_buffer_base, int channel_id) {
+fs_result_t send_create_directory_request(const unsigned char *dir_name, const permissions_t permissions, unsigned char *fs_buffer_base, const uint8_t channel_id) {
     microkit_msginfo msg = microkit_msginfo_new(0, 2);
 
     copy_string_from_buffer(dir_name, (unsigned char *)fs_buffer_base, CLIENT_BUFFER_SIZE);
@@ -67,7 +67,7 @@ fs_result_t send_create_directory_request(const unsigned char *dir_name, const p
 }
 
 
-fs_result_fileid_t send_open_file_request(const file_open_operations_t ops, const unsigned char *file_name, uint8_t *fs_buffer_base, int channel_id) {
+fs_result_fileid_t send_open_file_request(const file_open_operations_t ops, const unsigned char *file_name, unsigned char *fs_buffer_base, const uint8_t channel_id) {
     microkit_msginfo msg = microkit_msginfo_new(0, 2);
 
     copy_string_from_buffer(file_name, (unsigned char *)fs_buffer_base, CLIENT_BUFFER_SIZE);
@@ -85,7 +85,7 @@ fs_result_fileid_t send_open_file_request(const file_open_operations_t ops, cons
 }
 
 
-fs_result_t send_close_file_request(const uint32_t file_id, int channel_id) {
+fs_result_t send_close_file_request(const uint32_t file_id, const uint8_t channel_id) {
     microkit_msginfo msg = microkit_msginfo_new(0, 2);
 
     microkit_mr_set(0, OP_CLOSE);
@@ -97,7 +97,7 @@ fs_result_t send_close_file_request(const uint32_t file_id, int channel_id) {
     return return_code;
 }
 
-fs_result_read_t send_read_file_request(const uint32_t file_id, const uint32_t length, uint8_t *fs_buffer_base, int channel_id) {
+fs_result_read_t send_read_file_request(const uint32_t file_id, const size_t length, uint8_t *fs_buffer_base, const uint8_t channel_id) {
     microkit_msginfo msg = microkit_msginfo_new(0, 3);
 
     microkit_mr_set(0, OP_READ);
@@ -115,7 +115,7 @@ fs_result_read_t send_read_file_request(const uint32_t file_id, const uint32_t l
 }
 
 
-fs_result_write_t send_write_file_request(const uint32_t file_id, const size_t length, const uint8_t *data, uint8_t *fs_buffer_base, const int channel_id) {
+fs_result_write_t send_write_file_request(const uint32_t file_id, const size_t length, const uint8_t *data, uint8_t *fs_buffer_base, const uint8_t channel_id) {
     microkit_msginfo msg = microkit_msginfo_new(0, 3);
 
     microkit_mr_set(0, OP_WRITE);
@@ -134,7 +134,7 @@ fs_result_write_t send_write_file_request(const uint32_t file_id, const size_t l
 }
 
 
-fs_result_t send_seek_file_request(const uint32_t file_id, const uint32_t position, int channel_id) {
+fs_result_t send_seek_file_request(const uint32_t file_id, const size_t position, const uint8_t channel_id) {
     microkit_msginfo msg = microkit_msginfo_new(0, 3);
 
     microkit_mr_set(0, OP_SEEK);
@@ -148,7 +148,7 @@ fs_result_t send_seek_file_request(const uint32_t file_id, const uint32_t positi
 }
 
 
-fs_result_t send_delete_entry_request(const unsigned char *path, uint8_t *fs_buffer_base, int channel_id) {
+fs_result_t send_delete_entry_request(const unsigned char *path, unsigned char *fs_buffer_base, const uint8_t channel_id) {
     copy_string_from_buffer(path, (unsigned char *)fs_buffer_base, CLIENT_BUFFER_SIZE);
     microkit_msginfo msg = microkit_msginfo_new(0, 1);
     microkit_mr_set(0, OP_DELETE);
@@ -159,7 +159,7 @@ fs_result_t send_delete_entry_request(const unsigned char *path, uint8_t *fs_buf
     return return_code;
 }
 
-fs_result_t send_set_entry_permissions_request(const unsigned char *path, const permissions_t permissions, uint8_t *fs_buffer_base, int channel_id) {
+fs_result_t send_set_entry_permissions_request(const unsigned char *path, const permissions_t permissions, unsigned char *fs_buffer_base, const uint8_t channel_id) {
     copy_string_from_buffer(path, (unsigned char *)fs_buffer_base, CLIENT_BUFFER_SIZE);
     microkit_msginfo msg = microkit_msginfo_new(0, 2);
 
@@ -172,7 +172,7 @@ fs_result_t send_set_entry_permissions_request(const unsigned char *path, const 
     return return_code;
 }
 
-fs_result_permissions_t send_get_entry_permissions_request(const unsigned char *path, uint8_t *fs_buffer_base, int channel_id) {
+fs_result_permissions_t send_get_entry_permissions_request(const unsigned char *path, unsigned char *fs_buffer_base, const uint8_t channel_id) {
     copy_string_from_buffer(path, (unsigned char *)fs_buffer_base, CLIENT_BUFFER_SIZE);
     microkit_msginfo msg = microkit_msginfo_new(0, 1);
 
@@ -186,7 +186,7 @@ fs_result_permissions_t send_get_entry_permissions_request(const unsigned char *
     return res;
 }
 
-fs_result_size_t send_get_entry_size_request(const unsigned char *path, uint8_t *fs_buffer_base, int channel_id) {
+fs_result_size_t send_get_entry_size_request(const unsigned char *path, unsigned char *fs_buffer_base, const uint8_t channel_id) {
     copy_string_from_buffer(path, (unsigned char *)fs_buffer_base, CLIENT_BUFFER_SIZE);
     microkit_msginfo msg = microkit_msginfo_new(0, 1);
 
@@ -196,12 +196,12 @@ fs_result_size_t send_get_entry_size_request(const unsigned char *path, uint8_t 
     fs_result_size_t res;
     res.rc = microkit_mr_get(0);
 
-    res.size = *((uint32_t *)fs_buffer_base);
+    res.size = *((size_t *)fs_buffer_base);
 
     return res;
 }
 
-fs_result_exists_t send_entry_exists_request(const unsigned char *path, uint8_t *fs_buffer_base, int channel_id) {
+fs_result_exists_t send_entry_exists_request(const unsigned char *path, unsigned char *fs_buffer_base, const uint8_t channel_id) {
     copy_string_from_buffer(path, (unsigned char *)fs_buffer_base, CLIENT_BUFFER_SIZE);
     microkit_msginfo msg = microkit_msginfo_new(0, 1);
     microkit_mr_set(0, OP_EXISTS);
@@ -215,7 +215,7 @@ fs_result_exists_t send_entry_exists_request(const unsigned char *path, uint8_t 
     return res;
 }
 
-fs_result_list_t send_list_entries_request(const unsigned char *path, uint8_t *fs_buffer_base, int channel_id) {
+fs_result_list_t send_list_entries_request(const unsigned char *path, unsigned char *fs_buffer_base, const uint8_t channel_id) {
     copy_string_from_buffer(path, (unsigned char *)fs_buffer_base, CLIENT_BUFFER_SIZE);
     microkit_msginfo msg = microkit_msginfo_new(0, 1);
 

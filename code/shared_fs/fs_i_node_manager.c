@@ -2,13 +2,11 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "../debug_output.h"
+#include "debug_output.h"
 
-#include "include/fs_buffer_manager.h"
-#include "include/fs_shared.h"
-#include "include/fs_internal.h"
-#include "include/fs_block_manager.h"
-#include "include/fs_utils.h"
+#include "fs_internal.h"
+#include "fs_block_manager.h"
+#include "fs_utils.h"
 
 
 i_node_result_t allocate_i_node(fs_state_t *state) {

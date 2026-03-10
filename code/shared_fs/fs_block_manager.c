@@ -2,10 +2,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "../debug_output.h"
-#include "include/fs_buffer_manager.h"
-#include "include/fs_shared.h"
-#include "include/fs_internal.h"
+#include "debug_output.h"
+#include "fs_internal.h"
 
 block_id_result_t allocate_block(fs_state_t *state) {
     for (size_t i = 0; i < MAX_NUMBER_OF_BLOCKS; i++) {

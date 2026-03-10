@@ -1,22 +1,23 @@
 #pragma once
 
-#include <microkit.h>
-#include <stdbool.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
 
-#include "fs_shared.h"
+#include "fs_shared_types.h"
 
 // System parameters
-#define MAX_NAME_LENGTH 63
 #ifndef NUMBER_OF_CLIENTS
 #define NUMBER_OF_CLIENTS 1
 #endif
+
 #define BLOCK_SIZE 0x1000u
+
 #define MAX_NUMBER_OF_BLOCKS 0x10000
 #define MAX_NUMBER_OF_INODES 0x10000
 #define DIRECT_BLOCKS_PER_INODE 11
 #define MAX_OPEN_FILES_PER_CLIENT 256
+#define MAX_OPERATIONS_PER_CLIENT_SERVICE (MAX_QUEUE_ENTRIES / 2)
 
 #define FULL_PATH_EQUAL 0
 #define FULL_PATH_NOT_EQUAL -1
@@ -36,10 +37,10 @@
 #define GET_TARGET_I_NODE false
 #define READ true
 #define WRITE false
-#define IS_FILE_BIT_SET 0b00u
-#define IS_DIRECTORY_BIT_SET 0b000010u
-#define IS_DELETED_BIT_SET 0b100000u
-#define IN_USE_BIT_SET 0b000001u
+#define IS_FILE_BIT_SET 0b00
+#define IS_DIRECTORY_BIT_SET 0b000010
+#define IS_DELETED_BIT_SET 0b100000
+#define IN_USE_BIT_SET 0b000001
 #define PERMISSION_BITS_START 2
 #define DIRECTORY_BIT_START 1
 
@@ -72,6 +73,14 @@ struct child_entry
     unsigned char name[MAX_NAME_LENGTH];
     uint32_t i_node_index;
 } typedef child_entry_t;
+
+struct fs_state
+{
+    uint8_t *block_table;
+    file_descriptor_t *file_descriptor_table;
+    i_node_t *i_node_table;
+    block_t *blocks;
+} typedef fs_state_t;
 
 // ----------------- Result function return structs --------------------- //
 

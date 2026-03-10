@@ -16,7 +16,17 @@ AS := $(TOOLCHAIN)-as
 MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
 # VPATH to find sources in subdirectories
-VPATH := fs:benchmarks
+VPATH := fs:benchmarks:../shared_fs
+
+MOVED_SHARED_DEPS := $(addprefix $(BUILD_DIR)/, \
+	fs_block_data_manager.d \
+	fs_block_manager.d \
+	fs_directory_manager.d \
+	fs_file_table_manager.d \
+	fs_i_node_manager.d \
+	fs_utils.d)
+
+$(shell rm -f $(MOVED_SHARED_DEPS))
 
 FILESERVER_OBJS := file_server_benchmark.o \
 	fs_operations.o \
@@ -45,7 +55,7 @@ MULTI_CLIENT2_OBJS := multi_client_2.o $(BENCHMARK_COMMON_OBJS)
 BOARD_DIR := $(MICROKIT_SDK)/board/$(BOARD)/$(MICROKIT_CONFIG)
 
 # Compiler and linker flags
-CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g -Werror $(OPT) -I$(BOARD_DIR)/include -Ivmm/src/util -DBOARD_$(BOARD) -I. -Ifs/include -Ibenchmarks
+CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g -Werror $(OPT) -I$(BOARD_DIR)/include -Ivmm/src/util -DBOARD_$(BOARD) -I. -Ifs/include -Ibenchmarks -I../shared_fs/include
 LDFLAGS := -L$(BOARD_DIR)/lib
 LIBS := -lmicrokit -Tmicrokit.ld
 

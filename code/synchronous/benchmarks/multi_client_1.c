@@ -8,8 +8,7 @@
 
 uintptr_t fs_data_base;
 
-void notified(microkit_channel ch) {
-    (void)ch;
+void notified(microkit_channel) {
 }
 
 void init(void) {

@@ -1,12 +1,11 @@
 
 #pragma once
 
-#include <stdbool.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 #include "fs_internal.h"
-#include "fs_shared.h"
 
 int32_t compare_names(const unsigned char *name1, const unsigned char *name2);
 bool valid_name(const unsigned char *name);
