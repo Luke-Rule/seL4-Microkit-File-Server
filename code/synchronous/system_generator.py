@@ -1,13 +1,14 @@
 from pathlib import Path
 import sys
 # TODO: cache or not?
-def generate_synchronous_system_file(number_of_clients, client_names):
+def generate_synchronous_system_file(number_of_clients, client_name, client_path):
     base_vaddr = 0x30000000
     
     fs_size = 0x10133000
     client_size = 0x40000
+    server_image = "file_server.elf" if number_of_clients == 1 else "file_server_multi.elf"
         
-    output_path = Path(__file__).with_name("fs_tests.system")
+    output_path = Path(client_path)
 
     with output_path.open("w") as f:
         f.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
@@ -19,7 +20,7 @@ def generate_synchronous_system_file(number_of_clients, client_names):
         
         f.write("    <!-- File Server Protection Domain -->\n")
         f.write(f"    <protection_domain name=\"file_server\" priority=\"1\" >\n")
-        f.write(f"        <program_image path=\"file_server.elf\"/>\n")
+        f.write(f"        <program_image path=\"{server_image}\"/>\n")
         f.write("\n")
 
         f.write(f"        <map mr=\"fs_memory\" vaddr=\"0x{base_vaddr:X}\" perms=\"rw\" cached=\"true\"\n")
@@ -42,7 +43,7 @@ def generate_synchronous_system_file(number_of_clients, client_names):
         for i in range(number_of_clients):
             # client pds
             f.write(f"    <protection_domain name=\"client_{i}\" priority=\"0\" >\n")
-            f.write(f"        <program_image path=\"{client_names[i]}.elf\"/>\n")
+            f.write(f"        <program_image path=\"{client_name}{i}.elf\"/>\n")
             f.write(f"        <map mr=\"client_{i}\" vaddr=\"0x{(base_vaddr):X}\" perms=\"rw\" cached=\"true\"\n")
             f.write(f"          setvar_vaddr=\"fs_data_base\"/>\n")
             f.write(f"    </protection_domain>\n")
@@ -59,13 +60,16 @@ def generate_synchronous_system_file(number_of_clients, client_names):
         f.write("</system>\n")
 
 
-num_clients = int(sys.argv[1])
+def main(argv):
+    if len(argv) != 4:
+        print("Usage: python generate_system.py [num_clients] [client_name_prefix] [output_path]")
+        return 1
 
-if num_clients > 16 or num_clients < 1:
-    print("Error: Maximum number of clients is 16.")
-    sys.exit(1)
+    num_clients = int(argv[1])
 
-if len(sys.argv) == num_clients + 2:
-    generate_synchronous_system_file(num_clients, sys.argv[2:])
-else:
-    generate_synchronous_system_file(num_clients, [f"client{i}" for i in range(num_clients)])
+    if num_clients > 16 or num_clients < 1:
+        print("Error: Maximum number of clients is 16.")
+        return 1
+
+    generate_synchronous_system_file(num_clients, argv[2], argv[3])
+    return 0

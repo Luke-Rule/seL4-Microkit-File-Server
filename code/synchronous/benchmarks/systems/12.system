@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<system>
+     <!-- File Server Memory Regions -->
+    <memory_region name="fs_memory" size="0x10133000" />
+
+    <!-- File Server Protection Domain -->
+    <protection_domain name="file_server" priority="1" >
+        <program_image path="file_server_multi.elf"/>
+
+        <map mr="fs_memory" vaddr="0x30000000" perms="rw" cached="true"
+          setvar_vaddr="fs_memory_base"/>
+        <map mr="client_0" vaddr="0x40133000" perms="rw" cached="true"
+          setvar_vaddr="clients_memory_base"/>
+
+        <map mr="client_1" vaddr="0x40173000" perms="rw" cached="true"/>
+
+        <map mr="client_2" vaddr="0x401B3000" perms="rw" cached="true"/>
+
+        <map mr="client_3" vaddr="0x401F3000" perms="rw" cached="true"/>
+
+        <map mr="client_4" vaddr="0x40233000" perms="rw" cached="true"/>
+
+        <map mr="client_5" vaddr="0x40273000" perms="rw" cached="true"/>
+
+        <map mr="client_6" vaddr="0x402B3000" perms="rw" cached="true"/>
+
+        <map mr="client_7" vaddr="0x402F3000" perms="rw" cached="true"/>
+
+        <map mr="client_8" vaddr="0x40333000" perms="rw" cached="true"/>
+
+        <map mr="client_9" vaddr="0x40373000" perms="rw" cached="true"/>
+
+        <map mr="client_10" vaddr="0x403B3000" perms="rw" cached="true"/>
+
+        <map mr="client_11" vaddr="0x403F3000" perms="rw" cached="true"/>
+
+    </protection_domain>
+
+     <!-- Client Memory Regions -->
+    <memory_region name="client_0" size="0x40000" />
+    <memory_region name="client_1" size="0x40000" />
+    <memory_region name="client_2" size="0x40000" />
+    <memory_region name="client_3" size="0x40000" />
+    <memory_region name="client_4" size="0x40000" />
+    <memory_region name="client_5" size="0x40000" />
+    <memory_region name="client_6" size="0x40000" />
+    <memory_region name="client_7" size="0x40000" />
+    <memory_region name="client_8" size="0x40000" />
+    <memory_region name="client_9" size="0x40000" />
+    <memory_region name="client_10" size="0x40000" />
+    <memory_region name="client_11" size="0x40000" />
+
+    <!-- Client Protection Domains -->
+    <protection_domain name="client_0" priority="0" >
+        <program_image path="multi_client_0.elf"/>
+        <map mr="client_0" vaddr="0x30000000" perms="rw" cached="true"
+          setvar_vaddr="fs_data_base"/>
+    </protection_domain>
+
+    <protection_domain name="client_1" priority="0" >
+        <program_image path="multi_client_1.elf"/>
+        <map mr="client_1" vaddr="0x30000000" perms="rw" cached="true"
+          setvar_vaddr="fs_data_base"/>
+    </protection_domain>
+
+    <protection_domain name="client_2" priority="0" >
+        <program_image path="multi_client_2.elf"/>
+        <map mr="client_2" vaddr="0x30000000" perms="rw" cached="true"
+          setvar_vaddr="fs_data_base"/>
+    </protection_domain>
+
+    <protection_domain name="client_3" priority="0" >
+        <program_image path="multi_client_3.elf"/>
+        <map mr="client_3" vaddr="0x30000000" perms="rw" cached="true"
+          setvar_vaddr="fs_data_base"/>
+    </protection_domain>
+
+    <protection_domain name="client_4" priority="0" >
+        <program_image path="multi_client_4.elf"/>
+        <map mr="client_4" vaddr="0x30000000" perms="rw" cached="true"
+          setvar_vaddr="fs_data_base"/>
+    </protection_domain>
+
+    <protection_domain name="client_5" priority="0" >
+        <program_image path="multi_client_5.elf"/>
+        <map mr="client_5" vaddr="0x30000000" perms="rw" cached="true"
+          setvar_vaddr="fs_data_base"/>
+    </protection_domain>
+
+    <protection_domain name="client_6" priority="0" >
+        <program_image path="multi_client_6.elf"/>
+        <map mr="client_6" vaddr="0x30000000" perms="rw" cached="true"
+          setvar_vaddr="fs_data_base"/>
+    </protection_domain>
+
+    <protection_domain name="client_7" priority="0" >
+        <program_image path="multi_client_7.elf"/>
+        <map mr="client_7" vaddr="0x30000000" perms="rw" cached="true"
+          setvar_vaddr="fs_data_base"/>
+    </protection_domain>
+
+    <protection_domain name="client_8" priority="0" >
+        <program_image path="multi_client_8.elf"/>
+        <map mr="client_8" vaddr="0x30000000" perms="rw" cached="true"
+          setvar_vaddr="fs_data_base"/>
+    </protection_domain>
+
+    <protection_domain name="client_9" priority="0" >
+        <program_image path="multi_client_9.elf"/>
+        <map mr="client_9" vaddr="0x30000000" perms="rw" cached="true"
+          setvar_vaddr="fs_data_base"/>
+    </protection_domain>
+
+    <protection_domain name="client_10" priority="0" >
+        <program_image path="multi_client_10.elf"/>
+        <map mr="client_10" vaddr="0x30000000" perms="rw" cached="true"
+          setvar_vaddr="fs_data_base"/>
+    </protection_domain>
+
+    <protection_domain name="client_11" priority="0" >
+        <program_image path="multi_client_11.elf"/>
+        <map mr="client_11" vaddr="0x30000000" perms="rw" cached="true"
+          setvar_vaddr="fs_data_base"/>
+    </protection_domain>
+
+
+    <!-- Communication Channels -->
+    <channel>
+        <end pd="file_server" id="0"/>
+        <end pd="client_0" id="0" pp="true"/>
+    </channel>
+    <channel>
+        <end pd="file_server" id="1"/>
+        <end pd="client_1" id="0" pp="true"/>
+    </channel>
+    <channel>
+        <end pd="file_server" id="2"/>
+        <end pd="client_2" id="0" pp="true"/>
+    </channel>
+    <channel>
+        <end pd="file_server" id="3"/>
+        <end pd="client_3" id="0" pp="true"/>
+    </channel>
+    <channel>
+        <end pd="file_server" id="4"/>
+        <end pd="client_4" id="0" pp="true"/>
+    </channel>
+    <channel>
+        <end pd="file_server" id="5"/>
+        <end pd="client_5" id="0" pp="true"/>
+    </channel>
+    <channel>
+        <end pd="file_server" id="6"/>
+        <end pd="client_6" id="0" pp="true"/>
+    </channel>
+    <channel>
+        <end pd="file_server" id="7"/>
+        <end pd="client_7" id="0" pp="true"/>
+    </channel>
+    <channel>
+        <end pd="file_server" id="8"/>
+        <end pd="client_8" id="0" pp="true"/>
+    </channel>
+    <channel>
+        <end pd="file_server" id="9"/>
+        <end pd="client_9" id="0" pp="true"/>
+    </channel>
+    <channel>
+        <end pd="file_server" id="10"/>
+        <end pd="client_10" id="0" pp="true"/>
+    </channel>
+    <channel>
+        <end pd="file_server" id="11"/>
+        <end pd="client_11" id="0" pp="true"/>
+    </channel>
+</system>

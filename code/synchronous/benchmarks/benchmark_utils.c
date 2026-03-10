@@ -152,6 +152,11 @@ bool benchmark_run_workload(uint8_t *fs_buffer_base, int channel_id,
         if (!expect_rc(rc, "close benchmark file")) {
             return false;
         }
+
+        rc = send_delete_entry_request(path, fs_buffer_base, channel_id);
+        if (!expect_rc(rc, "delete benchmark file")) {
+            return false;
+        }
     }
 
     return true;

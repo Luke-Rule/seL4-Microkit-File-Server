@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 #include "fs_shared.h"
-#include "fs_shared_types.h"
+#include "../../../shared_fs/include/fs_shared_types.h"
 
 #define FILE_SERVER_CHANNEL_ID 0
 

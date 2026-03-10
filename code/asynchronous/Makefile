@@ -1,6 +1,16 @@
 # Environment
 MICROKIT_SDK ?= ../../microkit-sdk-2.0.1
 TOOLCHAIN := aarch64-linux-gnu
+NUM_CLIENTS ?= 3
+
+VALID_MULTI_CLIENT_COUNTS := 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
+ALL_MULTI_CLIENT_INDEXES := 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+
+ifeq ($(filter $(NUM_CLIENTS),$(VALID_MULTI_CLIENT_COUNTS)),)
+$(error NUM_CLIENTS must be one of: $(VALID_MULTI_CLIENT_COUNTS))
+endif
+
+ACTIVE_MULTI_CLIENT_INDEXES := $(wordlist 1,$(NUM_CLIENTS),$(ALL_MULTI_CLIENT_INDEXES))
 
 BOARD := qemu_virt_aarch64
 MICROKIT_CONFIG := debug
@@ -16,7 +26,7 @@ AS := $(TOOLCHAIN)-as
 MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
 # VPATH to find sources in subdirectories
-VPATH := fs:tests:tests/single_client:tests/multi_client:benchmarks:../shared_fs
+VPATH := fs:tests:tests/single_client:tests/multi_client:benchmarks:benchmarks/clients:../shared_fs
 
 MOVED_SHARED_DEPS := $(addprefix $(BUILD_DIR)/, \
 	fs_block_data_manager.d \
@@ -26,19 +36,19 @@ MOVED_SHARED_DEPS := $(addprefix $(BUILD_DIR)/, \
 	fs_i_node_manager.d \
 	fs_utils.d)
 
-$(shell rm -f $(MOVED_SHARED_DEPS))
+MOVED_BENCHMARK_CLIENT_DEPS := $(BUILD_DIR)/single_client.d $(foreach idx,$(ALL_MULTI_CLIENT_INDEXES),$(BUILD_DIR)/multi_client_$(idx).d)
+
+$(shell rm -f $(MOVED_SHARED_DEPS) $(MOVED_BENCHMARK_CLIENT_DEPS))
 
 CLIENT_OBJS := client.o $(COMMON_OBJS)
 
-SINGLE_TEST_OBJS := fs_tests.o test_utils.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o $(COMMON_OBJS)
+SINGLE_TEST_OBJS := fs_tests.o test_utils.o test_common.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o $(COMMON_OBJS)
 
 BENCHMARK_COMMON_OBJS := benchmark_utils.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o $(COMMON_OBJS)
 SINGLE_BENCHMARK_OBJS := single_client.o $(BENCHMARK_COMMON_OBJS)
-MULTI_BENCHMARK0_OBJS := multi_client_0.o $(BENCHMARK_COMMON_OBJS)
-MULTI_BENCHMARK1_OBJS := multi_client_1.o $(BENCHMARK_COMMON_OBJS)
-MULTI_BENCHMARK2_OBJS := multi_client_2.o $(BENCHMARK_COMMON_OBJS)
+MULTI_BENCHMARK_ELFS := $(foreach idx,$(ACTIVE_MULTI_CLIENT_INDEXES),$(BUILD_DIR)/multi_client_$(idx).elf)
 
-MULTI_CLIENT_COMMON_OBJS := test_utils.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o $(COMMON_OBJS)
+MULTI_CLIENT_COMMON_OBJS := test_utils.o test_common.o fs_api.o fs_buffer_manager.o fs_queue_manager_client.o $(COMMON_OBJS)
 MULTI_CLIENT0_OBJ := client_0.o
 MULTI_CLIENT1_OBJ := client_1.o
 MULTI_CLIENT2_OBJ := client_2.o
@@ -79,7 +89,8 @@ FILESERVER_BENCHMARK_DYNAMIC_OBJS := file_server_benchmark.o \
 	fs_queue_manager_server.o \
 	fs_utils.o
 
-FILESERVER_MULTI_BENCHMARK_DYNAMIC_OBJS := file_server_multi_benchmark.o \
+FILESERVER_MULTI_BENCHMARK_OBJ := file_server_multi_benchmark_$(NUM_CLIENTS).o
+FILESERVER_MULTI_BENCHMARK_DYNAMIC_OBJS := $(FILESERVER_MULTI_BENCHMARK_OBJ) \
 	$(COMMON_OBJS) \
 	fs_buffer_manager.o \
 	fs_operations.o \
@@ -106,9 +117,6 @@ SINGLE_BENCHMARK_ELF := $(BUILD_DIR)/single_client.elf
 MULTI_CLIENT0_ELF := $(BUILD_DIR)/client_0.elf
 MULTI_CLIENT1_ELF := $(BUILD_DIR)/client_1.elf
 MULTI_CLIENT2_ELF := $(BUILD_DIR)/client_2.elf
-MULTI_BENCHMARK0_ELF := $(BUILD_DIR)/multi_client_0.elf
-MULTI_BENCHMARK1_ELF := $(BUILD_DIR)/multi_client_1.elf
-MULTI_BENCHMARK2_ELF := $(BUILD_DIR)/multi_client_2.elf
 # FILESERVER_ELF := $(BUILD_DIR)/file_server.elf
 FILESERVER_DYNAMIC_ELF := $(BUILD_DIR)/file_server_test.elf
 FILESERVER_MULTI_DYNAMIC_ELF := $(BUILD_DIR)/file_server_multi_test.elf
@@ -118,13 +126,13 @@ FILESERVER_MULTI_BENCHMARK_DYNAMIC_ELF := $(BUILD_DIR)/file_server_multi.elf
 SINGLE_TEST_IMAGE_FILE = $(BUILD_DIR)/single_test_loader.img
 MULTI_TEST_IMAGE_FILE = $(BUILD_DIR)/multi_test_loader.img
 SINGLE_BENCHMARK_IMAGE_FILE = $(BUILD_DIR)/benchmark_1_loader.img
-MULTI_BENCHMARK_IMAGE_FILE = $(BUILD_DIR)/benchmark_3_loader.img
+MULTI_BENCHMARK_IMAGE_FILE = $(BUILD_DIR)/benchmark_$(NUM_CLIENTS)_loader.img
 REPORT_FILE = $(BUILD_DIR)/report.txt
 SYSTEM_FILE := file.system
 SINGLE_TEST_SYSTEM_FILE := tests/single_client/single_client_test.system
 MULTI_TEST_SYSTEM_FILE := tests/multi_client/multi_client_test.system
-SINGLE_BENCHMARK_SYSTEM_FILE := benchmarks/1.system
-MULTI_BENCHMARK_SYSTEM_FILE := benchmarks/3.system
+SINGLE_BENCHMARK_SYSTEM_FILE := benchmarks/systems/1.system
+MULTI_BENCHMARK_SYSTEM_FILE := benchmarks/systems/$(NUM_CLIENTS).system
 
 # Targets
 # all: directories $(IMAGE_FILE) $(TEST_IMAGE_FILE)
@@ -137,6 +145,12 @@ directories: $(BUILD_DIR)
 	
 # Compile .c -> .o and generate dependency file
 $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR)
+	$(CC) -c $(CFLAGS) -MMD -MP $< -o $@
+
+$(BUILD_DIR)/single_client.o: benchmarks/clients/single_client.c Makefile | $(BUILD_DIR)
+	$(CC) -c $(CFLAGS) -MMD -MP $< -o $@
+
+$(BUILD_DIR)/multi_client_%.o: benchmarks/clients/multi_client_%.c Makefile | $(BUILD_DIR)
 	$(CC) -c $(CFLAGS) -MMD -MP $< -o $@
 
 # Include dependency files if they exist
@@ -161,13 +175,7 @@ $(MULTI_CLIENT1_ELF): $(addprefix $(BUILD_DIR)/, $(MULTI_CLIENT1_OBJ) $(MULTI_CL
 $(MULTI_CLIENT2_ELF): $(addprefix $(BUILD_DIR)/, $(MULTI_CLIENT2_OBJ) $(MULTI_CLIENT_COMMON_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
-$(MULTI_BENCHMARK0_ELF): $(addprefix $(BUILD_DIR)/, $(MULTI_BENCHMARK0_OBJS))
-	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
-
-$(MULTI_BENCHMARK1_ELF): $(addprefix $(BUILD_DIR)/, $(MULTI_BENCHMARK1_OBJS))
-	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
-
-$(MULTI_BENCHMARK2_ELF): $(addprefix $(BUILD_DIR)/, $(MULTI_BENCHMARK2_OBJS))
+$(BUILD_DIR)/multi_client_%.elf: $(addprefix $(BUILD_DIR)/, multi_client_%.o $(BENCHMARK_COMMON_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
 # $(FILESERVER_ELF): $(addprefix $(BUILD_DIR)/, $(FILESERVER_OBJS))
@@ -207,7 +215,7 @@ $(SINGLE_BENCHMARK_IMAGE_FILE): $(SINGLE_BENCHMARK_ELF) $(FILESERVER_BENCHMARK_D
 		--board $(BOARD) --config $(MICROKIT_CONFIG) \
 		-o $(SINGLE_BENCHMARK_IMAGE_FILE) -r $(REPORT_FILE)
 
-$(MULTI_BENCHMARK_IMAGE_FILE): $(MULTI_BENCHMARK0_ELF) $(MULTI_BENCHMARK1_ELF) $(MULTI_BENCHMARK2_ELF) $(FILESERVER_MULTI_BENCHMARK_DYNAMIC_ELF) $(MULTI_BENCHMARK_SYSTEM_FILE)
+$(MULTI_BENCHMARK_IMAGE_FILE): $(MULTI_BENCHMARK_ELFS) $(FILESERVER_MULTI_BENCHMARK_DYNAMIC_ELF) $(MULTI_BENCHMARK_SYSTEM_FILE)
 	$(MICROKIT_TOOL) $(MULTI_BENCHMARK_SYSTEM_FILE) --search-path $(BUILD_DIR) \
 		--board $(BOARD) --config $(MICROKIT_CONFIG) \
 		-o $(MULTI_BENCHMARK_IMAGE_FILE) -r $(REPORT_FILE)
@@ -221,8 +229,8 @@ $(BUILD_DIR)/file_server_benchmark.o: fs/file_server.c Makefile | $(BUILD_DIR)
 $(BUILD_DIR)/file_server_multi_test.o: fs/file_server.c Makefile | $(BUILD_DIR)
 	$(CC) -c $(CFLAGS) -DNUMBER_OF_CLIENTS=3 -DBENCHMARKING=0 -MMD -MP $< -o $@
 
-$(BUILD_DIR)/file_server_multi_benchmark.o: fs/file_server.c Makefile | $(BUILD_DIR)
-	$(CC) -c $(CFLAGS) -DNUMBER_OF_CLIENTS=3 -DBENCHMARKING=1 -MMD -MP $< -o $@
+$(BUILD_DIR)/$(FILESERVER_MULTI_BENCHMARK_OBJ): fs/file_server.c Makefile | $(BUILD_DIR)
+	$(CC) -c $(CFLAGS) -DNUMBER_OF_CLIENTS=$(NUM_CLIENTS) -DBENCHMARKING=1 -MMD -MP $< -o $@
 
 # Run in QEMU
 # run: $(IMAGE_FILE)
@@ -277,14 +285,19 @@ multi_benchmark: $(MULTI_BENCHMARK_IMAGE_FILE)
 		-netdev user,id=mynet0 \
 		-device virtio-net-device,netdev=mynet0,mac=52:55:00:d1:55:01
 
+benchmark_multi: $(MULTI_BENCHMARK_IMAGE_FILE)
+
 benchmark_1: $(SINGLE_BENCHMARK_IMAGE_FILE)
 
 benchmark_3: $(MULTI_BENCHMARK_IMAGE_FILE)
 
+generate_benchmark_systems:
+	/usr/bin/python3 benchmarks/generate_benchmark_multi_systems.py
+
 # Back-compat alias
 test: single_test
 
-.PHONY: all single_test multi_test single_benchmark multi_benchmark benchmark_1 benchmark_3 test clean
+.PHONY: all single_test multi_test single_benchmark multi_benchmark benchmark_multi benchmark_1 benchmark_3 generate_benchmark_systems test clean
 
 $(BUILD_DIR)/client_0.o: tests/multi_client/client_0.c Makefile | $(BUILD_DIR)
 	$(CC) -c $(CFLAGS) -MMD -MP $< -o $@

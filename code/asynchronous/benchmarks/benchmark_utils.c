@@ -75,6 +75,20 @@ static void make_file_path(unsigned char *dest, size_t capacity,
 	append_c_string(dest, index, capacity, ".bin");
 }
 
+static void copy_path(unsigned char *dest, size_t capacity,
+					  const unsigned char *src)
+{
+	size_t index = 0;
+
+	while (*src != '\0' && index + 1 < capacity) {
+		dest[index++] = *src++;
+	}
+
+	if (index < capacity) {
+		dest[index] = '\0';
+	}
+}
+
 static void fill_pattern(uint8_t *buffer, size_t length, uint32_t seed)
 {
 	for (size_t i = 0; i < length; i++) {
@@ -173,8 +187,10 @@ static bool queue_create_file(client_t *client_data, const unsigned char *path)
 		"create benchmark file");
 }
 
-static bool queue_write_seek_read_close(client_t *client_data, const uint32_t file_id,
-									    const uint8_t *write_buffer)
+static bool queue_write_seek_read_close_delete(client_t *client_data,
+									   const uint32_t file_id,
+									   const uint8_t *write_buffer,
+									   const unsigned char *path)
 {
 	if (!expect_queue_rc(
 			send_write_file_request(file_id, BENCHMARK_FILE_SIZE, write_buffer,
@@ -194,8 +210,13 @@ static bool queue_write_seek_read_close(client_t *client_data, const uint32_t fi
 		return false;
 	}
 
-	return expect_queue_rc(send_close_file_request(file_id, client_data),
-						   "close benchmark file");
+	if (!expect_queue_rc(send_close_file_request(file_id, client_data),
+						 "close benchmark file")) {
+		return false;
+	}
+
+	return expect_queue_rc(send_delete_entry_request(path, client_data),
+						   "delete benchmark file");
 }
 
 static bool drain_create_completion(client_t *client_data, const char *operation,
@@ -257,6 +278,11 @@ static bool drain_file_batch(client_t *client_data, const uint8_t *expected_data
 
 	if (!get_completion_or_fail(client_data, &completion, "close benchmark file") ||
 		!expect_completion_rc(completion.return_code, "close benchmark file")) {
+		return false;
+	}
+
+	if (!get_completion_or_fail(client_data, &completion, "delete benchmark file") ||
+		!expect_completion_rc(completion.return_code, "delete benchmark file")) {
 		return false;
 	}
 
@@ -323,7 +349,8 @@ bool benchmark_run_workload(client_t *client_data, const unsigned char *root_pat
 
 		fill_pattern(write_buffer, sizeof(write_buffer), seed_base + iteration * 17u);
 
-		if (!queue_write_seek_read_close(client_data, current_file_id, write_buffer)) {
+		if (!queue_write_seek_read_close_delete(client_data, current_file_id,
+										   write_buffer, current_path)) {
 			return false;
 		}
 
@@ -336,7 +363,7 @@ bool benchmark_run_workload(client_t *client_data, const unsigned char *root_pat
 
 		notify_file_server_and_wait_for_all_operations(
 			client_data,
-			(uint8_t)(has_next_create ? 5 : 4));
+			(uint8_t)(has_next_create ? 6 : 5));
 
 		if (!drain_file_batch(client_data, write_buffer, has_next_create,
 							  &next_file_id)) {
@@ -345,6 +372,7 @@ bool benchmark_run_workload(client_t *client_data, const unsigned char *root_pat
 
 		if (has_next_create) {
 			current_file_id = next_file_id;
+			copy_path(current_path, sizeof(current_path), next_path);
 		}
 	}
 
