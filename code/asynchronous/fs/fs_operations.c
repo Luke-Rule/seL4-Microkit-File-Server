@@ -239,7 +239,7 @@ void list_directory_operation(const uint8_t client_id, unsigned char *path) {
         add_completion_entry(client_id, FS_ERR_PERMISSION, 0, 0, SIZE_MAX);
         return;
     }
-    const size_t buffer_index = get_free_completion_buffer(client_id);
+    const size_t buffer_index = get_free_buffer(clients[client_id].completion_buffer_table);
     if (buffer_index == SIZE_MAX) {
         add_completion_entry(client_id, FS_ERROR_NO_FREE_COMPLETION_BUFFERS, 0, 0, SIZE_MAX);
         return;
@@ -344,7 +344,7 @@ void read_file_operation(const uint8_t client_id, const uint32_t file_descriptor
         bytes_to_read = i_node->entry_size - fd.descriptor->cursor_position;
         return_code = FS_ERR_OUT_OF_BOUNDS;
     }
-    const size_t buffer_index = get_free_completion_buffer(client_id);
+    const size_t buffer_index = get_free_buffer((bool *)&clients[client_id].completion_buffer_table);
     if (buffer_index == SIZE_MAX) {
         add_completion_entry(client_id, FS_ERROR_NO_FREE_COMPLETION_BUFFERS, 0, 0, SIZE_MAX);
         return;

@@ -252,7 +252,7 @@ void service_client(const uint8_t client_id) {
 
         file_operation_t operation = (file_operation_t)submission_entry->operation_code;
 
-        if (operation_requires_completion_buffer(operation) && !is_free_completion_buffer(client_id)) {
+        if (operation_requires_completion_buffer(operation) && !is_free_buffer((bool *)&clients[client_id].completion_buffer_table)) {
             microkit_debug_puts(OUTPUT_VERBOSITY, "FILE SERVER: no free completion buffer for operation\n");
             break;
         }
@@ -260,7 +260,7 @@ void service_client(const uint8_t client_id) {
         handle_operation(operation, submission_entry, client_id);
 
         if (operation_requires_submission_buffer(operation)) {
-            set_free_submission_buffer(client_id, submission_entry->buffer_index);
+            set_free_buffer(submission_entry->buffer_index, (bool *)&clients[client_id].submission_buffer_table);
         }
 
         increment_submission_queue_head(client_id);

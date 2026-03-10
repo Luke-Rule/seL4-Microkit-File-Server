@@ -8,6 +8,30 @@
 #include "include/fs_buffer_manager.h"
 #include "include/fs_shared.h"
 
+// ------------------------ Buffer requirement checks -------------------------- //
+
+bool operation_requires_completion_buffer(const file_operation_t operation) {
+    if (operation == OP_READ || operation == OP_LIST || operation == OP_GET_PERMISSIONS ||
+        operation == OP_GET_SIZE || operation == OP_EXISTS
+    ) {
+        return true;
+    }
+
+    return false;
+}
+
+bool operation_requires_submission_buffer(const file_operation_t operation) {
+    if (operation == OP_CREATE_FILE || operation == OP_CREATE_DIRECTORY || operation == OP_OPEN ||
+        operation == OP_WRITE || operation == OP_DELETE || operation == OP_SET_PERMISSIONS ||
+        operation == OP_GET_PERMISSIONS || operation == OP_GET_SIZE || operation == OP_EXISTS ||
+        operation == OP_LIST
+    ) {
+        return true;
+    }
+
+    return false;
+}
+
 // ------------------------ Buffer management -------------------------- //
 
 size_t get_free_buffer(bool *buffer_table) {
@@ -25,6 +49,15 @@ void set_free_buffer(const size_t buffer_index, bool *buffer_table) {
         return;
     }
     buffer_table[buffer_index] = false;
+}
+
+bool is_free_buffer(bool *buffer_table) {
+    for (size_t i = 0; i < NUMBER_OF_BUFFERS_PER_CLIENT; i++) {
+        if (buffer_table[i] == false) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // ------------------------------ Buffer data management ------------------------------- //

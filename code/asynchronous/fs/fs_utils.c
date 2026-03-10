@@ -8,29 +8,6 @@
 #include "include/fs_shared.h"
 
 
-bool operation_requires_completion_buffer(const file_operation_t operation) {
-    if (operation == OP_READ || operation == OP_LIST || operation == OP_GET_PERMISSIONS ||
-        operation == OP_GET_SIZE || operation == OP_EXISTS
-    ) {
-        return true;
-    }
-
-    return false;
-}
-
-bool operation_requires_submission_buffer(const file_operation_t operation) {
-    if (operation == OP_CREATE_FILE || operation == OP_CREATE_DIRECTORY || operation == OP_OPEN ||
-        operation == OP_WRITE || operation == OP_DELETE || operation == OP_SET_PERMISSIONS ||
-        operation == OP_GET_PERMISSIONS || operation == OP_GET_SIZE || operation == OP_EXISTS ||
-        operation == OP_LIST
-    ) {
-        return true;
-    }
-
-    return false;
-}
-
-
 int32_t compare_names(const unsigned char *name1, const unsigned char *name2) {
     for (size_t i = 0; i < MAX_NAME_LENGTH; i++) {
         if (name1[i] == '/') {
