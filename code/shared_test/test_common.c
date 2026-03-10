@@ -5,7 +5,7 @@
 
 #include "debug_output.h"
 
-#include "include/test_common.h"
+#include "test_common.h"
 
 void output_suite_pass(unsigned char *msg) {
 	seL4_Yield();

@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "../debug_output.h"
+#include "../../debug_output.h"
 
 #include "benchmark_utils.h"
 #include "../fs/include/fs_api.h"

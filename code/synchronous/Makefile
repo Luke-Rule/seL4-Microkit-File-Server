@@ -27,7 +27,7 @@ AS := $(TOOLCHAIN)-as
 MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
 # VPATH to find sources in subdirectories
-VPATH := fs:tests:tests/single_client:tests/multi_client:benchmarks:benchmarks/clients:../shared_fs
+VPATH := fs:tests:tests/single_client:tests/multi_client:benchmarks:benchmarks/clients:../shared_fs:../shared_test
 
 MOVED_SHARED_DEPS := $(addprefix $(BUILD_DIR)/, \
 	fs_block_data_manager.d \
@@ -38,7 +38,7 @@ MOVED_SHARED_DEPS := $(addprefix $(BUILD_DIR)/, \
 	fs_utils.d)
 
 MOVED_BENCHMARK_CLIENT_DEPS := $(BUILD_DIR)/single_client.d $(foreach idx,$(ALL_MULTI_CLIENT_INDEXES),$(BUILD_DIR)/multi_client_$(idx).d)
-MOVED_TEST_DEPS := $(BUILD_DIR)/fs_tests.d $(BUILD_DIR)/test_utils.d $(BUILD_DIR)/client_0.d $(BUILD_DIR)/client_1.d $(BUILD_DIR)/client_2.d
+MOVED_TEST_DEPS := $(BUILD_DIR)/fs_tests.d $(BUILD_DIR)/test_utils.d $(BUILD_DIR)/test_common.d $(BUILD_DIR)/client_0.d $(BUILD_DIR)/client_1.d $(BUILD_DIR)/client_2.d
 
 $(shell rm -f $(MOVED_SHARED_DEPS) $(MOVED_BENCHMARK_CLIENT_DEPS) $(MOVED_TEST_DEPS))
 
@@ -93,7 +93,7 @@ MULTI_BENCHMARK_ELFS := $(foreach idx,$(ACTIVE_MULTI_CLIENT_INDEXES),$(BUILD_DIR
 BOARD_DIR := $(MICROKIT_SDK)/board/$(BOARD)/$(MICROKIT_CONFIG)
 
 # Compiler and linker flags
-CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g -Werror $(OPT) -I$(BOARD_DIR)/include -Ivmm/src/util -DBOARD_$(BOARD) -I. -Ifs/include -Itests/include -Ibenchmarks -I../shared_fs/include
+CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g -Werror $(OPT) -I$(BOARD_DIR)/include -Ivmm/src/util -DBOARD_$(BOARD) -I. -I.. -I../shared_test -Ifs/include -Itests/include -Ibenchmarks -I../shared_fs/include
 LDFLAGS := -L$(BOARD_DIR)/lib
 LIBS := -lmicrokit -Tmicrokit.ld
 

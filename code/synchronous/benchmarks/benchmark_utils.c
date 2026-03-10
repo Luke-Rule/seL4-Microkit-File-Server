@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "../debug_output.h"
+#include "../../debug_output.h"
 
 #include "benchmark_utils.h"
 

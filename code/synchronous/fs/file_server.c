@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "../debug_output.h"
+#include "../../debug_output.h"
 
 #include "include/fs_shared.h"
 #include "fs_internal.h"
