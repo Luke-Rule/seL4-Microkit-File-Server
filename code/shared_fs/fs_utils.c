@@ -10,27 +10,20 @@
 int32_t compare_names(const unsigned char *name1, const unsigned char *name2) {
     for (size_t i = 0; i < MAX_NAME_LENGTH; i++) {
         if (name1[i] == '/') {
-            microkit_debug_puts(OUTPUT_VERBOSITY, "part\n");
             return PATH_SEGMENT_EQUAL;
         }
         if (name1[i] == '\0') {
-            microkit_debug_puts(OUTPUT_VERBOSITY, "full\n");
             return FULL_PATH_EQUAL;
         }
         if (name1[i] != name2[i]) {
-            microkit_debug_puts(OUTPUT_VERBOSITY, "not\n");
             return FULL_PATH_NOT_EQUAL;
         }
     }
-    microkit_debug_puts(OUTPUT_VERBOSITY, "eq2\n");
     return 0; 
 }
 
 
 bool valid_name(const unsigned char *name) {
-    microkit_debug_puts(OUTPUT_VERBOSITY, "validating name: ");
-    microkit_debug_puts(OUTPUT_VERBOSITY, (const char *)name);
-    microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
     if (name[0] == '\0' || name[0] == '/') {
         return 0;
     }
@@ -42,23 +35,23 @@ bool valid_name(const unsigned char *name) {
             return 0;
         }
     }
+
+    // name must end with \0
     return 0;
 }
 
 
 bool valid_permissions(const i_node_t *i_node, const uint8_t client_id, const permissions_t required) {
+    // can perform any op on own file
     if (i_node->owner_id == client_id) {
         return 1;
     }
-    permissions_t dir_perm = (i_node->mode >> PERMISSION_BITS_START) & 0b111;
-    microkit_debug_puts(OUTPUT_VERBOSITY, "checking permissions: ");
-    microkit_debug_put32(OUTPUT_VERBOSITY, dir_perm);
-    microkit_debug_puts(OUTPUT_VERBOSITY, " against required: ");
-    microkit_debug_put32(OUTPUT_VERBOSITY, required);
-    microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
-    if ((dir_perm & required) == required) {
+
+    permissions_t perm = (i_node->mode >> PERMISSION_BITS_START) & 0b111;
+    if ((perm & required) == required) {
         return 1;
     }
+
     return 0;
 }
 

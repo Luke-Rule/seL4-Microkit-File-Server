@@ -5,85 +5,8 @@
 
 #include "../../debug_output.h"
 
+#include "benchmark_shared.h"
 #include "benchmark_utils.h"
-
-static size_t append_c_string(unsigned char *dest, size_t offset, size_t capacity, const char *src) {
-    size_t index = offset;
-
-    while (*src != '\0' && index + 1 < capacity) {
-        dest[index++] = (unsigned char)*src++;
-    }
-
-    if (index < capacity) {
-        dest[index] = '\0';
-    }
-
-    return index;
-}
-
-static size_t append_u32(unsigned char *dest, size_t offset, size_t capacity, uint32_t value) {
-    char digits[10];
-    size_t count = 0;
-    size_t index = offset;
-
-    if (value == 0) {
-        if (index + 1 < capacity) {
-            dest[index++] = '0';
-            dest[index] = '\0';
-        }
-        return index;
-    }
-
-    while (value > 0 && count < sizeof(digits)) {
-        digits[count++] = (char)('0' + (value % 10u));
-        value /= 10u;
-    }
-
-    while (count > 0 && index + 1 < capacity) {
-        dest[index++] = (unsigned char)digits[--count];
-    }
-
-    if (index < capacity) {
-        dest[index] = '\0';
-    }
-
-    return index;
-}
-
-static void make_file_path(unsigned char *dest, size_t capacity,
-                           const unsigned char *root_path, uint32_t iteration) {
-    size_t index = 0;
-    const unsigned char *src = root_path;
-
-    while (*src != '\0' && index + 1 < capacity) {
-        dest[index++] = *src++;
-    }
-
-    if (index + 1 < capacity) {
-        dest[index++] = '/';
-        dest[index] = '\0';
-    }
-
-    index = append_c_string(dest, index, capacity, "file_");
-    index = append_u32(dest, index, capacity, iteration);
-    append_c_string(dest, index, capacity, ".bin");
-}
-
-static void fill_pattern(uint8_t *buffer, size_t length, uint32_t seed) {
-    for (size_t i = 0; i < length; i++) {
-        buffer[i] = (uint8_t)((seed + i) & 0xffu);
-    }
-}
-
-static bool buffers_equal(const uint8_t *lhs, const uint8_t *rhs, size_t length) {
-    for (size_t i = 0; i < length; i++) {
-        if (lhs[i] != rhs[i]) {
-            return false;
-        }
-    }
-
-    return true;
-}
 
 static bool expect_rc(int rc, const char *operation) {
     if (rc == FS_OK) {
@@ -113,8 +36,8 @@ bool benchmark_run_workload(uint8_t *fs_buffer_base, int channel_id,
     }
 
     for (uint32_t iteration = 0; iteration < BENCHMARK_FILE_COUNT; iteration++) {
-        make_file_path(path, sizeof(path), root_path, iteration);
-        fill_pattern(write_buffer, sizeof(write_buffer), seed_base + iteration * 17u);
+        benchmark_make_file_path(path, sizeof(path), root_path, iteration);
+        benchmark_fill_pattern(write_buffer, sizeof(write_buffer), seed_base + iteration * 17u);
 
         fs_result_fileid_t create_result = send_create_file_request(
             path, PERM_PUBLIC, READ_WRITE_OP, fs_buffer_base, channel_id);
@@ -143,7 +66,8 @@ bool benchmark_run_workload(uint8_t *fs_buffer_base, int channel_id,
             return false;
         }
 
-        if (!buffers_equal(read_result.data_address, write_buffer, sizeof(write_buffer))) {
+        if (!benchmark_buffers_equal(read_result.data_address, write_buffer,
+                                     sizeof(write_buffer))) {
             microkit_debug_puts(TEST_VERBOSITY, "readback mismatch\n");
             return false;
         }

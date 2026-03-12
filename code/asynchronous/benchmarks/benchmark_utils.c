@@ -5,138 +5,9 @@
 
 #include "../../debug_output.h"
 
+#include "benchmark_shared.h"
 #include "benchmark_utils.h"
 #include "../fs/include/fs_api.h"
-
-static size_t append_c_string(unsigned char *dest, size_t offset, size_t capacity,
-							  const char *src)
-{
-	size_t index = offset;
-
-	while (*src != '\0' && index + 1 < capacity) {
-		dest[index++] = (unsigned char)*src++;
-	}
-
-	if (index < capacity) {
-		dest[index] = '\0';
-	}
-
-	return index;
-}
-
-static size_t append_u32(unsigned char *dest, size_t offset, size_t capacity,
-						 uint32_t value)
-{
-	char digits[10];
-	size_t count = 0;
-	size_t index = offset;
-
-	if (value == 0) {
-		if (index + 1 < capacity) {
-			dest[index++] = '0';
-			dest[index] = '\0';
-		}
-		return index;
-	}
-
-	while (value > 0 && count < sizeof(digits)) {
-		digits[count++] = (char)('0' + (value % 10u));
-		value /= 10u;
-	}
-
-	while (count > 0 && index + 1 < capacity) {
-		dest[index++] = (unsigned char)digits[--count];
-	}
-
-	if (index < capacity) {
-		dest[index] = '\0';
-	}
-
-	return index;
-}
-
-static void make_file_path(unsigned char *dest, size_t capacity,
-						   const unsigned char *root_path, uint32_t iteration)
-{
-	size_t index = 0;
-	const unsigned char *src = root_path;
-
-	while (*src != '\0' && index + 1 < capacity) {
-		dest[index++] = *src++;
-	}
-
-	if (index + 1 < capacity) {
-		dest[index++] = '/';
-		dest[index] = '\0';
-	}
-
-	index = append_c_string(dest, index, capacity, "file_");
-	index = append_u32(dest, index, capacity, iteration);
-	append_c_string(dest, index, capacity, ".bin");
-}
-
-static void copy_path(unsigned char *dest, size_t capacity,
-					  const unsigned char *src)
-{
-	size_t index = 0;
-
-	while (*src != '\0' && index + 1 < capacity) {
-		dest[index++] = *src++;
-	}
-
-	if (index < capacity) {
-		dest[index] = '\0';
-	}
-}
-
-static void fill_pattern(uint8_t *buffer, size_t length, uint32_t seed)
-{
-	for (size_t i = 0; i < length; i++) {
-		buffer[i] = (uint8_t)((seed + i) & 0xffu);
-	}
-}
-
-static bool buffers_equal(const uint8_t *lhs, const uint8_t *rhs, const size_t length)
-{
-	for (size_t i = 0; i < length; i++) {
-		if (lhs[i] != rhs[i]) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-static void clear_client_state(client_t *client_data)
-{
-	client_data->submission_queue_head = 0;
-	client_data->submission_queue_tail = 0;
-	client_data->completion_queue_head = 0;
-	client_data->completion_queue_tail = 0;
-	client_data->flags.ready_flag = 0;
-	client_data->flags.complete_flag = 0;
-	client_data->flags.finished_running_flag = 0;
-
-	for (size_t i = 0; i < MAX_QUEUE_ENTRIES; i++) {
-		client_data->submission_queue[i].operation_code = 0;
-		client_data->submission_queue[i].parameter1 = 0;
-		client_data->submission_queue[i].parameter2 = 0;
-		client_data->submission_queue[i].buffer_index = 0;
-		client_data->completion_queue[i].return_code = 0;
-		client_data->completion_queue[i].parameter1 = 0;
-		client_data->completion_queue[i].parameter2 = 0;
-		client_data->completion_queue[i].buffer_index = 0;
-	}
-
-	for (size_t i = 0; i < NUMBER_OF_BUFFERS_PER_CLIENT; i++) {
-		client_data->submission_buffer_table[i] = false;
-		client_data->completion_buffer_table[i] = false;
-		for (size_t j = 0; j < CLIENT_BUFFER_SIZE; j++) {
-			client_data->submission_buffers[i].data[j] = 0;
-			client_data->completion_buffers[i].data[j] = 0;
-		}
-	}
-}
 
 static bool expect_queue_rc(const fs_result_t rc, const char *operation)
 {
@@ -266,7 +137,7 @@ static bool drain_file_batch(client_t *client_data, const uint8_t *expected_data
 		return false;
 	}
 
-	if (!buffers_equal(
+	if (!benchmark_buffers_equal(
 			client_data->completion_buffers[completion.buffer_index].data,
 			expected_data, BENCHMARK_FILE_SIZE)) {
 		microkit_debug_puts(TEST_VERBOSITY, "readback mismatch\n");
@@ -304,7 +175,7 @@ bool benchmark_run_workload(client_t *client_data, const unsigned char *root_pat
 	uint32_t current_file_id;
 	uint32_t next_file_id = 0;
 
-	clear_client_state(client_data);
+	benchmark_clear_client_state(client_data);
 
 	if (!expect_queue_rc(send_delete_entry_request(root_path, client_data),
 						 "delete benchmark root")) {
@@ -333,7 +204,7 @@ bool benchmark_run_workload(client_t *client_data, const unsigned char *root_pat
 		return false;
 	}
 
-	make_file_path(current_path, sizeof(current_path), root_path, 0);
+	benchmark_make_file_path(current_path, sizeof(current_path), root_path, 0);
 	if (!queue_create_file(client_data, current_path)) {
 		return false;
 	}
@@ -347,7 +218,8 @@ bool benchmark_run_workload(client_t *client_data, const unsigned char *root_pat
 	for (uint32_t iteration = 0; iteration < BENCHMARK_FILE_COUNT; iteration++) {
 		int has_next_create = iteration + 1 < BENCHMARK_FILE_COUNT;
 
-		fill_pattern(write_buffer, sizeof(write_buffer), seed_base + iteration * 17u);
+		benchmark_fill_pattern(write_buffer, sizeof(write_buffer),
+					   seed_base + iteration * 17u);
 
 		if (!queue_write_seek_read_close_delete(client_data, current_file_id,
 										   write_buffer, current_path)) {
@@ -355,7 +227,8 @@ bool benchmark_run_workload(client_t *client_data, const unsigned char *root_pat
 		}
 
 		if (has_next_create) {
-			make_file_path(next_path, sizeof(next_path), root_path, iteration + 1);
+			benchmark_make_file_path(next_path, sizeof(next_path), root_path,
+						 iteration + 1);
 			if (!queue_create_file(client_data, next_path)) {
 				return false;
 			}
@@ -372,7 +245,7 @@ bool benchmark_run_workload(client_t *client_data, const unsigned char *root_pat
 
 		if (has_next_create) {
 			current_file_id = next_file_id;
-			copy_path(current_path, sizeof(current_path), next_path);
+			benchmark_copy_path(current_path, sizeof(current_path), next_path);
 		}
 	}
 

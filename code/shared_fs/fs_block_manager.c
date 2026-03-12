@@ -7,8 +7,8 @@
 
 block_id_result_t allocate_block(fs_state_t *state) {
     for (size_t i = 0; i < MAX_NUMBER_OF_BLOCKS; i++) {
-        if (state->block_table[i] == 0) {
-            state->block_table[i] = 1;
+        if (state->block_table[i] == false) {
+            state->block_table[i] = true;
             return (block_id_result_t){i, FS_OK};
         }
     }
@@ -17,8 +17,8 @@ block_id_result_t allocate_block(fs_state_t *state) {
 
 
 void release_block(fs_state_t *state, const size_t block_index) {
-    if (block_index < MAX_NUMBER_OF_BLOCKS && state->block_table[block_index] == 1) {
-        state->block_table[block_index] = 0;
+    if (block_index < MAX_NUMBER_OF_BLOCKS && state->block_table[block_index] == true) {
+        state->block_table[block_index] = false;
     }
 }
 

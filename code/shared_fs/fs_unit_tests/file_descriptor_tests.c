@@ -63,20 +63,21 @@ static bool add_i_node_to_fd_table_enforces_permissions_and_capacity(void)
 	file_id_and_cursor_result_t filled;
 	file_id_and_cursor_result_t overflow;
 	bool passed;
+	const uint32_t capacity_test_inode = 900;
 
 	if (!test_fixture_init(&fixture)) {
 		return false;
 	}
 
 	test_fixture_assign_inode(&fixture, 9, false, 1, PERM_READ);
-	test_fixture_assign_inode(&fixture, 300, false, 0, PERM_PUBLIC);
+	test_fixture_assign_inode(&fixture, capacity_test_inode, false, 0, PERM_PUBLIC);
 	denied = add_i_node_to_fd_table(&fixture.state, 0, 9, WRITE_OP);
 	for (size_t index = 0; index < MAX_OPEN_FILES_PER_CLIENT; index++) {
 		fixture.file_descriptor_table[index].i_node_index = (uint32_t)index;
 	}
-	filled = add_i_node_to_fd_table(&fixture.state, 0, 300, READ_OP);
+	filled = add_i_node_to_fd_table(&fixture.state, 0, capacity_test_inode, READ_OP);
 	fixture.file_descriptor_table[7].i_node_index = UINT32_MAX;
-	overflow = add_i_node_to_fd_table(&fixture.state, 0, 300, READ_OP);
+	overflow = add_i_node_to_fd_table(&fixture.state, 0, capacity_test_inode, READ_OP);
 	passed = expect_uint32_eq(denied.return_code, FS_ERR_PERMISSION, "permission denied when inode lacks requested mode") &&
 		expect_uint32_eq(filled.return_code, FS_ERR_MAX_OPEN_FILES_REACHED, "full descriptor table is reported") &&
 		expect_uint32_eq(overflow.return_code, FS_OK, "freed slot accepts new descriptor") &&

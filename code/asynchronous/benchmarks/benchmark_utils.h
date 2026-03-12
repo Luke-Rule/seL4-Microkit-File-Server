@@ -5,7 +5,7 @@
 
 #include "../fs/include/fs_shared.h"
 
-#define BENCHMARK_FILE_COUNT 2000
+#define BENCHMARK_FILE_COUNT 2048
 #define BENCHMARK_FILE_SIZE 2048
 
 bool benchmark_run_workload(client_t *client_data, const unsigned char *root_path,

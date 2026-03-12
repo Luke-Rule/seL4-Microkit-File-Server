@@ -5,53 +5,43 @@
 #include "../../debug_output.h"
 
 #include "include/fs_api.h"
+#include "fs_utils.h"
 
-
-void copy_data_from_buffer(const uint8_t *src, uint8_t *dest, size_t length) {
-    for (size_t i = 0; i < length; i++) {
-        dest[i] = src[i];
-    }
-}
-
-size_t copy_string_from_buffer(const unsigned char *src, unsigned char *dest, size_t max_length) {
-    size_t i;
-    for (i = 0; i < max_length - 1; i++) {
-        dest[i] = src[i];
-        if (dest[i] == '\0') {
-            return i;
-        }
-    }
-    // truncate if it exceeds max_length
-    dest[max_length - 1] = '\0';
-    return max_length - 1;
-}
-
-// ------------------------ Debug functions -------------------------- //
-
+// for multiclient benchmarking, so fs knows when everything complete
 void mark_client_as_finished_running(uint8_t *buffer) {
     buffer[CLIENT_BUFFER_SIZE - 1] = 1;
-    microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: marked as finished running.\n");
 }
 
-fs_result_fileid_t send_create_file_request(const unsigned char *file_name, const permissions_t permissions, const file_open_operations_t operations, unsigned char *fs_buffer_base, const uint8_t channel_id) {
+/* --------------------- Wrapper functions to request fs op -------------------------*/
+
+fs_result_fileid_t send_create_file_request(const unsigned char *file_name, const permissions_t permissions,
+                                            const file_open_operations_t operations, unsigned char *fs_buffer_base, const uint8_t channel_id) {
+
+    // initialise message with 3 parameters 
     microkit_msginfo msg = microkit_msginfo_new(0, 3);
 
+    // copy path from private client mem to shared fs mem
     copy_string_from_buffer(file_name, (unsigned char *)fs_buffer_base, CLIENT_BUFFER_SIZE);
 
     microkit_mr_set(0, OP_CREATE_FILE);
     microkit_mr_set(1, permissions);
     microkit_mr_set(2, operations);
 
+    // block on client request
     microkit_ppcall(channel_id, msg);
 
+    // build return struct for ease
     fs_result_fileid_t res;
     res.rc = microkit_mr_get(0);
     res.file_id = *((uint32_t *)fs_buffer_base);
+
     return res;
 }
 
 
-fs_result_t send_create_directory_request(const unsigned char *dir_name, const permissions_t permissions, unsigned char *fs_buffer_base, const uint8_t channel_id) {
+fs_result_t send_create_directory_request(const unsigned char *dir_name, const permissions_t permissions,
+                                          unsigned char *fs_buffer_base, const uint8_t channel_id) {
+
     microkit_msginfo msg = microkit_msginfo_new(0, 2);
 
     copy_string_from_buffer(dir_name, (unsigned char *)fs_buffer_base, CLIENT_BUFFER_SIZE);
@@ -61,13 +51,13 @@ fs_result_t send_create_directory_request(const unsigned char *dir_name, const p
 
     microkit_ppcall(channel_id, msg);
 
-    const int return_code = microkit_mr_get(0);
-
-    return return_code;
+    return microkit_mr_get(0);
 }
 
 
-fs_result_fileid_t send_open_file_request(const file_open_operations_t ops, const unsigned char *file_name, unsigned char *fs_buffer_base, const uint8_t channel_id) {
+fs_result_fileid_t send_open_file_request(const file_open_operations_t ops, const unsigned char *file_name,
+                                          unsigned char *fs_buffer_base, const uint8_t channel_id) {
+
     microkit_msginfo msg = microkit_msginfo_new(0, 2);
 
     copy_string_from_buffer(file_name, (unsigned char *)fs_buffer_base, CLIENT_BUFFER_SIZE);
@@ -81,6 +71,7 @@ fs_result_fileid_t send_open_file_request(const file_open_operations_t ops, cons
     fs_result_fileid_t res;
     res.rc = microkit_mr_get(0);
     res.file_id = *((uint32_t *)fs_buffer_base);
+    
     return res;
 }
 
@@ -93,8 +84,7 @@ fs_result_t send_close_file_request(const uint32_t file_id, const uint8_t channe
 
     microkit_ppcall(channel_id, msg);
 
-    const int return_code = microkit_mr_get(0);
-    return return_code;
+    return microkit_mr_get(0);
 }
 
 fs_result_read_t send_read_file_request(const uint32_t file_id, const size_t length, uint8_t *fs_buffer_base, const uint8_t channel_id) {
@@ -111,11 +101,14 @@ fs_result_read_t send_read_file_request(const uint32_t file_id, const size_t len
     res.data_address = &(fs_buffer_base[8]);
     res.bytes_read = ((uint32_t *)fs_buffer_base)[0];
     res.new_cursor_position = ((uint32_t *)(fs_buffer_base))[1];
+
     return res;
 }
 
 
-fs_result_write_t send_write_file_request(const uint32_t file_id, const size_t length, const uint8_t *data, uint8_t *fs_buffer_base, const uint8_t channel_id) {
+fs_result_write_t send_write_file_request(const uint32_t file_id, const size_t length, const uint8_t *data,
+                                          uint8_t *fs_buffer_base, const uint8_t channel_id) {
+
     microkit_msginfo msg = microkit_msginfo_new(0, 3);
 
     microkit_mr_set(0, OP_WRITE);
@@ -130,6 +123,7 @@ fs_result_write_t send_write_file_request(const uint32_t file_id, const size_t l
     res.rc = microkit_mr_get(0);
     res.bytes_written = ((uint32_t *)fs_buffer_base)[0];
     res.new_cursor_position = ((uint32_t *)(fs_buffer_base))[1];
+
     return res;
 }
 
@@ -144,6 +138,7 @@ fs_result_t send_seek_file_request(const uint32_t file_id, const size_t position
     microkit_ppcall(channel_id, msg);
     
     const int return_code = microkit_mr_get(0);
+
     return return_code;
 }
 
@@ -155,11 +150,12 @@ fs_result_t send_delete_entry_request(const unsigned char *path, unsigned char *
 
     microkit_ppcall(channel_id, msg);
 
-    const int return_code = microkit_mr_get(0);
-    return return_code;
+    return microkit_mr_get(0);
 }
 
-fs_result_t send_set_entry_permissions_request(const unsigned char *path, const permissions_t permissions, unsigned char *fs_buffer_base, const uint8_t channel_id) {
+fs_result_t send_set_entry_permissions_request(const unsigned char *path, const permissions_t permissions,
+                                               unsigned char *fs_buffer_base, const uint8_t channel_id) {
+
     copy_string_from_buffer(path, (unsigned char *)fs_buffer_base, CLIENT_BUFFER_SIZE);
     microkit_msginfo msg = microkit_msginfo_new(0, 2);
 
@@ -168,8 +164,7 @@ fs_result_t send_set_entry_permissions_request(const unsigned char *path, const 
 
     microkit_ppcall(channel_id, msg);
 
-    const int return_code = microkit_mr_get(0);
-    return return_code;
+    return microkit_mr_get(0);
 }
 
 fs_result_permissions_t send_get_entry_permissions_request(const unsigned char *path, unsigned char *fs_buffer_base, const uint8_t channel_id) {

@@ -31,7 +31,7 @@ bool operation_requires_submission_buffer(const operation_t operation) {
     return false;
 }
 
-// ------------------------ Buffer management -------------------------- //
+// ------------------------ Buffer pool management -------------------------- //
 
 size_t get_free_buffer(bool *buffer_table) {
     for (size_t i = 0; i < NUMBER_OF_BUFFERS_PER_CLIENT; i++) {
@@ -59,7 +59,7 @@ bool is_free_buffer(bool *buffer_table) {
     return false;
 }
 
-// ------------------------------ Buffer data management ------------------------------- //
+// ------------- Buffer data management, copying from client private data to fs shared data buffer ---------------- //
 
 buffer_copy_result_t copy_string_to_submission_buffer(const unsigned char *src, client_t *client_data) {
     buffer_copy_result_t result;
@@ -69,9 +69,7 @@ buffer_copy_result_t copy_string_to_submission_buffer(const unsigned char *src, 
         result.buffer_index = SIZE_MAX;
         return result;
     }
-    microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: copying string to submission buffer at index ");
-    microkit_debug_put32(OUTPUT_VERBOSITY, buffer_index);
-    microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
+
     unsigned char *dest = (unsigned char *)&client_data->submission_buffers[buffer_index];
     size_t i;
     for (i = 0; i < CLIENT_BUFFER_SIZE - 1; i++) {
@@ -81,13 +79,13 @@ buffer_copy_result_t copy_string_to_submission_buffer(const unsigned char *src, 
             break;
         }
     }
+
+    // truncate text if too long for buffer, ensuring its null terminated
     if (dest[i] != '\0') {
         dest[CLIENT_BUFFER_SIZE - 1] = '\0';
         result.rc = FS_ERR_BUFFER_TOO_SMALL;
     }
-    microkit_debug_puts(OUTPUT_VERBOSITY, "CLIENT: copied string: ");
-    microkit_debug_puts(OUTPUT_VERBOSITY, (const char *)&client_data->submission_buffers[buffer_index]);
-    microkit_debug_puts(OUTPUT_VERBOSITY, "\n");
+
     result.buffer_index = buffer_index;
     return result;
 }
@@ -101,10 +99,12 @@ buffer_copy_result_t copy_data_to_submission_buffer(const uint8_t *src, const si
         result.buffer_index = SIZE_MAX;
         return result;
     }
+    
     uint8_t *dest = (uint8_t *)&client_data->submission_buffers[buffer_index];
     for (size_t i = 0; i < (length < CLIENT_BUFFER_SIZE ? length : CLIENT_BUFFER_SIZE); i++) {
         dest[i] = src[i];
     }
+
     result.rc = FS_OK;
     result.buffer_index = buffer_index;
     return result;

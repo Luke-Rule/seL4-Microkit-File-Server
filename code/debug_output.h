@@ -7,6 +7,11 @@
 #define TEST_VERBOSITY 1
 #define OUTPUT_VERBOSITY 2
 
+// wrappers to allow toggling debug output
+// when writing long strings, it is recommended to first call sel4_Yield() first, 
+// to ensure maximum scheduling time for printing, to avoid chopped output
+// this is not placed within the wrappers, as some desired prints span multiple calls
+
 static inline void microkit_debug_puts(uint8_t verbosity, const char *s) {
     if (verbosity <= VERBOSITY_LEVEL) {
         microkit_dbg_puts(s);

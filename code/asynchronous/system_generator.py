@@ -1,9 +1,10 @@
 from pathlib import Path
 import sys
 
+# generate microkit system file for variable number of clients, with programs named x_i.elf, to specified location
 def generate_asynchronous_system_file(number_of_clients, client_names, client_path):
+    # memory org vars
     base_vaddr = 0x30000000
-    
     fs_size = 0x10133000
     client_size = 0x81000
         
@@ -41,7 +42,6 @@ def generate_asynchronous_system_file(number_of_clients, client_names, client_pa
             
         f.write("    <!-- Client Protection Domains -->\n")
         for i in range(number_of_clients):
-            # client pds
             f.write(f"    <protection_domain name=\"client_{i}\" priority=\"0\" >\n")
             f.write(f"        <program_image path=\"{client_names}{i}.elf\"/>\n")
             f.write(f"        <map mr=\"client_{i}\" vaddr=\"0x{(base_vaddr):X}\" perms=\"rw\" cached=\"true\"\n")
@@ -51,7 +51,6 @@ def generate_asynchronous_system_file(number_of_clients, client_names, client_pa
 
         f.write("\n    <!-- Communication Channels -->\n")
         for i in range(number_of_clients):
-            # channels
             f.write(f"    <channel>\n")
             f.write(f"        <end pd=\"file_server\" id=\"{i}\"/>\n")
             f.write(f"        <end pd=\"client_{i}\" id=\"0\" pp=\"true\"/>\n")

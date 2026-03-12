@@ -1,6 +1,6 @@
 from pathlib import Path
-import sys
-# TODO: cache or not?
+
+# generate microkit system file for variable number of clients, with programs named x_i.elf, to specified location
 def generate_synchronous_system_file(number_of_clients, client_name, client_path):
     base_vaddr = 0x30000000
     
@@ -41,7 +41,6 @@ def generate_synchronous_system_file(number_of_clients, client_name, client_path
             
         f.write("    <!-- Client Protection Domains -->\n")
         for i in range(number_of_clients):
-            # client pds
             f.write(f"    <protection_domain name=\"client_{i}\" priority=\"0\" >\n")
             f.write(f"        <program_image path=\"{client_name}{i}.elf\"/>\n")
             f.write(f"        <map mr=\"client_{i}\" vaddr=\"0x{(base_vaddr):X}\" perms=\"rw\" cached=\"true\"\n")
@@ -51,7 +50,6 @@ def generate_synchronous_system_file(number_of_clients, client_name, client_path
 
         f.write("\n    <!-- Communication Channels -->\n")
         for i in range(number_of_clients):
-            # channels
             f.write(f"    <channel>\n")
             f.write(f"        <end pd=\"file_server\" id=\"{i}\"/>\n")
             f.write(f"        <end pd=\"client_{i}\" id=\"0\" pp=\"true\"/>\n")
