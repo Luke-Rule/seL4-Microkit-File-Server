@@ -1,16 +1,14 @@
 from pathlib import Path
 import sys
 
+from system_generator import generate_asynchronous_system_file
+
 PARENT_DIR = Path(__file__).resolve().parent.parent
 if str(PARENT_DIR) not in sys.path:
     sys.path.insert(0, str(PARENT_DIR))
 
-from system_generator import generate_asynchronous_system_file
-
-
 DEFAULT_CLIENT_PREFIX = "multi_client_"
 DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parent / "systems"
-
 
 def main(argv):
     if len(argv) > 3:

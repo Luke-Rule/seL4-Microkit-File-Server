@@ -5,6 +5,7 @@
 
 #include "fs_shared_types.h"
 
+#define CLIENT_BENCHMARK_LABEL 1
 #define CLIENT_BUFFER_SIZE 0x1000u
 #define CLIENT_DATA_PAGE_SIZE 0x81000u
 

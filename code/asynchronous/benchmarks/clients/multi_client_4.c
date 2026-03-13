@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "../../../debug_output.h"
+#include "../../../timing_helpers.h"
 
 #include "../benchmark_utils.h"
 
@@ -10,18 +11,28 @@ uintptr_t fs_data_base;
 
 void notified(microkit_channel ch)
 {
-	(void)ch;
+    (void)ch;
 }
 
 void init(void)
 {
-	client_t *client_data = (client_t *)fs_data_base;
+    client_t *client_data = (client_t *)fs_data_base;
+    uint64_t elapsed_ticks = 0;
 
-	microkit_debug_puts(TEST_VERBOSITY, "multi benchmark client 4 started\n");
-	bool success = benchmark_run_workload(client_data,
-									 (const unsigned char *)"/bench_mc4",
-									 30u);
-	microkit_debug_puts(TEST_VERBOSITY, "multi benchmark client 4 finished\n");
+    microkit_debug_puts(TEST_VERBOSITY, "4 started\n");
+    bool success = benchmark_prepare_root(client_data,
+                                          (const unsigned char *)"/bench_mc4");
+    if (success) {
+        uint64_t start_ticks = read_cntvct();
+        success = benchmark_run_iterations(client_data,
+                                           (const unsigned char *)"/bench_mc4",
+                                           30u);
+        elapsed_ticks = read_cntvct() - start_ticks;
+        if (success) {
+            benchmark_report_timing(4, elapsed_ticks);
+        }
+    }
+    
 
-	benchmark_finish(client_data, success);
+    benchmark_finish(client_data, success);
 }

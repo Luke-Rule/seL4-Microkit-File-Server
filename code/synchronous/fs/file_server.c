@@ -20,20 +20,12 @@
 #include "fs_i_node_manager.h"
 #include "include/fs_operations.h"
 
-#ifndef BENCHMARKING
-    #define BENCHMARKING 0
-#endif
-
 // ------------------------------ Globals ------------------------------- //
 
 uintptr_t fs_memory_base;
 uintptr_t clients_memory_base;
 
 static fs_state_t fs_state;
-
-uint64_t freq;
-uint64_t start;
-bool benchmark_reported;
 
 // ------------------------------ File server operation ------------------------------- //
 
@@ -42,8 +34,23 @@ static inline uint8_t *client_buffer_base(const uint8_t client_id)
     return (uint8_t *)(clients_memory_base + ((uintptr_t)client_id * CLIENT_BUFFER_SIZE));
 }
 
+void output_client_benchmark(const uint8_t client_id, const uint64_t total_us, const uint64_t average_us) {   
+    seL4_Yield();
+	microkit_dbg_put32(client_id);
+	microkit_dbg_puts(", total=");
+	microkit_dbg_putu64(total_us);
+	microkit_dbg_puts(", avg=");
+	microkit_dbg_putu64(average_us);
+	microkit_dbg_putc('\n');
+}
+
 // blocking entry point from client, channel corresponds to client id, msginfo holds passed parameters
 microkit_msginfo protected(microkit_channel channel, microkit_msginfo msginfo) {
+    if (microkit_msginfo_get_label(msginfo) == CLIENT_BENCHMARK_LABEL) {
+        output_client_benchmark(microkit_mr_get(0), microkit_mr_get(1), microkit_mr_get(2));
+        return msginfo;
+    }
+
     if (microkit_msginfo_get_count(msginfo) < 1) {
         microkit_mr_set(0, FS_ERR_INVALID_OP_CODE);
         return msginfo;
@@ -253,52 +260,8 @@ void init(void) {
     root_i_node->entry_size = 0;
     root_i_node->blocks_used = 1;
 
-    if (BENCHMARKING) {
-        freq = read_cntfrq();
-        start = read_cntvct();
-        benchmark_reported = false;
-    }
-}
-
-void check_end_of_benchmark() {
-    if (benchmark_reported) {
-        return;
-    }
-
-    for (int i = 0; i < NUMBER_OF_CLIENTS; i++) {
-        if (!client_buffer_base(i)[CLIENT_BUFFER_SIZE - 1]) {
-            return;
-        }
-    }
-
-    uint64_t end = read_cntvct();
-    uint64_t delta_ticks = end - start;
-    uint64_t whole_s = 0;
-    uint32_t frac_us = 0;
-
-    if (freq != 0) {
-        whole_s = delta_ticks / freq;
-        uint64_t rem = delta_ticks % freq;
-        frac_us = (uint32_t)((rem * 1000000u) / freq);
-    }
-
-    microkit_dbg_puts("Benchmark took: ");
-    microkit_dbg_putu64(whole_s);
-    microkit_dbg_putc('.');
-    microkit_dbg_putu32_6(frac_us);
-    microkit_dbg_puts(" s (");
-    microkit_dbg_putu64(delta_ticks);
-    microkit_dbg_puts(" ticks @ ");
-    microkit_dbg_putu64(freq);
-    microkit_dbg_puts(" Hz)\n");
-
-    benchmark_reported = true;
-    seL4_Yield();
 }
 
 // non-blocking client entry point
 void notified(microkit_channel) {
-    if (BENCHMARKING) {
-        check_end_of_benchmark();
-    }
 }

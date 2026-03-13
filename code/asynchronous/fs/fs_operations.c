@@ -162,8 +162,21 @@ void delete_entry_operation(fs_state_t *state, client_t *client, const uint8_t c
         add_completion_entry(client, FS_ERR_PERMISSION, 0, 0, SIZE_MAX);
         return;
     }
-    // if it's already deleted, just return as successful (idempotent), it will be removed when the last file descriptor is closed
+
     if (state->i_node_table[i_node_index.index].mode & IS_DELETED_BIT_SET) {
+        // if it's already slated to be deleted and it is still open by multiple clients, return as successful,
+        // it will be removed when the last file descriptor is closed
+        if (is_i_node_open_by_other_client(state, i_node_index.index, client_id)) {
+            add_completion_entry(client, FS_OK, 0, 0, SIZE_MAX);
+            return;
+        }
+        // otherwise we can treat this delete as the final close (we have already done the removal processing below)
+        release_i_node(state, i_node_index.index);
+        if (is_i_node_open_by_client(state, i_node_index.index, client_id)) {
+            fs_result_t res = close_file_by_i_node_index(state, client_id, i_node_index.index);
+            add_completion_entry(client, res, 0, 0, SIZE_MAX);
+            return;
+        }
         add_completion_entry(client, FS_OK, 0, 0, SIZE_MAX);
         return;
     }
@@ -225,9 +238,10 @@ void delete_entry_operation(fs_state_t *state, client_t *client, const uint8_t c
         if (is_i_node_open_by_client(state, i_node_index.index, client_id)) {
             fs_result_t res = close_file_by_i_node_index(state, client_id, i_node_index.index);
             add_completion_entry(client, res, 0, 0, SIZE_MAX);
-        } else {
-            add_completion_entry(client, FS_OK, 0, 0, SIZE_MAX);
+            return;
         }
+        add_completion_entry(client, FS_OK, 0, 0, SIZE_MAX);
+        return;
     }
 }
 

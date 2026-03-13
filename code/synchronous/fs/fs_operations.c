@@ -137,8 +137,17 @@ fs_result_t delete_entry_operation(fs_state_t *state, const uint8_t client_id, u
     if (state->i_node_table[i_node_index.index].owner_id != client_id && !valid_permissions(&state->i_node_table[i_node_index.index], client_id, PERM_WRITE)) {
         return FS_ERR_PERMISSION;
     }
-    // already slated for deletion
     if (state->i_node_table[i_node_index.index].mode & IS_DELETED_BIT_SET) {
+        // if it's already slated to be deleted and it is still open by multiple clients, return as successful,
+        // it will be removed when the last file descriptor is closed
+        if (is_i_node_open_by_other_client(state, i_node_index.index, client_id)) {
+            return FS_OK;
+        }
+        // otherwise we can treat this delete as the final close (we have already done the removal processing below)
+        release_i_node(state, i_node_index.index);
+        if (is_i_node_open_by_client(state, i_node_index.index, client_id)) {
+            return close_file_by_i_node_index(state, client_id, i_node_index.index);
+        }
         return FS_OK;
     }
 
@@ -147,6 +156,7 @@ fs_result_t delete_entry_operation(fs_state_t *state, const uint8_t client_id, u
     if (parent_i_node.return_code != FS_OK) {
         return parent_i_node.return_code;
     }
+
     i_node_t *parent_i_node_ptr = &state->i_node_table[parent_i_node.index];
     size_t *indirect_block_data = (size_t *)&state->blocks[parent_i_node_ptr->block_indices[DIRECT_BLOCKS_PER_INODE]].data;
     for (size_t i = 0; i < parent_i_node_ptr->blocks_used; i++) {
@@ -202,11 +212,10 @@ fs_result_t delete_entry_operation(fs_state_t *state, const uint8_t client_id, u
 
         release_i_node(state, i_node_index.index);
         if (is_i_node_open_by_client(state, i_node_index.index, client_id)) {
-            fs_result_t res = close_file_by_i_node_index(state, client_id, i_node_index.index);
-            return res;
-        } else {
-            return FS_OK;
-        }
+            return close_file_by_i_node_index(state, client_id, i_node_index.index);
+        } 
+
+        return FS_OK;
     }
 }
 
@@ -457,6 +466,6 @@ fs_result_t seek_file_operation(fs_state_t *state, const uint8_t client_id,
     }
 
     fd.descriptor->cursor_position = position;
-    
+
     return FS_OK;
 }

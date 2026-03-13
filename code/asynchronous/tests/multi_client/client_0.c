@@ -16,7 +16,7 @@ int tests_passed = 0;
 int tests_failed = 0;
 
 static bool ensure_clean_mc_root(void) {
-	// Best-effort cleanup from previous runs.
+	/* Client 0 owns the shared multi-client fixture setup. */
 	if (!delete_entry_allow_missing((const unsigned char *)"/__mc", "Delete /__mc (cleanup)", client_data)) {
 		return false;
 	}
@@ -36,6 +36,12 @@ static bool ensure_clean_mc_root(void) {
 }
 
 static bool run_multi_client_permissions_test(void) {
+	/*
+	 * Client 0 acts as the coordinator for the multi-client permission tests.
+	 * It creates the shared fixture, advances the phase markers, and validates
+	 * the final owner-visible state after the other two clients exercise access
+	 * control from non-owner contexts.
+	 */
 	test_suite_begin("Multi-client permissions + sync", client_data);
 
 	if (!ensure_clean_mc_root()) {
@@ -56,6 +62,7 @@ static bool run_multi_client_permissions_test(void) {
 	const unsigned char rwdir_file[] = "/__mc/rw_no_x/public.txt";
 	const unsigned char rwdir_data[] = "public-in-rw";
 
+	/* Initial fixture: one private file, one read-only public file, one writable shared file. */
 	if (!fs_test_create_and_write_file(private_path, PERM_PRIVATE, READ_WRITE_OP, secret, sizeof(secret), "Create private", client_data)) {
 		return false;
 	}
@@ -66,7 +73,7 @@ static bool run_multi_client_permissions_test(void) {
 		return false;
 	}
 
-	// Phase 1: other clients should observe permission enforcement and be able to write shared.
+	/* Phase 1: other clients verify baseline permissions and mutate the shared file. */
 	if (!fs_test_create_marker((const unsigned char *)"/__mc/phase1", "Create phase1 marker", client_data)) {
 		return false;
 	}
@@ -83,7 +90,7 @@ static bool run_multi_client_permissions_test(void) {
 		return false;
 	}
 
-	// Phase 2: lock down public + shared for other clients.
+	/* Phase 2: tighten permissions and confirm non-owners now lose access. */
 	fs_result_t rc = send_set_entry_permissions_request(public_read_path, PERM_PRIVATE, client_data);
 	if (!expect_eq_int(rc, FS_OK, "Queue set public->private")) {
 		return false;
@@ -126,9 +133,7 @@ static bool run_multi_client_permissions_test(void) {
 		return false;
 	}
 
-	// Phase 3: directory requires execute to traverse, write to create children.
-	// Create an execute-only directory, put a readable file in it, and ensure other
-	// clients cannot create new files but can read the existing one.
+	/* Phase 3: execute-only directory allows traversal but not child creation. */
 	rc = send_create_directory_request(xdir, PERM_EXECUTE, client_data);
 	if (!expect_eq_int(rc, FS_OK, "Queue create x_only dir")) {
 		return false;
@@ -156,7 +161,7 @@ static bool run_multi_client_permissions_test(void) {
 		return false;
 	}
 
-	// Phase 4: directory without execute should not be traversable by other clients.
+	/* Phase 4: directory without execute permission should block traversal entirely. */
 	rc = send_create_directory_request(rwdir, (permissions_t)(PERM_READ | PERM_WRITE), client_data);
 	if (!expect_eq_int(rc, FS_OK, "Queue create rw_no_x dir")) {
 		return false;

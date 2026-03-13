@@ -5,8 +5,9 @@
 
 #include "../../debug_output.h"
 
-#include "../include/test_utils.h"
-#include "../../fs/include/fs_api.h"
+#include "test_utils.h"
+#include "fs_api.h"
+#include "fs_shared.h"
 
 extern int tests_passed;
 extern int tests_failed;

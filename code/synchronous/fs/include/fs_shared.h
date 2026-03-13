@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define CLIENT_BENCHMARK_LABEL 1
 #define CLIENT_BUFFER_SIZE 0x40000u
 
 typedef struct {
