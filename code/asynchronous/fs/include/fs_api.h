@@ -14,10 +14,12 @@ void mark_client_as_finished_running(client_t *client_data);
 void debug_print_return_code(const char *operation, const uint8_t return_code);
 
 void notify_file_server(client_t *client_data, const bool wait_for_completion);
+
 bool get_if_any_operations_completed(client_t *client_data);
 uint8_t get_number_of_completed_operations(client_t *client_data);
 void wait_until_n_operations_completed(client_t *client_data, const size_t n);
 void notify_file_server_and_wait_for_all_operations(client_t *client_data, const size_t number_of_operations);
+
 void set_free_completion_buffer(client_t *client_data, const size_t buffer_index);
 fs_result_t get_next_completion_entry(client_t *client_data, completion_queue_entry_t *out);
 

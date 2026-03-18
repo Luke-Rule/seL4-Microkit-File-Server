@@ -93,7 +93,7 @@ bool get_if_any_operations_completed(client_t *client_data) {
     return client_data->flags.complete_flag;
 }
 
-// These are required as the FS limits ops per service to prevent starvation of other clients, so a re-notify may be required 
+// These are required as the FS limits ops per service to prevent starvation of other clients
 uint8_t get_number_of_completed_operations(client_t *client_data) {
     if (client_data->completion_queue_tail >= client_data->completion_queue_head) {
         return client_data->completion_queue_tail - client_data->completion_queue_head;
