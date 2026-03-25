@@ -1,0 +1,61 @@
+PER OP SINGLE CLIENT
+
+SYNC 
+
+per-op write: total_ticks=119209917, avg_ticks=11641, avg_us=186
+per-op read: total_ticks=99467257, avg_ticks=9713, avg_us=155
+
+ASYNC
+
+per-op write batch=1: total_ticks=119863148, avg_ticks=11705, avg_us=187
+per-op read batch=1: total_ticks=101190107, avg_ticks=9881, avg_us=158
+per-op write batch=2: total_ticks=81862112, avg_ticks=7994, avg_us=127
+per-op read batch=2: total_ticks=71644082, avg_ticks=6996, avg_us=111
+per-op write batch=3: total_ticks=72758197, avg_ticks=7105, avg_us=113
+per-op read batch=3: total_ticks=51958968, avg_ticks=5074, avg_us=81
+per-op write batch=4: total_ticks=58317206, avg_ticks=5695, avg_us=91
+per-op read batch=4: total_ticks=40950524, avg_ticks=3999, avg_us=63
+per-op write batch=5: total_ticks=56281807, avg_ticks=5496, avg_us=87
+per-op read batch=5: total_ticks=37551939, avg_ticks=3667, avg_us=58
+per-op write batch=6: total_ticks=56679218, avg_ticks=5535, avg_us=88
+per-op read batch=6: total_ticks=34700052, avg_ticks=3388, avg_us=54
+per-op write batch=7: total_ticks=51349055, avg_ticks=5014, avg_us=80
+per-op read batch=7: total_ticks=29620054, avg_ticks=2892, avg_us=46
+per-op write batch=8: total_ticks=47435632, avg_ticks=4632, avg_us=74
+per-op read batch=8: total_ticks=30411119, avg_ticks=2969, avg_us=47
+per-op write batch=9: total_ticks=48591942, avg_ticks=4745, avg_us=75
+per-op read batch=9: total_ticks=26820091, avg_ticks=2619, avg_us=41
+per-op write batch=10: total_ticks=47831005, avg_ticks=4670, avg_us=74
+per-op read batch=10: total_ticks=31353357, avg_ticks=3061, avg_us=48
+
+VARIED MULTICLIENT REALISTIC BATCHABLE BENCHMARK (us)
+
+CREATE WRITE CLOSE OPEN SEEK READ DELETE for many files averaged
+
+for async batches are CREATE | WRITE CLOSE | OPEN | SEEK READ DELETE
+
+SYNC 
+
+8, total=25360843, avg=12680
+7, total=25368969, avg=12684
+3, total=25409122, avg=12704
+9, total=25519450, avg=12759
+0, total=25560115, avg=12780
+6, total=25639286, avg=12819
+4, total=25673876, avg=12836
+5, total=25697766, avg=12848
+1, total=25715596, avg=12857
+2, total=25724170, avg=12862
+
+ASYNC
+
+4, total=16064847, avg=7844
+8, total=16130779, avg=7876
+6, total=16134532, avg=7878
+3, total=16180787, avg=7900
+9, total=16224354, avg=7922
+5, total=16223199, avg=7921
+1, total=16207812, avg=7913
+7, total=16243695, avg=7931
+2, total=16263497, avg=7941
+0, total=16248209, avg=7933

@@ -92,8 +92,6 @@ static bool create_benchmark_files(uint8_t *fs_buffer_base, int channel_id,
 static bool write_benchmark_files(uint8_t *fs_buffer_base, int channel_id,
                                   const uint32_t *file_ids, uint64_t *elapsed_ticks)
 {
-    *elapsed_ticks = 0;
-
     for (uint32_t iteration = 0; iteration < PER_OP_BENCHMARK_FILE_COUNT; iteration++) {
         uint64_t start = read_cntvct();
         fs_result_write_t write_result = send_write_file_request(
@@ -130,8 +128,6 @@ static bool reset_benchmark_file_cursors(int channel_id, const uint32_t *file_id
 static bool read_benchmark_files(uint8_t *fs_buffer_base, int channel_id,
                                  const uint32_t *file_ids, uint64_t *elapsed_ticks)
 {
-    *elapsed_ticks = 0;
-
     for (uint32_t iteration = 0; iteration < PER_OP_BENCHMARK_FILE_COUNT; iteration++) {
         uint64_t start = read_cntvct();
         fs_result_read_t read_result = send_read_file_request(
@@ -194,15 +190,21 @@ bool per_op_benchmark_run_workload(uint8_t *fs_buffer_base, int channel_id,
     prepare_benchmark_data(seed_base);
 
     if (!prepare_benchmark_root(fs_buffer_base, channel_id, root_path) ||
-        !create_benchmark_files(fs_buffer_base, channel_id, root_path, file_ids) ||
-        !write_benchmark_files(fs_buffer_base, channel_id, file_ids, &write_ticks) ||
-        !reset_benchmark_file_cursors(channel_id, file_ids) ||
-        !read_benchmark_files(fs_buffer_base, channel_id, file_ids, &read_ticks)) {
+        !create_benchmark_files(fs_buffer_base, channel_id, root_path, file_ids)) {
         return false;
     }
 
-    print_phase_result("write", write_ticks, PER_OP_BENCHMARK_FILE_COUNT);
-    print_phase_result("read", read_ticks, PER_OP_BENCHMARK_FILE_COUNT);
+    for (uint32_t iteration = 0; iteration < NUM_ITERATIONS; iteration++) {
+        if (!reset_benchmark_file_cursors(channel_id, file_ids) ||
+            !write_benchmark_files(fs_buffer_base, channel_id, file_ids, &write_ticks) ||
+            !reset_benchmark_file_cursors(channel_id, file_ids) ||
+            !read_benchmark_files(fs_buffer_base, channel_id, file_ids, &read_ticks)) {
+            return false;
+        }
+    }
+
+    print_phase_result("write", write_ticks, PER_OP_BENCHMARK_FILE_COUNT * NUM_ITERATIONS);
+    print_phase_result("read", read_ticks, PER_OP_BENCHMARK_FILE_COUNT * NUM_ITERATIONS);
 
     return cleanup_benchmark_files(fs_buffer_base, channel_id, root_path, file_ids);
 }

@@ -183,11 +183,11 @@ static void print_phase_result(const char *phase, uint32_t batch_size,
                                uint64_t total_ticks)
 {
     uint64_t freq = read_cntfrq();
-    uint64_t average_ticks = total_ticks / PER_OP_BENCHMARK_FILE_COUNT;
+    uint64_t average_ticks = total_ticks / (PER_OP_BENCHMARK_FILE_COUNT * NUM_ITERATIONS);
     uint64_t average_us = 0;
 
     if (freq != 0) {
-        average_us = (total_ticks * 1000000u) / freq / PER_OP_BENCHMARK_FILE_COUNT;
+        average_us = (total_ticks * 1000000u) / freq / (PER_OP_BENCHMARK_FILE_COUNT * NUM_ITERATIONS);
     }
 
     microkit_dbg_puts("per-op ");
@@ -216,7 +216,6 @@ static bool run_write_phase(client_t *client_data, const uint32_t *file_ids,
                             uint32_t batch_size, uint64_t *elapsed_ticks)
 {
     completion_queue_entry_t completion;
-    *elapsed_ticks = 0;
 
     for (uint32_t base = 0; base < PER_OP_BENCHMARK_FILE_COUNT; base += batch_size) {
         uint32_t batch_count = PER_OP_BENCHMARK_FILE_COUNT - base;
@@ -264,7 +263,6 @@ static bool run_read_phase(client_t *client_data, const uint32_t *file_ids,
                            uint32_t batch_size, uint64_t *elapsed_ticks)
 {
     completion_queue_entry_t completion;
-    *elapsed_ticks = 0;
 
     for (uint32_t base = 0; base < PER_OP_BENCHMARK_FILE_COUNT; base += batch_size) {
         uint32_t batch_count = PER_OP_BENCHMARK_FILE_COUNT - base;
@@ -403,15 +401,16 @@ bool per_op_benchmark_run_workload(client_t *client_data, const unsigned char *r
          batch_size++) {
         uint64_t write_ticks = 0;
         uint64_t read_ticks = 0;
+        for (uint32_t iteration = 0; iteration < NUM_ITERATIONS; iteration++) {
+            if (!reset_file_cursors(client_data, benchmark_file_ids)) {
+                return false;
+            }
 
-        if (batch_size > 1 && !reset_file_cursors(client_data, benchmark_file_ids)) {
-            return false;
-        }
-
-        if (!run_write_phase(client_data, benchmark_file_ids, batch_size, &write_ticks) ||
-            !reset_file_cursors(client_data, benchmark_file_ids) ||
-            !run_read_phase(client_data, benchmark_file_ids, batch_size, &read_ticks)) {
-            return false;
+            if (!run_write_phase(client_data, benchmark_file_ids, batch_size, &write_ticks) ||
+                !reset_file_cursors(client_data, benchmark_file_ids) ||
+                !run_read_phase(client_data, benchmark_file_ids, batch_size, &read_ticks)) {
+                return false;
+            }
         }
 
         print_phase_result("write", batch_size, write_ticks);
